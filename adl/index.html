@@ -1,0 +1,819 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MNX ADL Replacement-Capacity Invariants</title>
+    <meta
+      name="description"
+      content="A short MNX contract research note explaining oracle-jump, max-trade-bound, and initial-margin inequalities for preserving ADL capacity under worst-case replacement flow."
+    />
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f6f7f5;
+        --paper: #ffffff;
+        --ink: #17201d;
+        --muted: #58645f;
+        --line: #d9dfda;
+        --teal: #096b62;
+        --teal-soft: #e5f3f1;
+        --rust: #92400e;
+        --rust-soft: #fff2df;
+        --blue: #1d4ed8;
+        --blue-soft: #eaf0ff;
+        --red: #a92828;
+        --red-soft: #fff1f1;
+        --code: #f1f4f2;
+        --shadow: 0 18px 44px rgba(23, 32, 29, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          sans-serif;
+        line-height: 1.55;
+      }
+
+      a {
+        color: var(--blue);
+        text-decoration-thickness: 1px;
+        text-underline-offset: 3px;
+      }
+
+      header {
+        background: #17201d;
+        color: #ffffff;
+        padding: 42px 24px 30px;
+        border-bottom: 6px solid #d97706;
+      }
+
+      .wrap {
+        width: min(1160px, calc(100vw - 40px));
+        margin: 0 auto;
+      }
+
+      .eyebrow {
+        margin: 0 0 14px;
+        color: #a7f3d0;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        max-width: 940px;
+        margin: 0;
+        font-size: clamp(2rem, 6vw, 4.8rem);
+        line-height: 0.98;
+        letter-spacing: 0;
+      }
+
+      .lede {
+        max-width: 900px;
+        margin: 18px 0 0;
+        color: #d9e3de;
+        font-size: clamp(1rem, 2vw, 1.22rem);
+      }
+
+      main {
+        padding: 28px 0 56px;
+      }
+
+      section {
+        margin: 30px 0;
+      }
+
+      h2 {
+        margin: 0 0 13px;
+        font-size: clamp(1.45rem, 3vw, 2.25rem);
+        line-height: 1.16;
+        letter-spacing: 0;
+      }
+
+      h3 {
+        margin: 0 0 10px;
+        font-size: 1.08rem;
+        line-height: 1.25;
+        letter-spacing: 0;
+      }
+
+      p {
+        margin: 0 0 13px;
+      }
+
+      ul {
+        margin: 10px 0 0;
+        padding-left: 20px;
+      }
+
+      li {
+        margin: 7px 0;
+      }
+
+      code,
+      .mono {
+        font-family:
+          'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        font-size: 0.94em;
+      }
+
+      code {
+        background: var(--code);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 0.12rem 0.32rem;
+      }
+
+      .panel {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        box-shadow: var(--shadow);
+        padding: 22px;
+      }
+
+      .plain-panel {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 22px;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .two {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .three {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .toc {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 18px;
+      }
+
+      .toc a {
+        display: inline-flex;
+        min-height: 38px;
+        align-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        border-radius: 7px;
+        padding: 8px 11px;
+        color: #ffffff;
+        background: rgba(255, 255, 255, 0.08);
+        text-decoration: none;
+        font-size: 0.9rem;
+      }
+
+      .statement {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        margin-top: 18px;
+      }
+
+      .formula {
+        border: 1px solid var(--line);
+        border-left: 5px solid var(--teal);
+        border-radius: 8px;
+        background: #fbfdfc;
+        padding: 18px;
+      }
+
+      .formula.down {
+        border-left-color: var(--rust);
+      }
+
+      .formula .label {
+        margin-bottom: 10px;
+        color: var(--muted);
+        font-size: 0.82rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .math {
+        overflow-x: auto;
+        padding: 13px 14px;
+        border-radius: 7px;
+        background: var(--code);
+        border: 1px solid var(--line);
+        color: #101815;
+        white-space: nowrap;
+        font-size: clamp(0.92rem, 2vw, 1.08rem);
+        font-weight: 700;
+      }
+
+      .callout {
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        padding: 18px;
+        background: var(--blue-soft);
+      }
+
+      .callout.warn {
+        background: var(--rust-soft);
+        border-color: #fed7aa;
+      }
+
+      .callout.bad {
+        background: var(--red-soft);
+        border-color: #fecaca;
+      }
+
+      .callout.good {
+        background: var(--teal-soft);
+        border-color: #b7e3dd;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      .diagram {
+        display: grid;
+        gap: 10px;
+        margin: 18px 0;
+      }
+
+      .track {
+        position: relative;
+        min-height: 68px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: linear-gradient(
+          90deg,
+          rgba(9, 107, 98, 0.12),
+          rgba(29, 78, 216, 0.1) 50%,
+          rgba(146, 64, 14, 0.14)
+        );
+        overflow: hidden;
+      }
+
+      .track::before {
+        content: '';
+        position: absolute;
+        left: 10%;
+        right: 10%;
+        top: 33px;
+        height: 2px;
+        background: rgba(23, 32, 29, 0.42);
+      }
+
+      .point {
+        position: absolute;
+        top: 13px;
+        transform: translateX(-50%);
+        width: 92px;
+        text-align: center;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--ink);
+      }
+
+      .point::after {
+        content: '';
+        display: block;
+        width: 10px;
+        height: 10px;
+        margin: 6px auto 0;
+        border-radius: 50%;
+        background: var(--ink);
+        border: 2px solid #ffffff;
+        box-shadow: 0 0 0 1px rgba(23, 32, 29, 0.35);
+      }
+
+      .point.p0 {
+        left: 16%;
+      }
+      .point.p1 {
+        left: 49%;
+      }
+      .point.p2 {
+        left: 82%;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 12px;
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      th,
+      td {
+        padding: 11px 12px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+        font-size: 0.94rem;
+      }
+
+      th {
+        background: #edf1ee;
+        color: #29342f;
+        font-size: 0.78rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 28px;
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .badge.fail {
+        background: var(--red-soft);
+        color: var(--red);
+      }
+
+      .badge.pass {
+        background: var(--teal-soft);
+        color: var(--teal);
+      }
+
+      .derivation {
+        display: grid;
+        grid-template-columns: 42px minmax(0, 1fr);
+        gap: 10px 12px;
+        margin-top: 14px;
+      }
+
+      .step {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--ink);
+        color: #ffffff;
+        font-weight: 800;
+        font-size: 0.86rem;
+      }
+
+      .foot {
+        margin-top: 42px;
+        padding-top: 20px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      @media (max-width: 820px) {
+        header {
+          padding: 34px 20px 26px;
+        }
+
+        .wrap {
+          width: min(100vw - 28px, 1160px);
+        }
+
+        .two,
+        .three,
+        .statement {
+          grid-template-columns: 1fr;
+        }
+
+        .panel,
+        .plain-panel {
+          padding: 18px;
+        }
+
+        th,
+        td {
+          padding: 9px;
+          font-size: 0.86rem;
+        }
+
+        .point {
+          width: 76px;
+          font-size: 0.7rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap">
+        <p class="eyebrow">MNX contract research note</p>
+        <h1>ADL replacement-capacity invariants</h1>
+        <p class="lede">
+          These inequalities answer one narrow but important question: if an
+          oracle update creates bankrupt exposure, can worst-case replacement
+          traders on the other side still be valid ADL takers before the next
+          oracle update?
+        </p>
+        <nav class="toc" aria-label="Page sections">
+          <a href="#definitions">Definitions</a>
+          <a href="#invariants">Invariants</a>
+          <a href="#derivation">Derivation</a>
+          <a href="#numbers">Numbers</a>
+          <a href="#limits">What this does not prove</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section class="panel" id="summary">
+        <h2>Short Version</h2>
+        <p>
+          If the exchange allows normal trading after an oracle update but
+          before ADL finishes, old profitable opposite-side accounts can exit
+          and be replaced by new max-leverage opposite-side accounts at the
+          worst allowed trade price.
+        </p>
+        <p>
+          The two formulas below are a configuration sanity check. They ask
+          whether those replacement accounts would still have a bankruptcy price
+          on the safe side of the bankrupt maker's ADL execution price.
+        </p>
+        <div class="statement">
+          <div class="formula">
+            <div class="label">
+              Upward oracle move, bankrupt shorts need long takers
+            </div>
+            <div class="math">(1 + J) * (1 + MTB_up) * (1 - IMR) &lt;= 1</div>
+          </div>
+          <div class="formula down">
+            <div class="label">
+              Downward oracle move, bankrupt longs need short takers
+            </div>
+            <div class="math">(1 - J) * (1 - MTB_down) * (1 + IMR) &gt;= 1</div>
+          </div>
+        </div>
+        <div class="callout good" style="margin-top: 16px">
+          <h3>What they buy</h3>
+          <p>
+            If they hold, the runtime does not need ADL to beat the first
+            post-update normal trade. It only needs forced settlement to run
+            before the next oracle update, assuming enough opposite-side
+            quantity exists.
+          </p>
+        </div>
+      </section>
+
+      <section id="definitions">
+        <h2>Definitions</h2>
+        <div class="grid three">
+          <div class="plain-panel">
+            <h3>J</h3>
+            <p>The maximum oracle price jump per accepted oracle update.</p>
+            <p class="muted mono">
+              Example: J = 2.5% means P_next can be at most 2.5% away from P.
+            </p>
+          </div>
+          <div class="plain-panel">
+            <h3>MTB</h3>
+            <p>
+              The max trade bound: the allowed distance between oracle price and
+              fill or clearing price.
+            </p>
+            <p class="muted mono">
+              MTB_up for upper-band buys; MTB_down for lower-band sells.
+            </p>
+          </div>
+          <div class="plain-panel">
+            <h3>IMR</h3>
+            <p>
+              The initial margin requirement. For max-leverage positions, margin
+              per unit is approximately <code>IMR * entry</code>.
+            </p>
+            <p class="muted mono">IMR = 5% means max leverage is 20x.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="invariants">
+        <h2>The Invariants</h2>
+        <div class="grid two">
+          <div class="plain-panel">
+            <h3>Upward move</h3>
+            <p>
+              Price moves up. Existing shorts can become bankrupt. ADL closes
+              those shorts against longs at the short's bankruptcy price.
+            </p>
+            <div class="diagram" aria-label="Upward price diagram">
+              <div class="track">
+                <div class="point p0">old P</div>
+                <div class="point p1">new oracle</div>
+                <div class="point p2">worst long entry</div>
+              </div>
+            </div>
+            <p>Worst-case replacement long entry:</p>
+            <div class="math">E_long = P * (1 + J) * (1 + MTB_up)</div>
+            <p style="margin-top: 12px">Max-leverage long bankruptcy price:</p>
+            <div class="math">B_long = E_long * (1 - IMR)</div>
+            <p style="margin-top: 12px">
+              To be usable as ADL taker for a short bankrupt around old
+              <code>P</code>, this must be no higher than <code>P</code>.
+            </p>
+          </div>
+
+          <div class="plain-panel">
+            <h3>Downward move</h3>
+            <p>
+              Price moves down. Existing longs can become bankrupt. ADL closes
+              those longs against shorts at the long's bankruptcy price.
+            </p>
+            <div class="diagram" aria-label="Downward price diagram">
+              <div class="track">
+                <div class="point p0">worst short entry</div>
+                <div class="point p1">new oracle</div>
+                <div class="point p2">old P</div>
+              </div>
+            </div>
+            <p>Worst-case replacement short entry:</p>
+            <div class="math">E_short = P * (1 - J) * (1 - MTB_down)</div>
+            <p style="margin-top: 12px">Max-leverage short bankruptcy price:</p>
+            <div class="math">B_short = E_short * (1 + IMR)</div>
+            <p style="margin-top: 12px">
+              To be usable as ADL taker for a long bankrupt around old
+              <code>P</code>, this must be no lower than <code>P</code>.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="derivation">
+        <h2>Derivation</h2>
+        <div class="grid two">
+          <div class="plain-panel">
+            <h3>Upward formula</h3>
+            <div class="derivation">
+              <div class="step">1</div>
+              <p>
+                Old oracle is <code>P</code>. New oracle is
+                <code>P * (1 + J)</code>.
+              </p>
+              <div class="step">2</div>
+              <p>
+                Worst replacement long enters at
+                <code>P * (1 + J) * (1 + MTB_up)</code>.
+              </p>
+              <div class="step">3</div>
+              <p>
+                A max-leverage long has bankruptcy price
+                <code>entry * (1 - IMR)</code>.
+              </p>
+              <div class="step">4</div>
+              <p>
+                For ADL at the old short bankruptcy price, require
+                <code>B_long &lt;= P</code>.
+              </p>
+            </div>
+            <div class="math" style="margin-top: 14px">
+              P * (1 + J) * (1 + MTB_up) * (1 - IMR) &lt;= P
+            </div>
+            <div class="math" style="margin-top: 10px">
+              (1 + J) * (1 + MTB_up) * (1 - IMR) &lt;= 1
+            </div>
+          </div>
+
+          <div class="plain-panel">
+            <h3>Downward formula</h3>
+            <div class="derivation">
+              <div class="step">1</div>
+              <p>
+                Old oracle is <code>P</code>. New oracle is
+                <code>P * (1 - J)</code>.
+              </p>
+              <div class="step">2</div>
+              <p>
+                Worst replacement short enters at
+                <code>P * (1 - J) * (1 - MTB_down)</code>.
+              </p>
+              <div class="step">3</div>
+              <p>
+                A max-leverage short has bankruptcy price
+                <code>entry * (1 + IMR)</code>.
+              </p>
+              <div class="step">4</div>
+              <p>
+                For ADL at the old long bankruptcy price, require
+                <code>B_short &gt;= P</code>.
+              </p>
+            </div>
+            <div class="math" style="margin-top: 14px">
+              P * (1 - J) * (1 - MTB_down) * (1 + IMR) &gt;= P
+            </div>
+            <div class="math" style="margin-top: 10px">
+              (1 - J) * (1 - MTB_down) * (1 + IMR) &gt;= 1
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="numbers">
+        <h2>Example Numbers</h2>
+        <p>Solving the formulas for max permitted <code>J</code> gives:</p>
+        <div class="grid two">
+          <div class="plain-panel">
+            <h3>Max J from upward side</h3>
+            <div class="math">J &lt;= 1 / ((1 + MTB_up) * (1 - IMR)) - 1</div>
+          </div>
+          <div class="plain-panel">
+            <h3>Max J from downward side</h3>
+            <div class="math">J &lt;= 1 - 1 / ((1 - MTB_down) * (1 + IMR))</div>
+          </div>
+        </div>
+
+        <table aria-label="Example parameter table">
+          <thead>
+            <tr>
+              <th>Market shape</th>
+              <th class="num">IMR</th>
+              <th class="num">MTB</th>
+              <th class="num">Upward max J</th>
+              <th class="num">Downward max J</th>
+              <th>Read</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Old 20x common bound</td>
+              <td class="num">5%</td>
+              <td class="num">5%</td>
+              <td class="num">0.251%</td>
+              <td class="num">fails at 0%</td>
+              <td><span class="badge fail">too loose</span></td>
+            </tr>
+            <tr>
+              <td>Proposed 5% MTB setting</td>
+              <td class="num">8%</td>
+              <td class="num">5%</td>
+              <td class="num">3.520%</td>
+              <td class="num">2.534%</td>
+              <td><span class="badge pass">passes J = 2.5%</span></td>
+            </tr>
+            <tr>
+              <td>10x, MTB 5%</td>
+              <td class="num">10%</td>
+              <td class="num">5%</td>
+              <td class="num">5.820%</td>
+              <td class="num">4.306%</td>
+              <td><span class="badge pass">more room</span></td>
+            </tr>
+            <tr>
+              <td>5x, MTB 5%</td>
+              <td class="num">20%</td>
+              <td class="num">5%</td>
+              <td class="num">19.048%</td>
+              <td class="num">12.281%</td>
+              <td><span class="badge pass">large buffer</span></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout bad" style="margin-top: 16px">
+          <h3>Why 5% IMR plus 5% MTB is fragile</h3>
+          <p>
+            With <code>IMR = 5%</code> and <code>MTB = 5%</code>, the downward
+            replacement condition already fails even when <code>J = 0</code>:
+          </p>
+          <div class="math">0.95 * 1.05 = 0.9975 &lt; 1</div>
+          <p style="margin-top: 12px">
+            That means a worst-edge max-leverage short can have a bankruptcy
+            price below the old long bankruptcy price, so it may not be a valid
+            ADL taker.
+          </p>
+        </div>
+      </section>
+
+      <section id="limits">
+        <h2>What This Proves And Does Not Prove</h2>
+        <div class="grid two">
+          <div class="callout good">
+            <h3>It proves, under the assumptions</h3>
+            <ul>
+              <li>
+                Worst-case replacement longs remain eligible after an upward
+                oracle jump.
+              </li>
+              <li>
+                Worst-case replacement shorts remain eligible after a downward
+                oracle jump.
+              </li>
+              <li>
+                The runtime does not need to win a 200 ms race against the first
+                post-update batch.
+              </li>
+              <li>
+                Forced settlement can be scheduled inside the guaranteed
+                oracle-update interval.
+              </li>
+            </ul>
+          </div>
+          <div class="callout warn">
+            <h3>It does not prove</h3>
+            <ul>
+              <li>Enough opposite-side quantity exists.</li>
+              <li>Backstop inheritance will succeed.</li>
+              <li>Book liquidation will succeed.</li>
+              <li>Binary 1x or other special cases are ADL-clearable.</li>
+              <li>
+                Withdrawals or margin removal cannot reduce aggregate capacity
+                unless separately gated.
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="panel" style="margin-top: 16px">
+          <h3>Operational invariant that follows</h3>
+          <p>
+            After oracle update <code>n</code>, the runtime may allow normal
+            trading during the interval only if the configured <code>J</code>,
+            <code>MTB</code>, and <code>IMR</code> satisfy the
+            replacement-capacity inequalities. Before accepting oracle update
+            <code>n + 1</code>, all forced-settlement obligations created by
+            update <code>n</code> must be cleared or the market must be in a
+            protective mode.
+          </p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Practical Recommendation For 5% MTB Markets</h2>
+        <div class="grid two">
+          <div class="plain-panel">
+            <h3>If MTB stays 5%</h3>
+            <p>
+              Raise the initial margin requirement to <code>8%</code> and set
+              the oracle max update to <code>2.5%</code>. The downward side
+              remains the tight side, but still passes:
+            </p>
+            <div class="math">
+              (1 - 0.025) * (1 - 0.05) * (1 + 0.08) = 1.00035
+            </div>
+            <p style="margin-top: 12px">
+              This keeps the existing <code>5%</code> trade bound while making
+              the replacement-capacity invariant true for a
+              <code>2.5%</code> oracle step.
+            </p>
+          </div>
+          <div class="plain-panel">
+            <h3>What changes economically</h3>
+            <p>
+              <code>IMR = 8%</code> means max theoretical leverage becomes
+              <code>12.5x</code>. Existing configs can still choose a lower
+              default leverage such as <code>10x</code>. If the product requires
+              true <code>20x</code> with <code>5%</code> MTB, this invariant
+              cannot be satisfied by lowering oracle jump alone.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <p class="foot">
+        Working note for MNX risk and contract review. This page isolates one
+        configuration-level invariant; it is not a complete solvency proof.
+      </p>
+    </main>
+  </body>
+</html>

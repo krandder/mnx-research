@@ -1,0 +1,911 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MNX Contract Research: StarkEx, IDEX/Kuma Ikon, Hyperliquid</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f8fa;
+      --paper: #ffffff;
+      --ink: #18202b;
+      --muted: #566579;
+      --line: #dbe1e8;
+      --accent: #0b6b62;
+      --accent-2: #7a3f10;
+      --soft: #edf7f5;
+      --warn: #fff4dc;
+      --code: #f2f4f7;
+      --shadow: 0 8px 24px rgba(22, 32, 43, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+    }
+
+    a {
+      color: #065fb8;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 2px;
+    }
+
+    header {
+      background: #12202c;
+      color: #ffffff;
+      padding: 42px 28px 34px;
+    }
+
+    header .wrap,
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(2rem, 5vw, 4rem);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin: 46px 0 14px;
+      font-size: 1.65rem;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 28px 0 10px;
+      font-size: 1.1rem;
+      letter-spacing: 0;
+    }
+
+    h4 {
+      margin: 22px 0 8px;
+      font-size: 1rem;
+      color: var(--accent);
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0 0 14px;
+    }
+
+    code {
+      background: var(--code);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: 0 4px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.92em;
+    }
+
+    main {
+      padding: 26px 28px 64px;
+    }
+
+    .subtitle {
+      max-width: 900px;
+      color: #d6e0ea;
+      font-size: 1.05rem;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      border-radius: 999px;
+      padding: 4px 11px;
+      background: rgba(255, 255, 255, 0.12);
+      color: #eff6fb;
+      font-size: 0.84rem;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .toc {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px 18px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .toc h2 {
+      margin-top: 0;
+      font-size: 1rem;
+    }
+
+    .toc ul,
+    .facts,
+    .compact-list {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .toc li,
+    .facts li,
+    .compact-list li {
+      margin: 6px 0;
+    }
+
+    .card {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+      margin: 18px 0;
+      box-shadow: var(--shadow);
+    }
+
+    .callout {
+      border-left: 4px solid var(--accent);
+      background: var(--soft);
+      padding: 14px 16px;
+      margin: 18px 0;
+      border-radius: 0 8px 8px 0;
+    }
+
+    .warning {
+      border-left-color: var(--accent-2);
+      background: var(--warn);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .four-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      margin: 18px 0 24px;
+      box-shadow: var(--shadow);
+    }
+
+    th,
+    td {
+      border: 1px solid var(--line);
+      padding: 10px 12px;
+      vertical-align: top;
+      text-align: left;
+      font-size: 0.92rem;
+    }
+
+    th {
+      background: #eef3f6;
+      color: #223142;
+      font-weight: 700;
+    }
+
+    tbody tr:nth-child(even) td {
+      background: #fbfcfd;
+    }
+
+    .matrix th:first-child,
+    .matrix td:first-child {
+      width: 16%;
+      font-weight: 700;
+      color: #243345;
+      background: #f1f5f8;
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .tag {
+      display: inline-block;
+      margin: 0 4px 6px 0;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 0.78rem;
+      background: #fbfcfd;
+      color: var(--muted);
+    }
+
+    .topic {
+      border-top: 1px solid var(--line);
+      padding-top: 16px;
+      margin-top: 18px;
+    }
+
+    @media (max-width: 900px) {
+      .grid,
+      .four-grid {
+        grid-template-columns: 1fr;
+      }
+
+      table {
+        display: block;
+        overflow-x: auto;
+        white-space: normal;
+      }
+
+      .matrix {
+        min-width: 980px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <h1>MNX Contract Research</h1>
+      <p class="subtitle">A contract-level comparison of MNX with StarkEx Perpetual, the latest public IDEX/Kuma Ikon contracts, and Hyperliquid, focused on funding, liquidations, automatic deleveraging, and oracle updates.</p>
+      <div class="meta">
+        <span class="pill">Research snapshot: 2026-06-19</span>
+        <span class="pill">MNX worktree: exchange-kas-cc-merge</span>
+        <span class="pill">Scope: smart contract and settlement semantics</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="toc" aria-labelledby="toc-heading">
+      <h2 id="toc-heading">Contents</h2>
+      <ul>
+        <li><a href="#executive-summary">Executive Summary</a></li>
+        <li><a href="#source-map">Source Map</a></li>
+        <li><a href="#glossary">Glossary</a></li>
+        <li><a href="#price-semantics">Price Semantics</a></li>
+        <li><a href="#mnx">MNX Contract-Level Exposition</a></li>
+        <li><a href="#starkex">StarkEx Perpetual</a></li>
+        <li><a href="#idex-kuma">Latest IDEX/Kuma Ikon Contracts</a></li>
+        <li><a href="#hyperliquid">Hyperliquid</a></li>
+        <li><a href="#comparison-matrix">Comparison Matrix</a></li>
+        <li><a href="#takeaways">Takeaways</a></li>
+      </ul>
+    </section>
+
+    <section id="executive-summary">
+      <h2>Executive Summary</h2>
+      <div class="callout">
+        <p><strong>MNX is closest to a transparent, per-market isolated-margin exchange contract design.</strong> The core risk and settlement rules live in Solidity contracts: <code>Perpetual</code>, <code>IsolatedTrader</code>, <code>FundingOracle</code>, <code>BackendPriceOracle</code>, <code>IsolatedADL</code>, <code>LiquidityVault</code>, and <code>MarginBank</code>. The high-throughput runtime is still important, but it submits calls into these contracts rather than replacing the contract rules.</p>
+      </div>
+
+      <div class="four-grid">
+        <div class="card">
+          <h3>MNX</h3>
+          <p>Per-market isolated margin. On-chain uniform-batch trade settlement. Permissioned settlement operators, but contract-enforced margin, funding settlement, liquidation bypass, backstop inheritance, ADL eligibility, and oracle freshness checks.</p>
+          <span class="tag">Solidity</span><span class="tag">isolated margin</span><span class="tag">FBA batches</span>
+        </div>
+        <div class="card">
+          <h3>StarkEx</h3>
+          <p>A validity-rollup or validium settlement framework, not a single public perps venue contract. Perpetual business logic is proven in StarkEx batches, with L1 contracts verifying state updates and enforcing forced-operation escape paths.</p>
+          <span class="tag">validity proofs</span><span class="tag">operator batches</span><span class="tag">forced exits</span>
+        </div>
+        <div class="card">
+          <h3>IDEX/Kuma Ikon</h3>
+          <p>Latest public IDEX-lineage perps contracts are the Kuma/Ikon contracts. They are fully cross-margined, use a dispatcher-only settlement model, hold funds in a separate <code>Custodian</code>, and validate funding, liquidation, and ADL paths in Solidity libraries.</p>
+          <span class="tag">Solidity</span><span class="tag">cross margin</span><span class="tag">dispatcher</span>
+        </div>
+        <div class="card">
+          <h3>Hyperliquid</h3>
+          <p>The perp engine is native HyperCore state, not ordinary EVM smart contracts. HyperEVM contracts can read HyperCore state and submit certain actions through precompiles/system contracts, but funding, liquidation, ADL, and oracle updates are HyperCore clearinghouse logic.</p>
+          <span class="tag">HyperCore</span><span class="tag">validators</span><span class="tag">native order book</span>
+        </div>
+      </div>
+
+      <h3>High-Signal Differences</h3>
+      <ul class="facts">
+        <li><strong>Funding:</strong> MNX computes a one-hour funding index from trade-vs-oracle premium samples in <code>FundingOracle</code>, or accepts an off-chain override when enabled. IDEX/Kuma publishes an off-chain funding multiplier every eight hours and lazily applies it to wallets. Hyperliquid pays hourly using a centralized-exchange-style formula sampled from impact prices and validator oracle prices. StarkEx supports funding ticks through global funding indices, but the exchange application supplies those ticks.</li>
+        <li><strong>Liquidations:</strong> MNX has signed forced-liquidation order support plus a backstop inheritance path into a liquidity vault child account. IDEX/Kuma liquidates wallets or positions into the insurance fund or exit fund, with contract-side bankruptcy and margin checks. Hyperliquid first routes liquidation flow to the book, then uses the liquidator vault below a deeper threshold. StarkEx liquidations are batch transactions that improve an under-collateralized position and are validity-proven.</li>
+        <li><strong>Automatic deleveraging (ADL):</strong> MNX ADL is a dedicated trader contract used when funding-adjusted equity is non-positive; it closes against profitable opposite-side accounts at the bankrupt account's bankruptcy price. IDEX/Kuma has multiple deleverage functions for in-maintenance acquisition, insurance-fund closure, exit acquisition, and exit-fund closure. Hyperliquid ranks profitable opposite-side users by unrealized profit and leverage. StarkEx calls this the deleverage flow and allows it when the target position value is negative.</li>
+        <li><strong>Oracles:</strong> MNX uses a Chainlink-compatible <code>BackendPriceOracle</code> with permissioned updaters, per-update basis-point limits, one update per block, and freshness checks in <code>Perpetual</code>. IDEX/Kuma lazily publishes signed index prices through whitelisted adapters and maintains a separate oracle-price path for on-chain views. Hyperliquid validators publish spot oracle prices roughly every three seconds, and mark price combines oracle, Hyperliquid book, and external perp markets. StarkEx uses signed oracle price ticks with configured keys and quorum.</li>
+      </ul>
+    </section>
+
+    <section id="source-map">
+      <h2>Source Map</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>System</th>
+            <th>Primary sources used</th>
+            <th>Notes on freshness and interpretation</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>MNX</td>
+            <td>
+              <a href="../../packages/contracts/contracts/Perpetual.sol">Perpetual.sol</a>,
+              <a href="../../packages/contracts/contracts/FundingOracle.sol">FundingOracle.sol</a>,
+              <a href="../../packages/contracts/contracts/BackendPriceOracle.sol">BackendPriceOracle.sol</a>,
+              <a href="../../packages/contracts/contracts/IsolatedTrader.sol">IsolatedTrader.sol</a>,
+              <a href="../../packages/contracts/contracts/IsolatedADL.sol">IsolatedADL.sol</a>,
+              <a href="../../packages/contracts/contracts/LiquidityVault.sol">LiquidityVault.sol</a>,
+              <a href="../../packages/contracts/contracts/MarginBank.sol">MarginBank.sol</a>,
+              <a href="../../apps/api/src/high-throughput-v1/adl/waterfall-adl-planner.ts">waterfall-adl-planner.ts</a>,
+              <a href="../../apps/api/src/high-throughput-v1/runtime/runtime-liquidations.ts">runtime-liquidations.ts</a>,
+              <a href="../../apps/api/src/jobs/price-updater.ts">price-updater.ts</a>
+            </td>
+            <td>Local source in the active MNX exchange worktree. Line references in prose are from this worktree as inspected on 2026-06-19.</td>
+          </tr>
+          <tr>
+            <td>StarkEx</td>
+            <td>
+              <a href="https://docs.starkware.co/starkex/perpetual/perpetual_overview.html">Perpetual overview</a>,
+              <a href="https://docs.starkware.co/starkex/perpetual/funding-tick.html">Funding tick</a>,
+              <a href="https://docs.starkware.co/starkex/perpetual/oracle-price-tick.html">Oracle price tick</a>,
+              <a href="https://docs.starkware.co/starkex/perpetual/liquidation.html">Liquidation flow</a>,
+              <a href="https://docs.starkware.co/starkex/perpetual/deleverage.html">Deleverage flow</a>,
+              <a href="https://docs.starkware.co/starkex/perpetual/shared/forced-operations_overview.html">Forced operations overview</a>
+            </td>
+            <td>Official StarkWare documentation. StarkEx is a framework and deployment pattern, so this comparison uses the documented generic Perpetual Trading semantics rather than a customer-specific Cairo program.</td>
+          </tr>
+          <tr>
+            <td>IDEX/Kuma Ikon</td>
+            <td>
+              <a href="https://github.com/kumabid/kuma-contracts-ikon/blob/e87f6294255044ee93461a6ea1f091af437a1705/README.md">Kuma/Ikon README</a>,
+              <a href="https://github.com/kumabid/kuma-contracts-ikon/blob/e87f6294255044ee93461a6ea1f091af437a1705/contracts/Exchange.sol#L818-L1212">Exchange.sol settlement wrappers</a>,
+              <a href="https://github.com/kumabid/kuma-contracts-ikon/blob/e87f6294255044ee93461a6ea1f091af437a1705/contracts/libraries/Funding.sol#L73-L124">Funding.sol</a>,
+              <a href="https://github.com/kumabid/kuma-contracts-ikon/blob/e87f6294255044ee93461a6ea1f091af437a1705/contracts/libraries/MarketAdmin.sol#L101-L132">MarketAdmin.sol</a>,
+              <a href="https://github.com/kumabid/kuma-contracts-ikon/blob/e87f6294255044ee93461a6ea1f091af437a1705/contracts/libraries/WalletInMaintenanceLiquidation.sol#L37-L108">WalletInMaintenanceLiquidation.sol</a>,
+              <a href="https://github.com/kumabid/kuma-contracts-ikon/blob/e87f6294255044ee93461a6ea1f091af437a1705/contracts/libraries/WalletInMaintenanceAcquisitionDeleveraging.sol#L33-L83">WalletInMaintenanceAcquisitionDeleveraging.sol</a>
+            </td>
+            <td>Repository HEAD inspected at commit <code>e87f6294255044ee93461a6ea1f091af437a1705</code>. This document treats Kuma/Ikon as the latest public perps contract lineage for IDEX-style contracts.</td>
+          </tr>
+          <tr>
+            <td>Hyperliquid</td>
+            <td>
+              <a href="https://hyperliquid.gitbook.io/hyperliquid-docs/hypercore/clearinghouse">Clearinghouse</a>,
+              <a href="https://hyperliquid.gitbook.io/hyperliquid-docs/hypercore/oracle">Oracle</a>,
+              <a href="https://hyperliquid.gitbook.io/hyperliquid-docs/trading/robust-price-indices">Robust price indices</a>,
+              <a href="https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding">Funding</a>,
+              <a href="https://hyperliquid.gitbook.io/hyperliquid-docs/trading/liquidations">Liquidations</a>,
+              <a href="https://hyperliquid.gitbook.io/hyperliquid-docs/trading/auto-deleveraging">Auto-deleveraging</a>,
+              <a href="https://hyperliquid.gitbook.io/hyperliquid-docs/hyperevm">HyperEVM</a>,
+              <a href="https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/hyperevm/interacting-with-hypercore">Interacting with HyperCore</a>
+            </td>
+            <td>Official Hyperliquid documentation. Hyperliquid perps are HyperCore execution state, not public Solidity contracts. The EVM discussion is limited to HyperEVM precompiles/system contracts.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="glossary">
+      <h2>Glossary</h2>
+      <div class="grid">
+        <div class="card">
+          <h3>Funding</h3>
+          <p>Periodic payments between longs and shorts designed to pull the perpetual contract price toward the reference spot or index price. Positive funding usually means longs pay shorts.</p>
+        </div>
+        <div class="card">
+          <h3>Liquidation</h3>
+          <p>Forced reduction or transfer of a risky position after account equity falls below the maintenance requirement. A venue may route this through a book, an insurance fund, a liquidator vault, or a deleveraging path.</p>
+        </div>
+        <div class="card">
+          <h3>Automatic deleveraging</h3>
+          <p>ADL is the final risk process where profitable opposite-side traders are forced to reduce exposure against an underwater account or fund position. It prevents bad debt from remaining in the system.</p>
+        </div>
+        <div class="card">
+          <h3>Oracle and mark price</h3>
+          <p>An oracle price is the external reference price. A mark price is a fair-value price used for margin and liquidation; it may combine oracle and order-book data.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="price-semantics">
+      <h2>Price Semantics</h2>
+      <div class="callout">
+        <p><strong>There is no universal "true price" across these systems.</strong> Each system has a risk/reference price used for solvency checks, and several systems use a different settlement or execution price once a liquidation or ADL path is allowed. This section ignores off-chain price construction and focuses on what the smart contract, proof system, or native state transition reads after a price has been accepted into protocol state.</p>
+      </div>
+
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Use</th>
+            <th>MNX</th>
+            <th>StarkEx Perpetual</th>
+            <th>IDEX/Kuma Ikon</th>
+            <th>Hyperliquid</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Main risk/reference price</td>
+            <td>Oracle price from <code>addresses.oracle.latestRoundData()</code> inside <code>Perpetual</code>.</td>
+            <td>Internal current price from the last valid StarkEx oracle price tick.</td>
+            <td><code>market.lastIndexPrice</code> in normal margin and risk libraries.</td>
+            <td>Native HyperCore mark price for margining, liquidations, trigger orders, and unrealized PnL.</td>
+          </tr>
+          <tr>
+            <td>Funding</td>
+            <td><code>FundingOracle.recordTrade</code> samples trade price versus oracle price. <code>Perpetual</code> accrues the global funding index using funding rate, elapsed time, and oracle price.</td>
+            <td>Funding tick updates global funding indices. StarkEx applies the index delta lazily to touched positions and bounds funding index validity by configuration and current prices.</td>
+            <td><code>publishFundingMultiplier</code> stores <code>fundingRate * market.lastIndexPrice</code>, with sign flipped for direct position multiplication.</td>
+            <td>Funding notional uses spot oracle price. Premium uses impact bid/ask prices versus oracle price.</td>
+          </tr>
+          <tr>
+            <td>Liquidation eligibility</td>
+            <td>Forced liquidation checks margin ratio using oracle price. Backstop inheritance checks funding-adjusted equity using oracle price.</td>
+            <td>Liquidation checks total account value / total maintenance margin requirement below 1 using current StarkEx prices.</td>
+            <td>Wallet maintenance checks use <code>market.lastIndexPrice</code>. Dust and active-market liquidations also validate against index price.</td>
+            <td>Account equity below maintenance margin is evaluated with mark price.</td>
+          </tr>
+          <tr>
+            <td>Liquidation settlement price</td>
+            <td>Forced liquidation is still a trade and settles at the fill price accepted by <code>Perpetual.trade</code>; the liquidatability gate uses oracle price. Backstop inheritance transfers the full position and isolated margin rather than executing at a book price.</td>
+            <td>Liquidation is a validity-proven transaction matched to a liquidator order; StarkEx checks the submitted collateral/synthetic transfer and requires the liquidated account's risk ratio to improve.</td>
+            <td>Path-specific: below-minimum uses current index price, deactivated-market liquidation uses <code>indexPriceAtDeactivation</code>, wallet-in-maintenance uses bankruptcy price, and wallet-exit liquidation uses exit price or bankruptcy price.</td>
+            <td>Book liquidation sends market orders first; deeper backstop liquidation transfers position and margin to the liquidator vault. Liquidations use mark price for risk.</td>
+          </tr>
+          <tr>
+            <td>ADL eligibility</td>
+            <td><code>isAccountAdlEligible</code> uses funding-adjusted equity valued at oracle price and requires non-positive equity.</td>
+            <td>Deleverage is allowed when the position value is negative according to the most current prices.</td>
+            <td>ADL preconditions use index-price account value and maintenance checks, or path-specific exit/insurance/exit-fund conditions.</td>
+            <td>ADL triggers when account value or isolated position value becomes negative; mark price is the risk price.</td>
+          </tr>
+          <tr>
+            <td>ADL settlement price</td>
+            <td><code>IsolatedADL</code> validates against rounded oracle price, but returns a trade result at the bankrupt maker's bankruptcy price.</td>
+            <td>The application submits synthetic and collateral amounts; StarkEx validates opposite signs, reduced exposure, value/risk preservation, and margin constraints.</td>
+            <td>Path-specific: bankruptcy price, insurance-fund entry/cost-basis price, exit price, index price, or exit-fund bankruptcy price.</td>
+            <td>Opposite-side profitable users are closed against the underwater user at the previous mark price.</td>
+          </tr>
+          <tr>
+            <td>Special price paths</td>
+            <td>Trade fills use trade/fill prices. Market-take bounds compare fill price to oracle price. ADL tick-size checks round oracle price, then settle at bankruptcy price.</td>
+            <td>Forced escape uses the last oracle price tick when the operator is frozen. Funding uses global funding indices rather than a direct spot price per transaction.</td>
+            <td><code>OraclePriceMargin</code> is a separate oracle-price accessor and exit path; it is not the normal margin/liquidation index-price path.</td>
+            <td>Oracle and mark are separate: oracle feeds funding and mark construction; mark feeds risk, liquidation, unrealized PnL, and ADL.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="topic">
+        <h3>MNX</h3>
+        <p>Inside MNX contracts, the closest thing to "true" or "fair" price is the oracle price read by <code>Perpetual._loadContext()</code> and <code>Perpetual._readOraclePrice()</code>. The contract requires a positive supported price and checks freshness against either current block time or the cached global-index timestamp, depending on the path.</p>
+        <ul class="facts">
+          <li><strong>Margin and liquidation checks:</strong> use oracle price. <code>IsolatedTrader._verifyForcedLiquidationOrder</code> computes the account margin ratio with oracle price and requires it to be below maintenance.</li>
+          <li><strong>Funding:</strong> has two prices. The premium sample is trade price versus oracle price. The funding index accrues with oracle price once the rate is known.</li>
+          <li><strong>ADL:</strong> uses oracle price to validate eligibility and min/max price checks, but actual ADL settlement returns bankruptcy price from <code>IsolatedADL</code>.</li>
+          <li><strong>Regular trades:</strong> settle at the submitted fill/uniform batch price; that is not treated as the universal fair price for solvency checks.</li>
+        </ul>
+        <p class="small">Key local evidence: <a href="../../packages/contracts/contracts/Perpetual.sol">Perpetual.sol</a>, <a href="../../packages/contracts/contracts/IsolatedTrader.sol">IsolatedTrader.sol</a>, <a href="../../packages/contracts/contracts/IsolatedADL.sol">IsolatedADL.sol</a>.</p>
+      </div>
+
+      <div class="topic">
+        <h3>StarkEx Perpetual</h3>
+        <p>StarkEx is not an ordinary Solidity perp contract. The relevant contract-level semantics are the validity-proven state transitions. The reference price is the internal current price from a valid oracle price tick. The application submits signed oracle updates; StarkEx verifies the configured signer/quorum/median/timing constraints and then uses the accepted tick in later validity checks.</p>
+        <ul class="facts">
+          <li><strong>Liquidation:</strong> StarkEx checks that total account value divided by total maintenance margin requirement is below 1 and improves after liquidation.</li>
+          <li><strong>ADL/deleverage:</strong> the target position must be negative according to the most current prices, and StarkEx validates opposite signs, reduced exposure, and value/risk constraints.</li>
+          <li><strong>Funding:</strong> funding ticks update global funding indices; the collateral change is derived from the new index minus the position's cached index.</li>
+        </ul>
+        <p class="small">Primary references: <a href="https://docs.starkware.co/starkex/perpetual/oracle-price-tick.html">Oracle price tick</a>, <a href="https://docs.starkware.co/starkex/perpetual/liquidation.html">Liquidation flow</a>, <a href="https://docs.starkware.co/starkex/perpetual/deleverage.html">Deleverage flow</a>, <a href="https://docs.starkware.co/starkex/perpetual/funding-tick.html">Funding tick</a>.</p>
+      </div>
+
+      <div class="topic">
+        <h3>IDEX/Kuma Ikon</h3>
+        <p>For normal Ikon risk checks, the contract price is <code>market.lastIndexPrice</code>. Index price is distinct from oracle-price accessors. The core margin and liquidation libraries use index price for account value and margin requirements, while <code>OraclePriceMargin</code> is a separate oracle-price path for exits and on-chain views.</p>
+        <ul class="facts">
+          <li><strong>Margin:</strong> <code>IndexPriceMargin</code> values positions with <code>market.lastIndexPrice</code> and computes initial and maintenance requirements from that same index price.</li>
+          <li><strong>Funding:</strong> <code>Funding.publishFundingMultiplier_delegatecall</code> stores a multiplier derived from <code>fundingRate</code> and <code>market.lastIndexPrice</code>.</li>
+          <li><strong>Liquidation:</strong> wallet-in-maintenance liquidation validates bankruptcy quote quantities using index-price account value; deactivated-market liquidation uses the stored <code>indexPriceAtDeactivation</code>; wallet-exit liquidation may use exit price or bankruptcy price.</li>
+          <li><strong>ADL:</strong> uses path-specific settlement prices: bankruptcy price for in-maintenance acquisition, insurance-fund entry/cost basis for insurance closure, exit price or bankruptcy price for exit acquisition, and index price or exit-fund bankruptcy price for exit-fund closure.</li>
+        </ul>
+        <p class="small">Primary references: <a href="https://github.com/kumabid/kuma-contracts-ikon/blob/e87f6294255044ee93461a6ea1f091af437a1705/contracts/libraries/IndexPriceMargin.sol#L178-L252">IndexPriceMargin.sol</a>, <a href="https://github.com/kumabid/kuma-contracts-ikon/blob/e87f6294255044ee93461a6ea1f091af437a1705/contracts/libraries/Funding.sol#L73-L124">Funding.sol</a>, <a href="https://github.com/kumabid/kuma-contracts-ikon/blob/e87f6294255044ee93461a6ea1f091af437a1705/contracts/libraries/PositionInDeactivatedMarketLiquidation.sol#L47-L63">PositionInDeactivatedMarketLiquidation.sol</a>.</p>
+      </div>
+
+      <div class="topic">
+        <h3>Hyperliquid</h3>
+        <p>Hyperliquid's perp checks live in HyperCore, not in public Solidity contracts. The protocol has two major accepted price concepts: validator-published spot oracle price and mark price. Oracle price feeds funding and is one input to mark price. Mark price is the native risk price.</p>
+        <ul class="facts">
+          <li><strong>Funding:</strong> uses spot oracle price for notional and compares impact bid/ask prices against oracle price to compute the premium component.</li>
+          <li><strong>Liquidation:</strong> uses mark price for margining and liquidation risk.</li>
+          <li><strong>ADL:</strong> triggers when account value or isolated position value becomes negative; profitable opposite-side accounts are ranked by unrealized PnL and leverage, and closure occurs at previous mark price.</li>
+          <li><strong>Mark construction:</strong> mark price is a median of oracle plus EMA basis, Hyperliquid book signals, and external perp-market prices.</li>
+        </ul>
+        <p class="small">Primary references: <a href="https://hyperliquid.gitbook.io/hyperliquid-docs/hypercore/oracle">Oracle</a>, <a href="https://hyperliquid.gitbook.io/hyperliquid-docs/trading/robust-price-indices">Robust price indices</a>, <a href="https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding">Funding</a>, <a href="https://hyperliquid.gitbook.io/hyperliquid-docs/trading/liquidations">Liquidations</a>, <a href="https://hyperliquid.gitbook.io/hyperliquid-docs/trading/auto-deleveraging">Auto-deleveraging</a>.</p>
+      </div>
+    </section>
+
+    <section id="mnx">
+      <h2>MNX Contract-Level Exposition</h2>
+      <p>MNX's contract design is per-market and isolated-margin. User collateral is held by <code>MarginBank</code>; market positions and funding indices are held by <code>Perpetual</code>; trade semantics are delegated to trader contracts such as <code>IsolatedTrader</code> for signed orders and forced liquidations, and <code>IsolatedADL</code> for bankrupt-account deleveraging. The backend runtime controls batching, order matching, keepers, liquidation planning, and oracle submissions, but the material risk checks are repeated or enforced in contracts.</p>
+
+      <div class="card">
+        <h3>Core Contract Roles</h3>
+        <ul class="facts">
+          <li><strong><code>MarginBank</code>:</strong> holds ERC-20 collateral, tracks bank balances, enforces total collateral coverage, and lets whitelisted market operators move margin between accounts.</li>
+          <li><strong><code>Perpetual</code>:</strong> owns market position state, margin-ratio checks, global funding index updates, trade settlement, funding settlement, backstop inheritance, ADL eligibility, and oracle freshness checks.</li>
+          <li><strong><code>FundingOracle</code>:</strong> receives trade premium samples from <code>Perpetual</code>, computes or stores the funding rate, and exposes a per-second rate to the market.</li>
+          <li><strong><code>BackendPriceOracle</code>:</strong> Chainlink-compatible backend oracle with permissioned updaters, optional max basis-point move, and one update per block.</li>
+          <li><strong><code>IsolatedTrader</code>:</strong> validates maker/taker signatures, order bounds, market-take bounds, margin impact, and forced-liquidation orders.</li>
+          <li><strong><code>IsolatedADL</code>:</strong> validates bankrupt maker and profitable opposite-side taker, prices ADL at bankruptcy, and returns zero-fee trade results to <code>Perpetual</code>.</li>
+          <li><strong><code>LiquidityVault</code>:</strong> implements the backstop vault/child-vault mechanism used when a low-equity but positive-equity position can be inherited.</li>
+        </ul>
+      </div>
+
+      <div class="topic">
+        <h3>MNX Funding</h3>
+        <p>The funding implementation has two separate layers: rate calculation in <code>FundingOracle</code>, and account settlement in <code>Perpetual</code>.</p>
+        <h4>Rate calculation</h4>
+        <ul class="facts">
+          <li>Normal FBA trade batches call <code>FundingOracle.recordTrade(tradePrice, oraclePrice, timestamp)</code> through <code>Perpetual.trade</code>. The recorded ratio is <code>(trade price - oracle price) / oracle price</code>, accumulated as a time-weighted premium sample.</li>
+          <li><code>FundingOracle.setFundingRate()</code> can be triggered through <code>Perpetual.setFundingRate()</code>. The oracle computes a one-hour average premium, applies a dampening factor by dividing by 24, clamps the result to the configured max hourly funding, then stores the per-second funding rate.</li>
+          <li><code>setOffChainFundingRate(int256)</code> exists for the off-chain funding mode. It is restricted by <code>offchainFROperator</code> at the <code>Perpetual</code> level and by max-funding checks in <code>FundingOracle</code>.</li>
+          <li>The Guardian can disable or re-enable funding. When disabling, it attempts to refresh the global index first; when enabling, it refreshes before allowing future accrual.</li>
+        </ul>
+        <h4>Global index and settlement</h4>
+        <ul class="facts">
+          <li><code>Perpetual._loadContext(true)</code> reads the oracle and funding rate, checks staleness against current time, and updates <code>globalIndex.value</code> using <code>fundingRate * elapsedTime * oraclePrice</code>. It emits <code>GlobalIndexUpdate</code>.</li>
+          <li><code>Perpetual._loadContext(false)</code>, used on the hot trade path, does not update the index but still requires the oracle update to be fresh enough relative to the cached global-index timestamp.</li>
+          <li>Before trades, <code>Perpetual.trade</code> applies pending funding for all touched accounts. There is also a permissionless <code>settleFundingForAccounts(address[])</code> path used by the keeper to settle open positions in batches.</li>
+          <li>Funding settlement is asymmetric by side: longs use <code>oldIndex - newIndex</code>; shorts use <code>newIndex - oldIndex</code>. Positive settlement credits margin. Negative settlement debits margin with round-up; if margin is insufficient, the balance is floored at zero and the unpaid amount is emitted as forgiven funding.</li>
+        </ul>
+        <p class="small">Key local evidence: <a href="../../packages/contracts/contracts/Perpetual.sol">Perpetual.sol</a> funding methods and <code>_settlePendingFunding</code>; <a href="../../packages/contracts/contracts/FundingOracle.sol">FundingOracle.sol</a>; <a href="../../apps/api/src/high-throughput-v1/runtime/runtime-funding-settlement.ts">runtime-funding-settlement.ts</a>.</p>
+      </div>
+
+      <div class="topic">
+        <h3>MNX Liquidations and Backstop Inheritance</h3>
+        <p>MNX has two contract-level liquidation-style paths: order-book forced liquidation via <code>IsolatedTrader</code>, and backstop inheritance via <code>LiquidityVault</code>.</p>
+        <h4>Forced liquidation orders</h4>
+        <ul class="facts">
+          <li><code>IsolatedTrader._verifyForcedLiquidationOrder</code> requires a reduce-only market order, an existing position, a non-flipping reduction, and account margin ratio below maintenance when valued at the oracle price.</li>
+          <li><code>Perpetual.trade</code> recognizes liquidation trader flags and relaxes normal account checks only for valid liquidation bypass scenarios. It still verifies margin-ratio transitions after all trades in the batch.</li>
+          <li>A liquidation cannot arbitrarily increase risk: when a position is under initial margin but above maintenance, the new margin ratio must improve; below maintenance, only reducing trades are allowed unless the trade is a valid liquidation or ADL path.</li>
+        </ul>
+        <h4>Backstop inheritance</h4>
+        <ul class="facts">
+          <li><code>attemptBackstopInheritance(address)</code> is settlement-operator-only. It loads fresh context, funding-adjusts the account in memory, and requires positive equity below the configured backstop trigger fraction.</li>
+          <li>If the vault accepts the account, <code>LiquidityVault.inheritPosition</code> returns the target child vault, and <code>Perpetual.completeBackstopInheritance</code> transfers the full position and isolated margin to that child account.</li>
+          <li>The current high-throughput liquidation runtime submits <code>attemptBackstopInheritance</code> payloads for prepared backstop cases. That makes the current runtime behavior closer to Hyperliquid's liquidator-vault takeover than to a pure order-book liquidation bot, even though forced-book liquidation logic exists in the contracts.</li>
+        </ul>
+        <p class="small">Key local evidence: <a href="../../packages/contracts/contracts/IsolatedTrader.sol">IsolatedTrader.sol</a>, <a href="../../packages/contracts/contracts/Perpetual.sol">Perpetual.sol</a>, <a href="../../packages/contracts/contracts/LiquidityVault.sol">LiquidityVault.sol</a>, <a href="../../apps/api/src/high-throughput-v1/runtime/runtime-liquidations.ts">runtime-liquidations.ts</a>.</p>
+      </div>
+
+      <div class="topic">
+        <h3>MNX Automatic Deleveraging</h3>
+        <p>MNX ADL is explicit and contract-routed. The runtime plans ADL legs, but settlement goes through <code>Perpetual.trade(accounts, trades)</code> using <code>IsolatedADL</code> as the trader contract.</p>
+        <ul class="facts">
+          <li><code>Perpetual.isAccountAdlEligible</code> excludes flat positions and special binary 1x floor cases, then requires funding-adjusted equity to be less than or equal to zero.</li>
+          <li><code>IsolatedADL.trade</code> treats the maker as the bankrupt account and the taker as the surplus opposite-side account. It rounds the oracle price to tick size for validation but returns a settlement price equal to the bankrupt account's bankruptcy price.</li>
+          <li>Bankruptcy price is derived from settled balance: for a long, <code>(open interest - margin) / quantity</code>; for a short, <code>(open interest + margin) / quantity</code>.</li>
+          <li>The ADL contract requires maker and taker to be opposite sides, maker margin ratio &lt;= 0, taker margin ratio &gt; 0, no increase of the maker position, and no negative taker equity after applying the ADL leg.</li>
+          <li>The runtime planner ranks profitable counterparties by a Hyperliquid-style score based on profit percentage and leverage used, then submits legs until the bankrupt exposure is closed or capacity is exhausted.</li>
+        </ul>
+        <p class="small">Key local evidence: <a href="../../packages/contracts/contracts/IsolatedADL.sol">IsolatedADL.sol</a>, <a href="../../apps/api/src/high-throughput-v1/adl/waterfall-adl-planner.ts">waterfall-adl-planner.ts</a>, <a href="../../apps/api/src/high-throughput-v1/adl/adl-submission.ts">adl-submission.ts</a>, <a href="../../apps/api/src/high-throughput-v1/runtime/runtime-adl.ts">runtime-adl.ts</a>.</p>
+      </div>
+
+      <div class="topic">
+        <h3>MNX Oracle Updates</h3>
+        <ul class="facts">
+          <li><code>BackendPriceOracle</code> implements the Chainlink <code>latestRoundData()</code> shape. The owner configures an updater, optional max staleness, and optional max basis-point update size.</li>
+          <li><code>setPrice</code> is updater-only, rejects non-positive or overflowing prices, enforces max move if configured, and writes at most once per block.</li>
+          <li><code>Perpetual._readOraclePrice</code> requires the returned price to be supported, positive, and fresh. If <code>oracleMaxStalenessSeconds</code> is non-zero, <code>updatedAt + maxStaleness</code> must be at least the reference timestamp.</li>
+          <li>The runtime price updater aggregates external prices, removes outliers when enough sources exist, computes internal mark-price data, then submits bounded <code>BackendPriceOracle.setPrice</code> calls through the HTV1 relayer.</li>
+          <li>The oracle update guard rejects duplicate pending updates, prevents same-block repeats, and can bound a submitted target price by the oracle's max-update basis-point limit.</li>
+        </ul>
+        <p class="small">Key local evidence: <a href="../../packages/contracts/contracts/BackendPriceOracle.sol">BackendPriceOracle.sol</a>, <a href="../../packages/contracts/contracts/Perpetual.sol">Perpetual.sol</a>, <a href="../../apps/api/src/jobs/price-updater.ts">price-updater.ts</a>, <a href="../../apps/api/src/jobs/oracle-price-update-guard.ts">oracle-price-update-guard.ts</a>.</p>
+      </div>
+    </section>
+
+    <section id="starkex">
+      <h2>StarkEx Perpetual</h2>
+      <p>StarkEx is best compared to MNX as a settlement and proof framework, not as a single public Solidity perp market. Its L1 contracts verify state updates and implement forced-operation escape machinery; the perps business logic is executed and proven in StarkEx batches.</p>
+
+      <div class="topic">
+        <h3>Funding</h3>
+        <p>StarkEx documents funding as a <strong>funding tick</strong>: a periodic global funding index update supplied by the operator/application. Funding affects a position only when a transaction touches that position, and multiple missed ticks are cumulatively applied. The collateral update is driven by the delta between the new global funding index and the position's cached index.</p>
+        <p>Relative to MNX, the closest concept is MNX's <code>globalIndex</code> and lazy account settlement. The difference is that MNX's funding-rate calculation is implemented in the local Solidity <code>FundingOracle</code>, while StarkEx describes funding ticks as application business logic sent into the StarkEx gateway and validity-proven.</p>
+      </div>
+
+      <div class="topic">
+        <h3>Liquidations</h3>
+        <p>StarkEx enforces maintenance margin, while the application is responsible for initial margin before submitting transactions. A liquidation can be submitted without the liquidated user's signature when the target position is below maintenance margin. StarkEx checks that the liquidated position is actually liquidatable, that the value-to-maintenance ratio improves, and that the synthetic holdings are reduced without changing sign.</p>
+        <p>Compared with MNX, StarkEx's liquidation is more like a validity-proven transaction type in a batch than a direct Solidity function such as <code>attemptBackstopInheritance</code> or <code>Perpetual.trade</code>.</p>
+      </div>
+
+      <div class="topic">
+        <h3>Automatic Deleveraging</h3>
+        <p>StarkEx calls this the <strong>deleverage flow</strong>. It applies when a position's total value becomes negative. The application matches that position with an opposite-side position, and StarkEx checks opposite signs, reduced total exposure, no sign flips, the deleverager's margin condition, valid asset IDs, valid position ownership, valid signatures where required, and a fairness condition preserving the value-to-risk ratio.</p>
+        <p>MNX and StarkEx are conceptually close here: both reserve ADL for accounts that have crossed into negative value. MNX exposes a concrete <code>IsolatedADL</code> Solidity trader contract; StarkEx exposes a proven transaction type.</p>
+      </div>
+
+      <div class="topic">
+        <h3>Oracle Updates</h3>
+        <p>StarkEx uses external oracle price feeds. The application collects signed price updates from registered oracle providers, aggregates them into an oracle price tick request, and sends the request to StarkEx. StarkEx validates configured signer keys, quorum, median price, and time-window constraints, then includes the price tick in a batch.</p>
+        <p>Compared with MNX's permissioned <code>BackendPriceOracle.setPrice</code>, StarkEx has more explicit signed-quorum semantics in the proof system. The tradeoff is that a reader must understand the StarkEx batch and application configuration rather than inspect a single oracle updater contract.</p>
+      </div>
+
+      <div class="warning callout">
+        <p><strong>Important distinction:</strong> StarkEx gives users an L1 forced-operation and freeze/escape path. Users can submit forced withdrawals or forced trades on-chain; if the operator does not serve them within the grace period, the contract can be frozen and users can escape using the last oracle price tick. MNX has ordinary on-chain custody in <code>MarginBank</code> and delayed/signature withdrawal mechanics, but not the same StarkEx proof-system escape model.</p>
+      </div>
+    </section>
+
+    <section id="idex-kuma">
+      <h2>Latest IDEX/Kuma Ikon Contracts</h2>
+      <p>The latest public perps contracts in the IDEX lineage are the Kuma/Ikon contracts in <code>kumabid/kuma-contracts-ikon</code>. The README describes Ikon as a fully cross-margined USDC perpetual futures product with index pricing, funding payments, liquidation, ADL, and smart-contract custody. The Solidity code centers on <code>Exchange_v1</code>, with most logic split into delegatecall libraries.</p>
+
+      <div class="card">
+        <h3>Contract Architecture</h3>
+        <ul class="facts">
+          <li><code>Exchange_v1</code> tracks balances, markets, index prices, funding multipliers, exits, and dispatcher/admin/governance roles.</li>
+          <li><code>Custodian</code> holds funds, while <code>Exchange_v1</code> tracks user asset balances and settlement state.</li>
+          <li><code>executeTrade</code>, <code>withdraw</code>, liquidations, ADL, <code>publishIndexPrices</code>, and <code>publishFundingMultiplier</code> are dispatcher-driven entry points, with contract validations in libraries.</li>
+          <li>Margin is cross-market by default, unlike MNX's isolated per-market accounting.</li>
+        </ul>
+      </div>
+
+      <div class="topic">
+        <h3>Funding</h3>
+        <p>Ikon funding is published as a compact on-chain multiplier ledger. The dispatcher calls <code>Exchange.publishFundingMultiplier(baseAssetSymbol, fundingRate)</code>. The <code>Funding</code> library requires the market to be active and the absolute funding rate to be lower than that market's maintenance margin fraction.</p>
+        <p>The stored value is <code>funding rate * index price</code>, with sign flipped so it can be directly multiplied by the wallet's base position to compute quote credit or debit. Funding periods are eight hours, aligned to 00:00, 08:00, and 16:00 UTC; missing periods are backfilled with zero multipliers. Funding is lazily applied on balance-changing actions, and <code>applyOutstandingWalletFundingForMarket</code> can proactively walk historical multipliers for inactive wallets.</p>
+        <p>Relative to MNX, Ikon moves rate calculation off-chain and commits only the multiplier. MNX can calculate funding rate on-chain from trade samples or accept an off-chain override, then updates a global index continuously by elapsed seconds.</p>
+      </div>
+
+      <div class="topic">
+        <h3>Liquidations</h3>
+        <p>Ikon has several liquidation paths exposed on <code>Exchange_v1</code>:</p>
+        <ul class="facts">
+          <li><code>liquidatePositionBelowMinimum</code>: transfers a dust-sized position to the insurance fund at current index price, with tolerance for small-position rounding.</li>
+          <li><code>liquidatePositionInDeactivatedMarket</code>: closes a position in a deactivated market at the deactivation index price.</li>
+          <li><code>liquidateWalletInMaintenance</code>: transfers all positions of a wallet below maintenance to the insurance fund at each position's bankruptcy price.</li>
+          <li><code>liquidateWalletInMaintenanceDuringSystemRecovery</code>: similar, but routes to the exit fund during offline recovery.</li>
+          <li><code>liquidateWalletExit</code>: handles an exited wallet at exit price or bankruptcy price.</li>
+        </ul>
+        <p>The wallet-in-maintenance library applies outstanding funding to the liquidating and counterparty wallets before checks. It validates the liquidating wallet is below maintenance using index-price account value and maintenance requirement, calculates bankruptcy quote quantities, updates all positions, sweeps residual quote balance, and validates that the insurance fund remains above initial margin after normal liquidation.</p>
+      </div>
+
+      <div class="topic">
+        <h3>Automatic Deleveraging</h3>
+        <p>Ikon ADL is dispatcher-submitted but contract-validated. The main entry points are:</p>
+        <ul class="facts">
+          <li><code>deleverageInMaintenanceAcquisition</code>: reduces a wallet below maintenance directly against a counterparty at bankruptcy price.</li>
+          <li><code>deleverageInsuranceFundClosure</code>: reduces an insurance-fund position against a counterparty at the insurance fund's entry or cost-basis price.</li>
+          <li><code>deleverageExitAcquisition</code>: reduces an exited wallet against a counterparty at exit price or bankruptcy price, depending on exit account value.</li>
+          <li><code>deleverageExitFundClosure</code>: reduces the exit fund at index price if the exit fund account value is positive, or at bankruptcy price if negative.</li>
+        </ul>
+        <p>For in-maintenance acquisition, the ADL library applies funding to both wallets, confirms the liquidating wallet is below maintenance, validates the quote quantity at bankruptcy price, updates positions, then validates that the counterparty still meets maintenance margin. Counterparty ranking is an off-chain dispatcher concern; unlike Hyperliquid and MNX's runtime planner, the inspected Solidity entry points validate a chosen counterparty rather than defining a public ranking queue.</p>
+      </div>
+
+      <div class="topic">
+        <h3>Oracle and Index Price Updates</h3>
+        <p>Ikon distinguishes index pricing and oracle pricing. Index prices determine margin requirements, liquidation conditions, ADL conditions, withdrawals, transfers, and funding inputs. The dispatcher lazily publishes index prices immediately before dependent settlement operations through <code>publishIndexPrices</code>. The contract checks that each adapter is whitelisted, validates the payload through the adapter, rejects timestamps more than one day in the future, requires active markets, and requires strictly increasing timestamps.</p>
+        <p>Oracle-pricing accessors exist for on-chain analysis and wallet exits, but the README warns that oracle-price and index-price accessors can differ because the methodologies are different. This differs from MNX, where the per-market <code>BackendPriceOracle</code> is the direct Chainlink-shaped price feed read by <code>Perpetual</code>.</p>
+      </div>
+    </section>
+
+    <section id="hyperliquid">
+      <h2>Hyperliquid</h2>
+      <p>Hyperliquid's perps engine is not a normal Solidity contract system. The official docs describe the perps clearinghouse as a component of HyperCore execution state that manages margin balances and positions. HyperEVM is secured by the same consensus and can interact with HyperCore through read precompiles and a CoreWriter system contract, but the native perp funding, liquidation, ADL, and oracle mechanisms live in HyperCore.</p>
+
+      <div class="topic">
+        <h3>Funding</h3>
+        <p>Hyperliquid pays funding every hour. The documented rate follows a centralized-exchange-style formula for an eight-hour funding rate, then pays one eighth of that rate each hour. The formula is:</p>
+        <p><code>Funding Rate = Average Premium Index + clamp(interest rate - Premium Index, -0.0005, 0.0005)</code></p>
+        <p>The interest component is fixed at 0.01% per eight hours. The premium is sampled every five seconds and averaged over the hour. The funding payment is <code>position_size * oracle_price * funding_rate</code>; the spot oracle price, not the mark price, is used to convert size to notional. Hyperliquid caps funding at 4% per hour.</p>
+        <p>Compared with MNX, Hyperliquid's funding calculation is native clearinghouse logic. MNX's funding rate and account settlement are visible in Solidity, while Hyperliquid exposes current and historical funding through API/HyperCore state rather than a public EVM funding contract.</p>
+      </div>
+
+      <div class="topic">
+        <h3>Liquidations</h3>
+        <p>Hyperliquid liquidates when account equity falls below maintenance margin. Maintenance margin is half of the initial margin at max leverage. The engine first attempts to close positions by sending market orders to the book. If book liquidation fully or partially restores maintenance compliance, remaining collateral stays with the trader.</p>
+        <p>If account equity falls below two thirds of maintenance margin without successful book liquidation, a backstop liquidation occurs through the liquidator vault, a component strategy of HLP. Cross backstop liquidation transfers cross positions and cross margin; isolated backstop liquidation transfers only that isolated position and isolated margin. Liquidations use mark price, not a single book tick.</p>
+        <p>Compared with MNX, Hyperliquid's liquidator vault is conceptually close to MNX's <code>LiquidityVault</code> backstop inheritance. The implementation boundary differs: MNX executes the inheritance through Solidity calls; Hyperliquid performs it in native HyperCore clearinghouse logic.</p>
+      </div>
+
+      <div class="topic">
+        <h3>Automatic Deleveraging</h3>
+        <p>Hyperliquid ADL triggers when a user's account value or isolated position value becomes negative. Opposite-side users are ranked by unrealized profit and leverage used. The documented sorting index is <code>(mark_price / entry_price) * (notional_position / account_value)</code>. Selected positions are closed at the previous mark price against the underwater user, preventing bad debt.</p>
+        <p>MNX deliberately mirrors this style in its runtime planner: profitable opposite-side accounts are ranked by a Hyperliquid-convention score, then settled through the <code>IsolatedADL</code> contract at bankruptcy price.</p>
+      </div>
+
+      <div class="topic">
+        <h3>Oracle and Mark Price Updates</h3>
+        <p>Hyperliquid validators publish spot oracle prices for each perp asset about every three seconds. Each validator computes a weighted median of major exchange spot mid prices; the final clearinghouse oracle is the weighted median of validator submissions, weighted by stake. Oracle prices feed funding and are an input to mark price.</p>
+        <p>The mark price is the median of three families of prices: oracle price plus a 150-second exponential moving average of Hyperliquid mid minus oracle, the median of Hyperliquid best bid/best ask/last trade, and a weighted median of external perp mid prices. Mark and oracle prices update approximately every three seconds and mark is used for margining, liquidations, trigger orders, and unrealized PnL.</p>
+      </div>
+    </section>
+
+    <section id="comparison-matrix">
+      <h2>Comparison Matrix</h2>
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Dimension</th>
+            <th>MNX</th>
+            <th>StarkEx Perpetual</th>
+            <th>IDEX/Kuma Ikon</th>
+            <th>Hyperliquid</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Contract locus</td>
+            <td>Solidity contracts on MegaETH-style EVM: <code>Perpetual</code>, <code>MarginBank</code>, trader contracts, oracle, funding oracle, vault.</td>
+            <td>StarkEx L1 contracts plus validity-proven off-chain state transitions. Perp logic is a StarkEx transaction/batch model.</td>
+            <td>Solidity <code>Exchange_v1</code> with delegatecall libraries and separate <code>Custodian</code>.</td>
+            <td>Native HyperCore clearinghouse state. HyperEVM can read/write via precompiles/system contract, but perps are not ordinary Solidity contracts.</td>
+          </tr>
+          <tr>
+            <td>Custody</td>
+            <td><code>MarginBank</code> holds collateral and tracks balances. Market operators move margin subject to contract checks.</td>
+            <td>L1 StarkEx contract custody with forced operations, freeze, and escape paths.</td>
+            <td><code>Custodian</code> holds funds; <code>Exchange</code> tracks balances.</td>
+            <td>HyperCore account balances and clearinghouse state.</td>
+          </tr>
+          <tr>
+            <td>Margin model</td>
+            <td>Isolated per-market margin.</td>
+            <td>Position-level collateral and synthetic assets; maintenance enforced by StarkEx, initial margin by application.</td>
+            <td>Fully cross-margined USDC perps.</td>
+            <td>Cross margin default; isolated and strict-isolated also supported.</td>
+          </tr>
+          <tr>
+            <td>Matching and settlement</td>
+            <td>Off-chain FBA order book. <code>Perpetual.trade</code> settles uniform-price batches and validates account states.</td>
+            <td>Application submits trades/liquidations/deleverages to StarkEx gateway; valid batches settle with proofs.</td>
+            <td>Off-chain matching; dispatcher-only <code>executeTrade</code> validates signed orders and applies funding.</td>
+            <td>Native central-limit order books in HyperCore.</td>
+          </tr>
+          <tr>
+            <td>Primary risk/reference price</td>
+            <td>Accepted oracle price from <code>latestRoundData()</code>; trade fills and ADL settlement can use different prices.</td>
+            <td>Current price from the latest valid oracle price tick inside the proven StarkEx state.</td>
+            <td><code>market.lastIndexPrice</code> for normal risk checks; separate oracle-price accessors exist for exit/view paths.</td>
+            <td>Mark price for risk/liquidation/ADL; spot oracle price for funding notional and mark construction.</td>
+          </tr>
+          <tr>
+            <td>Funding calculation</td>
+            <td>On-chain one-hour premium sampling in <code>FundingOracle</code>, dampened and clamped, or off-chain override.</td>
+            <td>Application supplies global funding indices as funding ticks.</td>
+            <td>Off-chain rate; dispatcher publishes <code>fundingRate * indexPrice</code> multiplier.</td>
+            <td>Hourly payment from CEX-like formula: premium average plus clamped interest adjustment.</td>
+          </tr>
+          <tr>
+            <td>Funding application</td>
+            <td>Global index accrues by elapsed seconds. Accounts settle lazily on trade/keeper calls; insufficient debits can be forgiven after margin floors at zero.</td>
+            <td>Lazy cumulative application when a transaction affects a position.</td>
+            <td>Lazy application to wallet quote balance on balance-changing actions; proactive apply function exists.</td>
+            <td>Applied hourly to holder balances in HyperCore.</td>
+          </tr>
+          <tr>
+            <td>Funding cadence</td>
+            <td>One-hour windows; per-second rate accrual in global index.</td>
+            <td>Configurable validity period and regular ticks supplied by application.</td>
+            <td>Every eight hours, aligned to UTC 00:00, 08:00, and 16:00.</td>
+            <td>Every hour; formula references an eight-hour rate.</td>
+          </tr>
+          <tr>
+            <td>Liquidation trigger</td>
+            <td>Forced liquidation requires account below maintenance at oracle price. Backstop inheritance requires positive equity below configured trigger fraction. ADL requires non-positive funding-adjusted equity.</td>
+            <td>Liquidation allowed when total account value / total maintenance margin requirement is below 1. Deleverage when value is negative.</td>
+            <td>Below maintenance, below minimum position size, deactivated market, exited wallet, or system recovery state.</td>
+            <td>Account equity below maintenance margin. Backstop at below two thirds of maintenance if book liquidation fails.</td>
+          </tr>
+          <tr>
+            <td>Liquidation execution</td>
+            <td>Signed reduce-only market forced-liquidation orders, plus current runtime backstop inheritance into a child vault.</td>
+            <td>Liquidation transaction matched to a limit order, without liquidated user's signature, if validity constraints pass.</td>
+            <td>Dispatcher calls liquidation functions; insurance fund or exit fund acquires positions at index, exit, or bankruptcy prices depending path.</td>
+            <td>Market orders to book first. If needed, liquidator vault takes over positions/margin.</td>
+          </tr>
+          <tr>
+            <td>Backstop or insurance</td>
+            <td><code>LiquidityVault</code> child accounts inherit qualifying low-equity positions.</td>
+            <td>Not a venue-level insurance fund in the generic docs; solvency rules are validity-proven and forced exits protect custody.</td>
+            <td>Insurance fund and exit fund are explicit special wallets.</td>
+            <td>Liquidator vault as HLP component strategy; ADL final safeguard.</td>
+          </tr>
+          <tr>
+            <td>ADL trigger</td>
+            <td>Funding-adjusted equity &lt;= 0, excluding flat/special floor cases.</td>
+            <td>Position total value is negative.</td>
+            <td>Insurance fund cannot acquire, fund closure needed, exit acquisition, or exit fund closure depending path.</td>
+            <td>Account or isolated position value becomes negative.</td>
+          </tr>
+          <tr>
+            <td>ADL counterparty selection</td>
+            <td>Runtime ranks opposite-side profitable accounts by profit and leverage; contract validates chosen maker/taker pair.</td>
+            <td>Application matches with opposite-side position; StarkEx validates constraints.</td>
+            <td>Dispatcher selects counterparty; contract validates price, exposure, and post-ADL counterparty margin.</td>
+            <td>Protocol ranks profitable opposite-side users by unrealized PnL and leverage used.</td>
+          </tr>
+          <tr>
+            <td>ADL price</td>
+            <td>Bankruptcy price of bankrupt account.</td>
+            <td>Collateral amount must preserve the target value/risk ratio; effectively a fairness-preserving deleverage transfer.</td>
+            <td>Bankruptcy price, insurance fund entry price, exit price, index price, or exit-fund bankruptcy price depending ADL type.</td>
+            <td>Previous mark price.</td>
+          </tr>
+          <tr>
+            <td>Oracle source</td>
+            <td>Permissioned backend oracle, Chainlink-compatible. Runtime aggregates external feeds and submits bounded updates.</td>
+            <td>Signed oracle provider price ticks aggregated by application and verified against configured keys/quorum.</td>
+            <td>Whitelisted index-price adapters publish index prices; separate oracle-price adapter for oracle accessors/exits.</td>
+            <td>Validators publish spot oracle prices; final oracle is stake-weighted median of validator submissions.</td>
+          </tr>
+          <tr>
+            <td>Oracle update cadence</td>
+            <td>Runtime-driven; on-chain oracle allows at most one update per block and max BPS steps when configured.</td>
+            <td>Application sends oracle price ticks; validity period enforced by configuration.</td>
+            <td>Lazy publication immediately before dependent operations.</td>
+            <td>Approximately every three seconds.</td>
+          </tr>
+          <tr>
+            <td>Oracle guards</td>
+            <td>Positive price, fixed decimals, staleness checks, max BPS updates, one update per block, pending-update runtime guard.</td>
+            <td>Signer keys, unique providers, quorum, median, price validity period, batch min/max proof optimization.</td>
+            <td>Whitelisted adapters, adapter payload validation, timestamp increasing, timestamp less than one day in future, active market.</td>
+            <td>Weighted medians across external sources and validators; mark price combines multiple robust inputs.</td>
+          </tr>
+          <tr>
+            <td>Operator trust boundary</td>
+            <td>Settlement operators and oracle updaters are privileged, but contract checks constrain trades, funding, liquidation, ADL, and oracle freshness.</td>
+            <td>Operator orders transactions and supplies ticks, but invalid transitions cannot be proven; forced operations/freeze reduce censorship risk.</td>
+            <td>Dispatcher is highly privileged for settlement, funding, index prices, liquidation, and ADL; contracts validate conditions.</td>
+            <td>Validators and native protocol run clearinghouse/oracle logic. EVM contracts are not the source of perp risk rules.</td>
+          </tr>
+          <tr>
+            <td>User escape or censorship resistance</td>
+            <td>MarginBank withdrawal mechanisms exist, but settlement/operator availability is still central to active trading and liquidation flows.</td>
+            <td>Strong documented forced trade/withdrawal, freeze, and escape process from the L1 contract.</td>
+            <td>Wallet exit and offline recovery flows are built into the contracts, including exit fund paths.</td>
+            <td>Native chain state and user-signed actions; not an L1 forced-exit rollup model.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="takeaways">
+      <h2>Takeaways</h2>
+      <div class="card">
+        <h3>1. MNX is more contract-explicit than Hyperliquid and more venue-specific than StarkEx.</h3>
+        <p>MNX exposes the core risk mechanics in Solidity contracts. Hyperliquid exposes similar financial semantics through HyperCore state and APIs, while StarkEx exposes a proof framework and transaction types. For an auditor, MNX gives a narrower set of Solidity files to inspect; for a systems reviewer, Hyperliquid and StarkEx require understanding native/proof execution outside the EVM.</p>
+      </div>
+      <div class="card">
+        <h3>2. MNX and IDEX/Kuma differ most sharply on margin scope.</h3>
+        <p>MNX is isolated by market. Ikon is cross-margined across markets. This changes every downstream risk process: funding debits in MNX hit isolated margin and can be forgiven if the bucket is empty; Ikon funding updates quote balance across a cross-margin wallet; Hyperliquid supports both cross and isolated; StarkEx's position model can include collateral and multiple synthetic assets.</p>
+      </div>
+      <div class="card">
+        <h3>3. MNX ADL is intentionally close to Hyperliquid's queue idea, but settlement price differs.</h3>
+        <p>MNX's runtime ranks profitable opposite-side accounts using a Hyperliquid-style profit/leverage score. The MNX contract then settles at bankruptcy price through <code>IsolatedADL</code>. Hyperliquid docs describe closure at previous mark price. Ikon uses path-specific prices. StarkEx enforces a fairness condition rather than publishing a queue formula in the generic docs.</p>
+      </div>
+      <div class="card">
+        <h3>4. Oracle design is the largest trust-boundary difference.</h3>
+        <p>MNX's oracle is a permissioned backend feed with contract-level movement and freshness limits. Ikon uses whitelisted adapters and lazy index publication. StarkEx uses signed oracle ticks with quorum in the validity system. Hyperliquid uses validator-published spot oracles and a robust mark-price construction. These are not interchangeable security models, even when they feed similar margin formulas.</p>
+      </div>
+
+      <div class="warning callout">
+        <p><strong>Caveat:</strong> This is a contract-level research artifact, not a formal audit. It intentionally focuses on funding, liquidations, ADL, and oracle updates. It does not exhaustively cover deposits, withdrawals, governance upgrade risk, sequencer/liveness risk, bridge risk, API correctness, or market-maker strategy risk.</p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

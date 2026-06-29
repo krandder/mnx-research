@@ -1,0 +1,1075 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Engine Egress: Quiver/TickSpread vs MNX</title>
+    <meta
+      name="description"
+      content="Source-backed comparison of Quiver/TickSpread engine egress, Kafka/Redpanda fanouts, projections, and the equivalent MNX HTV1 event flow."
+    />
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #111318;
+        --muted: #5c6270;
+        --soft: #f5f7fa;
+        --panel: #ffffff;
+        --line: #d9dee8;
+        --line-strong: #aeb7c7;
+        --blue: #1e5aa8;
+        --teal: #007d7e;
+        --green: #28784e;
+        --amber: #ad6500;
+        --red: #a33a42;
+        --violet: #5d529b;
+        --code: #f0f3f7;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        background: var(--soft);
+        color: var(--ink);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        font-size: 16px;
+        line-height: 1.55;
+        letter-spacing: 0;
+      }
+
+      a {
+        color: var(--blue);
+        text-decoration-thickness: 1px;
+        text-underline-offset: 3px;
+      }
+
+      code {
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        background: var(--code);
+        padding: 0.08rem 0.28rem;
+        font-family:
+          "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        font-size: 0.9em;
+      }
+
+      pre {
+        margin: 0;
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #10151f;
+        color: #eef3ff;
+        padding: 1rem;
+        font-family:
+          "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        font-size: 0.86rem;
+        line-height: 1.55;
+      }
+
+      .shell {
+        max-width: 1220px;
+        margin: 0 auto;
+        padding: 0 1.25rem;
+      }
+
+      header {
+        background: #ffffff;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(280px, 410px);
+        gap: 2rem;
+        padding: 4.25rem 0 3rem;
+        align-items: start;
+      }
+
+      .eyebrow {
+        margin: 0 0 0.8rem;
+        color: var(--teal);
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        letter-spacing: 0;
+        line-height: 1.08;
+      }
+
+      h1 {
+        max-width: 920px;
+        font-size: clamp(2.4rem, 5vw, 4.5rem);
+      }
+
+      h2 {
+        margin-bottom: 1rem;
+        font-size: clamp(1.7rem, 3vw, 2.55rem);
+      }
+
+      h3 {
+        margin-bottom: 0.55rem;
+        font-size: 1.05rem;
+      }
+
+      .lede {
+        max-width: 860px;
+        margin: 1.25rem 0 0;
+        color: #303641;
+        font-size: 1.08rem;
+      }
+
+      .thesis {
+        border: 1px solid var(--line-strong);
+        border-radius: 8px;
+        background: #fbfcfe;
+        padding: 1rem;
+      }
+
+      .thesis p {
+        margin: 0;
+      }
+
+      .thesis strong {
+        color: var(--red);
+      }
+
+      nav {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.96);
+        backdrop-filter: blur(8px);
+      }
+
+      nav .shell {
+        display: flex;
+        gap: 0.6rem;
+        overflow-x: auto;
+        padding-top: 0.65rem;
+        padding-bottom: 0.65rem;
+      }
+
+      nav a {
+        flex: 0 0 auto;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: #fff;
+        color: #303641;
+        padding: 0.35rem 0.7rem;
+        font-size: 0.86rem;
+        text-decoration: none;
+      }
+
+      main {
+        padding: 2.4rem 0 4rem;
+      }
+
+      section {
+        margin: 0 0 2rem;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: #ffffff;
+        padding: clamp(1.1rem, 2vw, 1.7rem);
+      }
+
+      .section-kicker {
+        margin: 0 0 0.45rem;
+        color: var(--muted);
+        font-size: 0.84rem;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .grid {
+        display: grid;
+        gap: 1rem;
+      }
+
+      .grid.two {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .grid.three {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .note,
+      .fact,
+      .warning,
+      .callout {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fbfcfe;
+        padding: 0.95rem;
+      }
+
+      .note p,
+      .fact p,
+      .warning p,
+      .callout p {
+        margin: 0.35rem 0 0;
+      }
+
+      .fact {
+        border-left: 4px solid var(--teal);
+      }
+
+      .warning {
+        border-left: 4px solid var(--amber);
+      }
+
+      .callout {
+        border-left: 4px solid var(--red);
+      }
+
+      .label {
+        color: var(--muted);
+        font-size: 0.76rem;
+        font-weight: 800;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+      }
+
+      .flow {
+        display: grid;
+        gap: 0.75rem;
+      }
+
+      .flow-row {
+        display: grid;
+        grid-template-columns: 180px minmax(0, 1fr);
+        gap: 0.8rem;
+        align-items: stretch;
+      }
+
+      .rail {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #f7f9fc;
+        padding: 0.7rem;
+        color: #242a34;
+        font-weight: 800;
+        text-align: center;
+      }
+
+      .nodes {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.5rem;
+      }
+
+      .node {
+        min-height: 92px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+        padding: 0.75rem;
+      }
+
+      .node b {
+        display: block;
+        margin-bottom: 0.3rem;
+        color: var(--blue);
+      }
+
+      .node span {
+        display: block;
+        color: var(--muted);
+        font-size: 0.88rem;
+      }
+
+      .topic {
+        color: var(--teal);
+        font-weight: 800;
+      }
+
+      .consumer {
+        color: var(--violet);
+        font-weight: 800;
+      }
+
+      .api {
+        color: var(--green);
+        font-weight: 800;
+      }
+
+      .bad {
+        color: var(--red);
+        font-weight: 800;
+      }
+
+      .mini-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.94rem;
+      }
+
+      .mini-table th,
+      .mini-table td {
+        vertical-align: top;
+        border-bottom: 1px solid var(--line);
+        padding: 0.75rem 0.55rem;
+        text-align: left;
+      }
+
+      .mini-table th {
+        color: #252b35;
+        font-size: 0.78rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .mini-table tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .pill-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        margin-top: 0.75rem;
+      }
+
+      .pill {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: #fff;
+        padding: 0.25rem 0.55rem;
+        color: #303641;
+        font-size: 0.84rem;
+      }
+
+      .source-list {
+        columns: 2;
+        column-gap: 2rem;
+        margin: 0;
+        padding-left: 1.15rem;
+        color: #303641;
+        font-size: 0.9rem;
+      }
+
+      .source-list li {
+        break-inside: avoid;
+        margin: 0 0 0.55rem;
+      }
+
+      footer {
+        border-top: 1px solid var(--line);
+        background: #fff;
+        padding: 1.25rem 0;
+        color: var(--muted);
+        font-size: 0.88rem;
+      }
+
+      @media (max-width: 900px) {
+        .hero,
+        .grid.two,
+        .grid.three {
+          grid-template-columns: 1fr;
+        }
+
+        .flow-row {
+          grid-template-columns: 1fr;
+        }
+
+        .nodes {
+          grid-template-columns: 1fr;
+        }
+
+        .source-list {
+          columns: 1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="shell hero">
+        <div>
+          <p class="eyebrow">Corrected architecture read</p>
+          <h1>Engine egress: Quiver/TickSpread vs MNX</h1>
+          <p class="lede">
+            This version starts where it should have started: after the matching
+            engine emits facts. The comparison is about how engine output becomes
+            Kafka/Redpanda topics, fanout streams, projections, and finally
+            consumable REST/WebSocket APIs.
+          </p>
+        </div>
+        <aside class="thesis">
+          <p class="label">Thesis</p>
+          <p>
+            <strong>Quiver's book API was a MarketFeed projection of
+            engine-level deltas on <code>results</code>.</strong> MNX currently
+            has durable order/fill/batch facts and market/user notifications,
+            but not an equivalent server-side per-price-level projection.
+          </p>
+        </aside>
+      </div>
+      <nav>
+        <div class="shell">
+          <a href="#quiver-topology">Quiver topology</a>
+          <a href="#results">Results transaction</a>
+          <a href="#fanout">Fanouts</a>
+          <a href="#projections">API projections</a>
+          <a href="#mnx">MNX mapping</a>
+          <a href="#gap">Gap</a>
+          <a href="#recommendation">Recommendation</a>
+          <a href="#sources">Sources</a>
+        </div>
+      </nav>
+    </header>
+
+    <main class="shell">
+      <section id="quiver-topology">
+        <p class="section-kicker">Quiver/TickSpread first</p>
+        <h2>The real post-engine topology</h2>
+        <div class="flow" aria-label="Quiver event flow">
+          <div class="flow-row">
+            <div class="rail">Context only: order entry</div>
+            <div class="nodes">
+              <div class="node">
+                <b>API / Broker</b>
+                <span>REST creates/cancels become request messages.</span>
+              </div>
+              <div class="node">
+                <b class="topic">user_data</b>
+                <span><code>create_request</code>, <code>cancel_request</code>.</span>
+              </div>
+              <div class="node">
+                <b class="consumer">Risk engine</b>
+                <span>C risk engine consumes user/risk/account state.</span>
+              </div>
+              <div class="node">
+                <b class="topic">risk_results</b>
+                <span><code>create_order</code>, rejects, balances, user trades.</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-row">
+            <div class="rail">Risk fanout loop</div>
+            <div class="nodes">
+              <div class="node">
+                <b class="consumer">risk_fanout.py</b>
+                <span>Consumes <code>risk_results</code>.</span>
+              </div>
+              <div class="node">
+                <b class="topic">orders</b>
+                <span>Accepted order commands routed by <code>market_group_id</code>.</span>
+              </div>
+              <div class="node">
+                <b class="topic">user_data</b>
+                <span>Loopback user-visible risk results routed by <code>user_group_id</code>.</span>
+              </div>
+              <div class="node">
+                <b>Offsets</b>
+                <span>Adds <code>risk_results_offset</code>, <code>source</code>, session ids.</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-row">
+            <div class="rail">Matching engine egress</div>
+            <div class="nodes">
+              <div class="node">
+                <b class="consumer">Matching engine</b>
+                <span>Consumes <code>orders</code> partition per market group.</span>
+              </div>
+              <div class="node">
+                <b class="topic">results</b>
+                <span>Transactional engine output: book, trade, user/order, funding, bands.</span>
+              </div>
+              <div class="node">
+                <b class="consumer">ME fanout</b>
+                <span>Forwards user/order lifecycle events, not book deltas.</span>
+              </div>
+              <div class="node">
+                <b class="consumer">MarketFeed / History</b>
+                <span>Consume <code>results</code> directly for market data and candles.</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-row">
+            <div class="rail">Consumable APIs</div>
+            <div class="nodes">
+              <div class="node">
+                <b class="api">Market WS</b>
+                <span><code>partial</code> and <code>update</code> from MarketFeed orderbook slices.</span>
+              </div>
+              <div class="node">
+                <b class="api">User WS</b>
+                <span>UserFeed projections from <code>user_data</code>.</span>
+              </div>
+              <div class="node">
+                <b class="api">History</b>
+                <span>Candles/trades from <code>trade</code> and <code>auction_commit</code>.</span>
+              </div>
+              <div class="node">
+                <b class="api">DB slices</b>
+                <span>OrderBook/UserFeed snapshots restore consumer state.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="results">
+        <p class="section-kicker">Engine output contract</p>
+        <h2><code>results</code> is the matching-engine fact stream</h2>
+        <div class="grid two">
+          <div class="fact">
+            <p class="label">Boundary</p>
+            <p>
+              The C matching engine opens a Kafka transaction, emits
+              <code>results_transaction_begin</code>, writes engine facts, then
+              emits <code>results_transaction_commit</code>. Consumers can treat
+              the events between begin/commit as one engine auction/batch unit.
+            </p>
+          </div>
+          <div class="fact">
+            <p class="label">Identity</p>
+            <p>
+              Results carry <code>orders_offset</code> and
+              <code>matching_engine_session_id</code>. The fanout later adds
+              <code>results_offset</code>, <code>results_partition</code>,
+              <code>source</code>, <code>fanout_session_id</code>, and transaction
+              begin offsets for replay safety.
+            </p>
+          </div>
+        </div>
+
+        <div style="margin-top: 1rem">
+          <pre><code>results transaction
+  results_transaction_begin
+    book_add / book_remove / book_remove_all        -> public orderbook deltas
+    trade                                           -> public trades
+    maker_order / delete_order / acknowledge_order  -> user/order lifecycle
+    maker_trade / taker_trade / funding_payment     -> user/risk lifecycle
+    execution_band / price_band / funding           -> market metadata
+    auction_commit                                  -> auction boundary
+  results_transaction_commit</code></pre>
+        </div>
+
+        <div class="pill-row" aria-label="Important source-backed events">
+          <span class="pill">book_add</span>
+          <span class="pill">book_remove</span>
+          <span class="pill">trade</span>
+          <span class="pill">auction_commit</span>
+          <span class="pill">maker_order</span>
+          <span class="pill">delete_order</span>
+          <span class="pill">maker_trade</span>
+          <span class="pill">taker_trade</span>
+          <span class="pill">funding</span>
+        </div>
+      </section>
+
+      <section id="fanout">
+        <p class="section-kicker">What fanout actually does</p>
+        <h2>Fanout is a bridge, not the book service</h2>
+        <table class="mini-table">
+          <thead>
+            <tr>
+              <th>Process</th>
+              <th>Consumes</th>
+              <th>Writes</th>
+              <th>Important detail</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>risk_fanout.py</code></td>
+              <td><code>risk_results</code></td>
+              <td><code>orders</code>, <code>user_data</code></td>
+              <td>
+                Sends approved engine commands such as <code>create_order</code>,
+                <code>cancel_order</code>, <code>margin_update_order</code> to
+                <code>orders</code>; loops rejects, balances, user trades, and
+                risk acks back to <code>user_data</code>.
+              </td>
+            </tr>
+            <tr>
+              <td><code>fanout.py</code> in matching-engine mode</td>
+              <td><code>results</code></td>
+              <td><code>user_data</code>, <code>orders</code></td>
+              <td>
+                Forwards user/order lifecycle events to <code>user_data</code>
+                and turns <code>auction_commit</code> into
+                <code>auction_looped</code> on <code>orders</code>. It ignores
+                <code>book_add</code>, <code>book_remove</code>,
+                <code>book_remove_all</code>, raw <code>trade</code>, bands, and
+                funding for this path.
+              </td>
+            </tr>
+            <tr>
+              <td>MarketFeed</td>
+              <td><code>results</code></td>
+              <td>Phoenix PubSub, stored slices</td>
+              <td>
+                This is the orderbook projection. It consumes engine
+                <code>book_add</code>/<code>book_remove</code> deltas directly
+                from <code>results</code> and broadcasts market updates.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="callout" style="margin-top: 1rem">
+          <p class="label">Correction</p>
+          <p>
+            The correct abstraction is not "the gateway asks the engine for a
+            book." The engine emits durable book deltas on <code>results</code>;
+            MarketFeed projects them into snapshots and updates; the fanout path
+            preserves user/risk/order-loop state separately.
+          </p>
+        </div>
+      </section>
+
+      <section id="projections">
+        <p class="section-kicker">How API-consumable views are made</p>
+        <h2>Quiver projections after engine egress</h2>
+        <div class="grid three">
+          <article class="note">
+            <p class="label">MarketFeed</p>
+            <h3>Orderbook and market updates</h3>
+            <p>
+              <code>MarketFeed.Consumer</code> uses the transaction-aware
+              <code>AuctionManual</code> consumer on <code>results</code>. It
+              filters by market, waits for <code>results_transaction_commit</code>,
+              applies <code>OrderBook.update</code>, creates a message via
+              <code>OrderBook.to_message</code>, then broadcasts on
+              <code>market_feed:&lt;symbol&gt;:&lt;precision&gt;</code>.
+            </p>
+          </article>
+          <article class="note">
+            <p class="label">History</p>
+            <h3>Candles and trade history</h3>
+            <p>
+              History consumes <code>results</code> directly. It samples
+              <code>auction_commit</code> and forwards <code>trade</code> events
+              into interval workers. This is a parallel projection, not a
+              client-side reconstruction from open orders.
+            </p>
+          </article>
+          <article class="note">
+            <p class="label">UserFeed</p>
+            <h3>User orders, balances, positions</h3>
+            <p>
+              UserFeed consumes <code>user_data</code>, builds mutations for
+              open orders, balances, open positions, trigger orders, and
+              broadcasts user-specific socket events on
+              <code>user_data:&lt;user_id&gt;:&lt;scope&gt;</code>.
+            </p>
+          </article>
+        </div>
+
+        <table class="mini-table" style="margin-top: 1rem">
+          <thead>
+            <tr>
+              <th>Consumer API</th>
+              <th>Source stream</th>
+              <th>Semantics</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Market data channel</td>
+              <td><code>results</code> -> MarketFeed</td>
+              <td>
+                On join: <code>partial</code> snapshot. Then
+                <code>update</code> messages with level deltas/trades/status.
+              </td>
+            </tr>
+            <tr>
+              <td>User data channel</td>
+              <td><code>user_data</code> -> UserFeed</td>
+              <td>
+                On join: balances, positions, orders. Then per-user lifecycle
+                messages.
+              </td>
+            </tr>
+            <tr>
+              <td>History/candles</td>
+              <td><code>results</code> -> History</td>
+              <td>
+                Trade and auction facts materialized independently of MarketFeed.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="mnx">
+        <p class="section-kicker">MNX through the same abstraction</p>
+        <h2>MNX engine egress is HTV1 facts, not Kafka book deltas</h2>
+        <div class="flow" aria-label="MNX HTV1 event flow">
+          <div class="flow-row">
+            <div class="rail">Engine output</div>
+            <div class="nodes">
+              <div class="node">
+                <b>FBA engine</b>
+                <span><code>runMatchEngine</code> returns <code>MatchResult</code>.</span>
+              </div>
+              <div class="node">
+                <b>Result fields</b>
+                <span>Fills, order updates, cancelled orders, clearing price.</span>
+              </div>
+              <div class="node">
+                <b>MarketBook</b>
+                <span>Plans a batch from matchable live orders.</span>
+              </div>
+              <div class="node">
+                <b>Runtime</b>
+                <span>Converts the result into durable facts.</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-row">
+            <div class="rail">Durable stream</div>
+            <div class="nodes">
+              <div class="node">
+                <b class="topic">trading-main</b>
+                <span>One HTV1 journal owner for market and account facts.</span>
+              </div>
+              <div class="node">
+                <b>Seal envelope</b>
+                <span><code>fill_claims_prepared</code> plus <code>batch_sealed</code>.</span>
+              </div>
+              <div class="node">
+                <b>Settlement envelope</b>
+                <span><code>batch_settled</code> plus chain/account effects.</span>
+              </div>
+              <div class="node">
+                <b>Read-after</b>
+                <span>Materializer and API calls use shard seq/generation.</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-row">
+            <div class="rail">Consumers</div>
+            <div class="nodes">
+              <div class="node">
+                <b class="consumer">MarketBook reducer</b>
+                <span>Tracks live orders and sealed quantity in memory.</span>
+              </div>
+              <div class="node">
+                <b class="consumer">Materializer</b>
+                <span>Projects <code>read_orders</code>, fills, batches, balances.</span>
+              </div>
+              <div class="node">
+                <b class="consumer">Fanout worker</b>
+                <span>Maps journal facts to WebSocket notifications.</span>
+              </div>
+              <div class="node">
+                <b class="api">Frontend</b>
+                <span>Fetches open orders and aggregates levels client-side.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="mnx-details">
+        <p class="section-kicker">MNX details that matter</p>
+        <h2>The closest MNX analogue is hidden in live state</h2>
+        <div class="grid two">
+          <div class="fact">
+            <p class="label">Matchable quantity</p>
+            <p>
+              <code>MarketBook.getMatchableLiveOrders</code> subtracts
+              <code>sealedQuantityByOrderHash</code> and already filled quantity
+              from live orders. This is the right semantic hook for a "what can
+              match now" book.
+            </p>
+          </div>
+          <div class="warning">
+            <p class="label">Read model semantics</p>
+            <p>
+              The materializer records <code>batch_sealed</code> lifecycle/fill
+              rows at seal time, but order rows are updated by
+              <code>batch_settled</code>. A REST book derived only from
+              <code>read_orders</code> is not automatically the same thing as the
+              live matchable book during a sealed-but-unsettled interval.
+            </p>
+          </div>
+        </div>
+
+        <table class="mini-table" style="margin-top: 1rem">
+          <thead>
+            <tr>
+              <th>MNX path today</th>
+              <th>What it emits</th>
+              <th>Why it is not Quiver MarketFeed</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>V1FanoutWorker</code></td>
+              <td>
+                <code>ORDER_CREATED</code>, <code>ORDER_CANCELLED</code>,
+                <code>ORDER_UPDATED</code>, <code>TRADE_BATCH_SETTLED</code>.
+              </td>
+              <td>
+                The topic <code>market:&lt;id&gt;:orderbook</code> is a
+                notification topic. It does not carry authoritative
+                <code>book_add</code>/<code>book_remove</code> level deltas.
+              </td>
+            </tr>
+            <tr>
+              <td><code>orders/by-market/:market_id</code></td>
+              <td>
+                Raw materialized order rows from <code>read_orders</code>,
+                filtered by status/side/order type.
+              </td>
+              <td>
+                The frontend requests open limit orders with a fixed high limit
+                and aggregates by price locally. That is a UI reconstruction, not
+                a server-side book projection contract.
+              </td>
+            </tr>
+            <tr>
+              <td><code>MarketBook</code> memory</td>
+              <td>
+                Live orders, filled quantities, sealed quantities, pending
+                cancels, terminal markers.
+              </td>
+              <td>
+                This has the right state for matchable book levels, but there is
+                no public projection/API that exposes it as level snapshots and
+                deltas.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="gap">
+        <p class="section-kicker">Abstraction mismatch</p>
+        <h2>The real gap is a missing MarketFeed-equivalent projection</h2>
+        <div class="grid two">
+          <article class="note">
+            <p class="label">Quiver</p>
+            <h3>Engine emits book deltas</h3>
+            <p>
+              The matching engine itself emits public level deltas:
+              <code>book_add</code>, <code>book_remove</code>,
+              <code>book_remove_all</code> with market, side, price,
+              precision, and visible delta. MarketFeed applies those events and
+              serves snapshots/updates.
+            </p>
+          </article>
+          <article class="note">
+            <p class="label">MNX</p>
+            <h3>Engine emits order/fill facts</h3>
+            <p>
+              The FBA engine returns fills/order updates; HTV1 persists
+              <code>batch_sealed</code> and <code>batch_settled</code>. Current
+              consumers expose order rows and batch/user notifications, not an
+              authoritative per-price-level stream.
+            </p>
+          </article>
+        </div>
+
+        <div class="callout" style="margin-top: 1rem">
+          <p class="label">Design implication</p>
+          <p>
+            If MNX wants a Quiver-like orderbook API, the correct abstraction is
+            not "make the frontend query more rows." It is a server-side
+            projection that consumes the durable HTV1 fact stream and emits
+            level snapshots/deltas with explicit sequence/read-after semantics.
+          </p>
+        </div>
+      </section>
+
+      <section id="recommendation">
+        <p class="section-kicker">Recommended MNX architecture</p>
+        <h2>Build <code>MarketFeed</code> semantics over HTV1 facts</h2>
+        <table class="mini-table">
+          <thead>
+            <tr>
+              <th>Component</th>
+              <th>Contract</th>
+              <th>Critical semantic choice</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>OrderBookLevels</code> projection</td>
+              <td>
+                Maintains per-market, per-side, per-price aggregate quantities.
+                Stores last journal cursor and publishes monotonic sequence.
+              </td>
+              <td>
+                Decide <code>mode=matchable</code> vs <code>mode=settled</code>.
+                The Quiver-like trading view should usually be
+                <code>matchable</code>.
+              </td>
+            </tr>
+            <tr>
+              <td>Apply order facts</td>
+              <td>
+                <code>order_accepted</code> adds visible quantity;
+                <code>order_cancelled</code>/<code>order_expired</code> remove
+                any remaining visible quantity.
+              </td>
+              <td>
+                Keep conditional/pending-trigger orders out until they become
+                accepted live orders.
+              </td>
+            </tr>
+            <tr>
+              <td>Apply batch facts</td>
+              <td>
+                For <code>matchable</code>, decrement levels at
+                <code>batch_sealed</code> by each order update's sealed quantity;
+                re-add on retryable/unsent abort; clear in-flight state on
+                <code>batch_settled</code>.
+              </td>
+              <td>
+                Do not decrement again at settlement for the matchable mode.
+                For <code>settled</code>, defer the decrement to
+                <code>batch_settled</code>.
+              </td>
+            </tr>
+            <tr>
+              <td>REST API</td>
+              <td>
+                <code>GET /v1/markets/:id/orderbook?depth=&amp;bucket=&amp;mode=matchable</code>
+                returns bids/asks, sequence, read-after, and projection cursor.
+              </td>
+              <td>
+                The response should be levels, not raw orders. Raw orders remain
+                a separate diagnostic/order-management endpoint.
+              </td>
+            </tr>
+            <tr>
+              <td>WebSocket API</td>
+              <td>
+                Emit <code>ORDER_BOOK_SNAPSHOT</code> and
+                <code>ORDER_BOOK_DELTA</code> on a dedicated topic such as
+                <code>market:&lt;id&gt;:orderbook-levels</code>.
+              </td>
+              <td>
+                Keep <code>market:&lt;id&gt;:orderbook</code> compatibility as a
+                refresh notification topic, or rename it after migration.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div style="margin-top: 1rem">
+          <pre><code>MNX MarketFeed-equivalent projection
+  trading-main journal
+    order_accepted                  -> level += quantity
+    order_cancelled / order_expired -> level -= remaining visible quantity
+    batch_sealed                    -> level -= sealed_quantity   (matchable mode)
+    batch_aborted_*                 -> level += restored sealed quantity
+    batch_settled                   -> clear in-flight; publish trade metadata
+
+  public output
+    REST snapshot:  bids[], asks[], seq, read_after, mode, bucket
+    WS deltas:      side, price, delta_quantity, seq, read_after</code></pre>
+        </div>
+      </section>
+
+      <section id="comparison">
+        <p class="section-kicker">One-line comparison</p>
+        <h2>Same lens, different primitives</h2>
+        <table class="mini-table">
+          <thead>
+            <tr>
+              <th>Abstraction</th>
+              <th>Quiver/TickSpread</th>
+              <th>MNX today</th>
+              <th>MNX target</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Engine egress stream</td>
+              <td><code>results</code> Kafka topic</td>
+              <td>HTV1 <code>trading-main</code> facts after in-process match</td>
+              <td>Same HTV1 stream, consumed by a book projection</td>
+            </tr>
+            <tr>
+              <td>Batch boundary</td>
+              <td><code>results_transaction_begin/commit</code></td>
+              <td>Atomic HTV1 envelope: <code>fill_claims_prepared</code> + <code>batch_sealed</code></td>
+              <td>Projection cursor advances by envelope/read-after</td>
+            </tr>
+            <tr>
+              <td>Public book primitive</td>
+              <td>Engine <code>book_add/remove</code> visible deltas</td>
+              <td>Raw order rows plus refresh notifications</td>
+              <td>Server-side level deltas/snapshots</td>
+            </tr>
+            <tr>
+              <td>User lifecycle</td>
+              <td><code>results</code> -> fanout -> <code>user_data</code> -> UserFeed</td>
+              <td>Journal facts -> fanout worker -> user/order topics</td>
+              <td>Keep current path; it is separate from book levels</td>
+            </tr>
+            <tr>
+              <td>Trades/history</td>
+              <td><code>trade</code>, <code>auction_commit</code> -> History</td>
+              <td><code>batch_sealed</code>/<code>batch_settled</code> -> read fills and WS</td>
+              <td>Book projection can publish trade-adjacent metadata but not own fills</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="sources">
+        <p class="section-kicker">Source evidence</p>
+        <h2>Files read for this correction</h2>
+        <ul class="source-list">
+          <li><code>/Users/kas/futarchy-repos/engine/matchengine/src/libme/me_kafka.c</code>: Kafka transaction begin/commit and <code>results</code> producer.</li>
+          <li><code>/Users/kas/futarchy-repos/engine/matchengine/src/libme/me_message.c</code>: event builders for book, order, trade, funding, auction messages.</li>
+          <li><code>/Users/kas/futarchy-repos/engine/matchengine/src/librisk/re_kafka.c</code> and <code>re_message.c</code>: risk engine consumes <code>user_data</code> and writes <code>risk_results</code>.</li>
+          <li><code>/Users/kas/futarchy-repos/engine/python/fanout.py</code>: restore/fast-forward logic, matching-engine fanout, and risk fanout routing.</li>
+          <li><code>/Users/kas/futarchy-repos/engine/matchengine/config/prod/config_prod_3.7.json</code>: accepted/ignored event sets for fanout and risk_fanout.</li>
+          <li><code>/Users/kas/exchange-gateway/apps/market_feed/lib/consumer.ex</code> and <code>market_feed.ex</code>: MarketFeed consumes <code>results</code>, applies batches, broadcasts updates.</li>
+          <li><code>/Users/kas/exchange-gateway/apps/market_feed/lib/market_feed/models/order_book/order_book.ex</code>: book delta application and snapshot/update encoding.</li>
+          <li><code>/Users/kas/exchange-gateway/apps/user_feed/lib/consumer.ex</code> and <code>user_feed.ex</code>: <code>user_data</code> projection for balances, positions, orders, user sockets.</li>
+          <li><code>/Users/kas/exchange-gateway/apps/history/lib/history/consumers/consumer.ex</code>: <code>results</code> projection for candles/trades.</li>
+          <li><code>/Users/kas/mnx-study/exchange/apps/api/src/high-throughput-v1/fba/match-engine.ts</code>: <code>MatchResult</code> return shape.</li>
+          <li><code>/Users/kas/mnx-study/exchange/apps/api/src/high-throughput-v1/runtime/runtime-batches.ts</code>: seal envelope co-publishes <code>fill_claims_prepared</code> and <code>batch_sealed</code>.</li>
+          <li><code>/Users/kas/mnx-study/exchange/apps/api/src/high-throughput-v1/trading/market-book.ts</code>: matchable live orders and sealed quantity tracking.</li>
+          <li><code>/Users/kas/mnx-study/exchange/apps/api/src/high-throughput-v1/fanout/fanout-worker.ts</code>: WebSocket topic mapping for order and batch events.</li>
+          <li><code>/Users/kas/mnx-study/exchange/apps/api/src/high-throughput-v1/persistence/materializer.ts</code> and <code>routes/get-orders.ts</code>: <code>read_orders</code> market-order view.</li>
+          <li><code>/Users/kas/mnx-study/exchange/apps/web/src/app/hooks/use-perp-market-data.ts</code> and <code>components/OrderBook.tsx</code>: frontend fetches open limit orders and aggregates client-side.</li>
+        </ul>
+      </section>
+    </main>
+
+    <footer>
+      <div class="shell">
+        Corrected on 2026-06-21. Scope: engine egress, fanouts, projections,
+        APIs/WebSockets, and the MNX equivalent abstraction.
+      </div>
+    </footer>
+  </body>
+</html>
