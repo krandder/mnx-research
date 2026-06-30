@@ -427,10 +427,11 @@
             </p>
           </article>
           <article class="panel metric">
-            <p class="label">ADL Bugs Fixed</p>
+            <p class="label">ADL Local Fixes</p>
             <p class="value">5</p>
             <p class="note">
-              A14 through A18 each found and fixed a focused ADL failure mode.
+              A14 through A18 each found a focused ADL failure mode and added a
+              local exchange fix plus regression.
             </p>
           </article>
         </div>
@@ -521,12 +522,17 @@
           executes one hypothesis at a time, records a focused regression, and
           lets the previous result choose the next risk surface.
         </p>
+        <p class="muted">
+          "Local fix" means a code change and regression test committed on the
+          local <code>exchange-replay</code> branch. It does not mean the
+          exchange branch was pushed, merged, deployed, or released.
+        </p>
 
         <ul class="finding-list">
           <li class="finding">
             <div class="row">
               <h3>A14: Receipt identity mismatch</h3>
-              <span class="status proven">Bug found and fixed</span>
+              <span class="status proven">Bug found; local fix</span>
             </div>
             <p class="muted">
               Receipt validation accepted a payload when the round and
@@ -538,7 +544,7 @@
           <li class="finding">
             <div class="row">
               <h3>A15: Submitted tx hash mismatch</h3>
-              <span class="status proven">Bug found and fixed</span>
+              <span class="status proven">Bug found; local fix</span>
             </div>
             <p class="muted">
               A receipt with the correct round, submission, and market could
@@ -549,7 +555,7 @@
           <li class="finding">
             <div class="row">
               <h3>A16: Reconciliation-failed stale recovery</h3>
-              <span class="status proven">Bug found and fixed</span>
+              <span class="status proven">Bug found; local fix</span>
             </div>
             <p class="muted">
               Stale recovery could abandon a round after
@@ -561,7 +567,7 @@
           <li class="finding">
             <div class="row">
               <h3>A17: Duplicate ADL trade log index</h3>
-              <span class="status proven">Bug found and fixed</span>
+              <span class="status proven">Bug found; local fix</span>
             </div>
             <p class="muted">
               A successful receipt could include two ADL trade updates with the
@@ -573,7 +579,7 @@
           <li class="finding">
             <div class="row">
               <h3>A18: Zero-effect successful receipt</h3>
-              <span class="status proven">Bug found and fixed</span>
+              <span class="status proven">Bug found; local fix</span>
             </div>
             <p class="muted">
               A decoded successful receipt with no ADL trades and no position
@@ -671,7 +677,7 @@
                 </td>
               </tr>
               <tr>
-                <td>Exchange ADL fixes</td>
+                <td>Exchange ADL local fixes</td>
                 <td>
                   <code>exchange-replay</code> local commits
                   <code>4a433a36</code>, <code>4cd9d165</code>,
@@ -680,7 +686,7 @@
                 </td>
                 <td>
                   Identity, tx-hash, stale-recovery, duplicate-log-index, and
-                  zero-effect receipt regressions fixed locally.
+                  zero-effect receipt regressions added and fixed locally.
                 </td>
               </tr>
             </tbody>
