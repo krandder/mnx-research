@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MNX Simulation Findings</title>
+    <meta
+      name="description"
+      content="Current MNX replay and ADL stress-test findings from the local-chain simulation workflow."
+    >
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f5f7f8;
+        --paper: #ffffff;
+        --ink: #15191b;
+        --muted: #596469;
+        --line: #d4dde1;
+        --teal: #0b6b61;
+        --teal-soft: #e4f3f1;
+        --blue: #2458c8;
+        --blue-soft: #edf3ff;
+        --amber: #9a5a12;
+        --amber-soft: #fff4df;
+        --red: #9f2d2d;
+        --red-soft: #fff1f1;
+        --green: #146c43;
+        --green-soft: #e8f6ee;
+        --code: #f0f3f4;
+        --shadow: 0 18px 42px rgba(21, 25, 27, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0)),
+          var(--bg);
+        color: var(--ink);
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        line-height: 1.55;
+      }
+
+      a {
+        color: var(--blue);
+        text-underline-offset: 3px;
+      }
+
+      header {
+        background: #17201d;
+        color: #ffffff;
+        border-bottom: 6px solid #17a394;
+        padding: 42px 24px 30px;
+      }
+
+      .wrap {
+        width: min(1160px, calc(100vw - 40px));
+        margin: 0 auto;
+      }
+
+      .eyebrow {
+        margin: 0 0 14px;
+        color: #99f6e4;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        max-width: 980px;
+        margin: 0;
+        font-size: clamp(2rem, 5.6vw, 4.7rem);
+        line-height: 0.98;
+        letter-spacing: 0;
+      }
+
+      .lede {
+        max-width: 900px;
+        margin: 18px 0 0;
+        color: #d9e3de;
+        font-size: clamp(1rem, 2vw, 1.2rem);
+      }
+
+      .toc {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 20px;
+      }
+
+      .toc a {
+        display: inline-flex;
+        min-height: 38px;
+        align-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        border-radius: 7px;
+        padding: 8px 11px;
+        color: #ffffff;
+        background: rgba(255, 255, 255, 0.08);
+        text-decoration: none;
+        font-size: 0.9rem;
+      }
+
+      main {
+        padding: 28px 0 58px;
+      }
+
+      section {
+        margin: 30px 0;
+      }
+
+      h2 {
+        margin: 0 0 13px;
+        font-size: clamp(1.45rem, 3vw, 2.25rem);
+        line-height: 1.16;
+        letter-spacing: 0;
+      }
+
+      h3 {
+        margin: 0 0 9px;
+        font-size: 1.08rem;
+        line-height: 1.25;
+        letter-spacing: 0;
+      }
+
+      p {
+        margin: 0 0 13px;
+      }
+
+      ul {
+        margin: 10px 0 0;
+        padding-left: 20px;
+      }
+
+      li {
+        margin: 7px 0;
+      }
+
+      code,
+      .mono {
+        font-family:
+          "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        font-size: 0.94em;
+      }
+
+      code {
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--code);
+        padding: 0.12rem 0.32rem;
+      }
+
+      .panel {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        box-shadow: var(--shadow);
+        padding: 22px;
+      }
+
+      .plain-panel {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 22px;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .two {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .three {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .four {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .metric {
+        min-height: 150px;
+      }
+
+      .metric .label {
+        margin: 0 0 8px;
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      .metric .value {
+        margin: 0;
+        font-size: clamp(1.5rem, 3vw, 2.15rem);
+        font-weight: 820;
+        line-height: 1.05;
+      }
+
+      .metric .note {
+        margin: 10px 0 0;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .status {
+        display: inline-flex;
+        align-items: center;
+        min-height: 28px;
+        border-radius: 999px;
+        padding: 0 11px;
+        font-size: 0.78rem;
+        font-weight: 800;
+      }
+
+      .status.proven {
+        background: var(--green-soft);
+        color: var(--green);
+      }
+
+      .status.partial {
+        background: var(--amber-soft);
+        color: var(--amber);
+      }
+
+      .status.pending {
+        background: var(--red-soft);
+        color: var(--red);
+      }
+
+      .callout {
+        border: 1px solid var(--line);
+        border-left: 5px solid var(--teal);
+        border-radius: 8px;
+        background: var(--teal-soft);
+        padding: 18px;
+      }
+
+      .callout.warn {
+        border-left-color: var(--amber);
+        background: var(--amber-soft);
+      }
+
+      .callout.bad {
+        border-left-color: var(--red);
+        background: var(--red-soft);
+      }
+
+      .progress {
+        display: grid;
+        gap: 10px;
+        margin-top: 16px;
+      }
+
+      .step {
+        display: grid;
+        grid-template-columns: 136px minmax(0, 1fr);
+        gap: 14px;
+        align-items: start;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fbfcfc;
+        padding: 14px;
+      }
+
+      .step strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .finding-list {
+        display: grid;
+        gap: 12px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .finding {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--paper);
+        padding: 16px;
+      }
+
+      .finding .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 9px;
+      }
+
+      .finding p {
+        margin-bottom: 0;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        overflow-wrap: anywhere;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid var(--line);
+        padding: 12px 10px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      footer {
+        margin-top: 36px;
+        color: var(--muted);
+        font-size: 0.86rem;
+      }
+
+      @media (max-width: 860px) {
+        .two,
+        .three,
+        .four {
+          grid-template-columns: 1fr;
+        }
+
+        .step {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 560px) {
+        .wrap {
+          width: min(100% - 28px, 1160px);
+        }
+
+        header {
+          padding: 30px 14px 24px;
+        }
+
+        .panel,
+        .plain-panel,
+        .finding {
+          padding: 18px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap">
+        <p class="eyebrow">MNX Replay</p>
+        <h1>Simulation Findings</h1>
+        <p class="lede">
+          Current evidence from the local-chain replay workflow and the
+          independent ADL stress-test chain. Snapshot date: 2026-06-30.
+        </p>
+        <nav class="toc" aria-label="Page sections">
+          <a href="#status">Status</a>
+          <a href="#replay">Replay</a>
+          <a href="#adl">ADL Stress</a>
+          <a href="#limits">Limits</a>
+          <a href="#evidence">Evidence</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section id="status">
+        <div class="grid four">
+          <article class="panel metric">
+            <p class="label">Clean 1M Plan</p>
+            <p class="value">1,000,000</p>
+            <p class="note">
+              Baseline-executable perpetual orders selected after scanning
+              3,114,655 raw rows.
+            </p>
+          </article>
+          <article class="panel metric">
+            <p class="label">Largest F2 Proof</p>
+            <p class="value">200</p>
+            <p class="note">
+              Public API orders placed through local-chain settlement plumbing
+              with zero API failures.
+            </p>
+          </article>
+          <article class="panel metric">
+            <p class="label">Replay ADL Seen</p>
+            <p class="value">0</p>
+            <p class="note">
+              No liquidation or ADL was observed in the bounded replay runs.
+            </p>
+          </article>
+          <article class="panel metric">
+            <p class="label">ADL Bugs Fixed</p>
+            <p class="value">5</p>
+            <p class="note">
+              A14 through A18 each found and fixed a focused ADL failure mode.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="replay">
+        <h2>Replay Findings</h2>
+        <div class="callout warn">
+          <p>
+            The full 1M local-chain replay has not completed yet. The strongest
+            completed end-to-end evidence is a 200-order streaming F2 proof.
+            The 1M claim is a planner-selection result, not a completed exchange
+            execution result.
+          </p>
+        </div>
+
+        <div class="progress">
+          <article class="step">
+            <span class="status proven">Proven</span>
+            <div>
+              <strong>Box data is usable for the clean baseline.</strong>
+              <p class="muted">
+                The clean planner scanned 3,114,655 raw rows from the box data,
+                accepted 2,249,210 perpetual events, selected 1,000,000
+                baseline-executable orders, and recorded zero parse rejects.
+                The selected source window is 2026-02-08T00:00:00.042Z through
+                2026-02-08T18:27:03.916Z.
+              </p>
+            </div>
+          </article>
+
+          <article class="step">
+            <span class="status proven">Proven</span>
+            <div>
+              <strong>Bounded F2 execution path works.</strong>
+              <p class="muted">
+                The first bounded clean-policy proof placed 100 public API
+                orders, sealed 9 batches, produced 31 fills, submitted and
+                applied 9 settlements, and finished with zero persistence apply
+                failures.
+              </p>
+            </div>
+          </article>
+
+          <article class="step">
+            <span class="status proven">Proven</span>
+            <div>
+              <strong>Streaming F2 driver works on a larger slice.</strong>
+              <p class="muted">
+                The streaming proof placed 200 API orders, scanned 458 events,
+                skipped 258 reduce-only rows for initially flat users, sealed
+                11 batches, and produced 44 fills with zero API failures.
+              </p>
+            </div>
+          </article>
+
+          <article class="step">
+            <span class="status partial">Partial</span>
+            <div>
+              <strong>No natural liquidation or ADL appeared in bounded replay.</strong>
+              <p class="muted">
+                The completed bounded runs ended with 0 underwater positions, 0
+                liquidation broadcasts, and 0 ADL. This is useful negative
+                evidence for the sampled path, but not evidence that larger
+                price-transformed runs cannot liquidate.
+              </p>
+            </div>
+          </article>
+
+          <article class="step">
+            <span class="status pending">Not run</span>
+            <div>
+              <strong>Full 1M, 10M, 100M, and 1B exchange replays remain open.</strong>
+              <p class="muted">
+                The next main replay gate is the full clean-policy 1M F2 run,
+                followed by price-transformed liquidation probes before moving
+                to larger milestones.
+              </p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="adl">
+        <h2>ADL Stress Findings</h2>
+        <p>
+          The independent ADL chain is separate from the volume replay. It
+          executes one hypothesis at a time, records a focused regression, and
+          lets the previous result choose the next risk surface.
+        </p>
+
+        <ul class="finding-list">
+          <li class="finding">
+            <div class="row">
+              <h3>A14: Receipt identity mismatch</h3>
+              <span class="status proven">Bug found and fixed</span>
+            </div>
+            <p class="muted">
+              Receipt validation accepted a payload when the round and
+              submission existed independently, even if the submission belonged
+              to another round or market. The fix binds receipt round,
+              submission, and market identity before journaling.
+            </p>
+          </li>
+          <li class="finding">
+            <div class="row">
+              <h3>A15: Submitted tx hash mismatch</h3>
+              <span class="status proven">Bug found and fixed</span>
+            </div>
+            <p class="muted">
+              A receipt with the correct round, submission, and market could
+              still use a different tx hash. The fix rejects receipts whose
+              submitted tx hash provenance does not match.
+            </p>
+          </li>
+          <li class="finding">
+            <div class="row">
+              <h3>A16: Reconciliation-failed stale recovery</h3>
+              <span class="status proven">Bug found and fixed</span>
+            </div>
+            <p class="muted">
+              Stale recovery could abandon a round after
+              <code>RECEIPT_RECONCILIATION_FAILED</code>, reopening the market
+              while chain effects were still unknown. The fix keeps that frozen
+              repair state pinned.
+            </p>
+          </li>
+          <li class="finding">
+            <div class="row">
+              <h3>A17: Duplicate ADL trade log index</h3>
+              <span class="status proven">Bug found and fixed</span>
+            </div>
+            <p class="muted">
+              A successful receipt could include two ADL trade updates with the
+              same log index, deriving duplicate ADL settlement identities. The
+              fix rejects duplicate log indices before publishing a receipt
+              fact.
+            </p>
+          </li>
+          <li class="finding">
+            <div class="row">
+              <h3>A18: Zero-effect successful receipt</h3>
+              <span class="status proven">Bug found and fixed</span>
+            </div>
+            <p class="muted">
+              A decoded successful receipt with no ADL trades and no position
+              or settlement effects could release the active ADL round. The fix
+              quarantines it as a reconciliation failure and keeps cancel-only
+              pinned.
+            </p>
+          </li>
+          <li class="finding">
+            <div class="row">
+              <h3>A19: Post-ADL reduce-only close capacity</h3>
+              <span class="status partial">Active</span>
+            </div>
+            <p class="muted">
+              The active hypothesis tests whether a reduce-only close order that
+              was valid before ADL can become stale after an ADL position update
+              and still seal after ADL-owned cancel-only releases.
+            </p>
+          </li>
+        </ul>
+      </section>
+
+      <section id="limits">
+        <h2>Limits and Next Gates</h2>
+        <div class="grid two">
+          <article class="plain-panel">
+            <h3>Replay limits</h3>
+            <ul>
+              <li>The full clean-policy 1M replay has not completed.</li>
+              <li>10M, 100M, and 1B milestones have not started.</li>
+              <li>No market-maker replay milestone has completed.</li>
+              <li>
+                Natural bounded replay did not trigger liquidation or ADL, so
+                price-transformed liquidation probes are still required.
+              </li>
+            </ul>
+          </article>
+          <article class="plain-panel">
+            <h3>Repository limits</h3>
+            <ul>
+              <li>
+                Replay findings are recorded in the orchestrator repository.
+              </li>
+              <li>
+                Exchange ADL fixes exist on the local
+                <code>replay/testnet-base</code> branch.
+              </li>
+              <li>
+                The exchange branch is intentionally not pushed from this
+                publication workflow.
+              </li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section id="evidence">
+        <h2>Evidence Index</h2>
+        <div class="panel">
+          <table>
+            <thead>
+              <tr>
+                <th>Area</th>
+                <th>Artifact</th>
+                <th>Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>M03 clean policy</td>
+                <td>
+                  <code>runs/m03-policy-cleanup-20260630-001/SUMMARY.md</code>
+                </td>
+                <td>
+                  1M baseline-executable plan selected; bounded 100-order F2
+                  proof passed.
+                </td>
+              </tr>
+              <tr>
+                <td>M03 streaming proof</td>
+                <td>
+                  <code>runs/m03-streaming-f2-proof-20260630-001/SUMMARY.md</code>
+                </td>
+                <td>
+                  200 orders placed, 44 fills, 11 sealed batches, 0 API
+                  failures.
+                </td>
+              </tr>
+              <tr>
+                <td>ADL stress chain</td>
+                <td><code>adl-stress/ADL_STRESS_CHAIN.md</code></td>
+                <td>
+                  A00 through A18 complete; A19 is the active reduce-only
+                  close-capacity stress.
+                </td>
+              </tr>
+              <tr>
+                <td>Exchange ADL fixes</td>
+                <td>
+                  <code>exchange-replay</code> local commits
+                  <code>4a433a36</code>, <code>4cd9d165</code>,
+                  <code>010d7df1</code>, <code>af2a0213</code>,
+                  <code>e17e84c2</code>
+                </td>
+                <td>
+                  Identity, tx-hash, stale-recovery, duplicate-log-index, and
+                  zero-effect receipt regressions fixed locally.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <footer>
+        Source of truth remains the local run artifacts and milestone files in
+        <code>mnx-replay-orchestrator</code>.
+      </footer>
+    </main>
+  </body>
+</html>

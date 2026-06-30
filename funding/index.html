@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MNX Funding Proposal</title>
+    <meta
+      name="description"
+      content="Concise technical proposal for MNX perpetual funding: premium sampling, funding indexes, equity-market sessions, liquidations, and ADL invariants."
+    >
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f5f7f5;
+        --paper: #ffffff;
+        --ink: #17201d;
+        --muted: #5d6963;
+        --line: #d9dfda;
+        --teal: #096b62;
+        --teal-soft: #e4f2ef;
+        --rust: #92400e;
+        --rust-soft: #fff2df;
+        --blue: #1d4ed8;
+        --blue-soft: #edf3ff;
+        --red: #9f2f2f;
+        --red-soft: #fff1f1;
+        --code: #f1f4f2;
+        --shadow: 0 16px 40px rgba(23, 32, 29, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        line-height: 1.55;
+      }
+
+      a {
+        color: var(--blue);
+        text-decoration-thickness: 1px;
+        text-underline-offset: 3px;
+      }
+
+      header {
+        background: #16211e;
+        color: #ffffff;
+        padding: 42px 24px 30px;
+        border-bottom: 6px solid #d97706;
+      }
+
+      .wrap {
+        width: min(1160px, calc(100vw - 40px));
+        margin: 0 auto;
+      }
+
+      .eyebrow {
+        margin: 0 0 14px;
+        color: #a7f3d0;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        max-width: 940px;
+        margin: 0;
+        font-size: clamp(2rem, 6vw, 4.6rem);
+        line-height: 0.98;
+        letter-spacing: 0;
+      }
+
+      .lede {
+        max-width: 910px;
+        margin: 18px 0 0;
+        color: #d9e3de;
+        font-size: clamp(1rem, 2vw, 1.18rem);
+      }
+
+      .toc {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 18px;
+      }
+
+      .toc a {
+        display: inline-flex;
+        min-height: 38px;
+        align-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        border-radius: 7px;
+        padding: 8px 11px;
+        color: #ffffff;
+        background: rgba(255, 255, 255, 0.08);
+        text-decoration: none;
+        font-size: 0.9rem;
+      }
+
+      main {
+        padding: 28px 0 58px;
+      }
+
+      section {
+        margin: 30px 0;
+      }
+
+      h2 {
+        margin: 0 0 13px;
+        font-size: clamp(1.45rem, 3vw, 2.2rem);
+        line-height: 1.16;
+        letter-spacing: 0;
+      }
+
+      h3 {
+        margin: 0 0 10px;
+        font-size: 1.08rem;
+        line-height: 1.25;
+        letter-spacing: 0;
+      }
+
+      p {
+        margin: 0 0 13px;
+      }
+
+      ul {
+        margin: 10px 0 0;
+        padding-left: 20px;
+      }
+
+      li {
+        margin: 7px 0;
+      }
+
+      code,
+      .mono {
+        font-family:
+          "SFMono-Regular",
+          Consolas,
+          "Liberation Mono",
+          Menlo,
+          monospace;
+        font-size: 0.94em;
+      }
+
+      code {
+        background: var(--code);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        overflow-wrap: anywhere;
+        padding: 0.12rem 0.32rem;
+      }
+
+      .panel,
+      table {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        box-shadow: var(--shadow);
+      }
+
+      .panel {
+        padding: 22px;
+      }
+
+      .plain-panel {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 22px;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .two {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .three {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .callout {
+        border-left: 5px solid var(--teal);
+        background: var(--teal-soft);
+        border-radius: 0 8px 8px 0;
+        padding: 16px 18px;
+        margin: 18px 0;
+      }
+
+      .callout.warn {
+        border-left-color: var(--rust);
+        background: var(--rust-soft);
+      }
+
+      .callout.bad {
+        border-left-color: var(--red);
+        background: var(--red-soft);
+      }
+
+      .metric {
+        display: grid;
+        gap: 6px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fbfdfc;
+        padding: 16px;
+      }
+
+      .metric .label {
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      .metric .value {
+        font-size: 1.08rem;
+        font-weight: 760;
+      }
+
+      .param-grid {
+        margin-top: 16px;
+      }
+
+      .formula {
+        display: block;
+        border: 1px solid var(--line);
+        border-left: 5px solid var(--teal);
+        border-radius: 8px;
+        background: #fbfdfc;
+        padding: 18px;
+        overflow-x: auto;
+        white-space: pre;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        overflow: hidden;
+        margin: 16px 0 24px;
+      }
+
+      th,
+      td {
+        border: 1px solid var(--line);
+        padding: 10px 12px;
+        vertical-align: top;
+        text-align: left;
+        font-size: 0.92rem;
+      }
+
+      th {
+        background: #edf3f1;
+        color: #25312e;
+        font-weight: 760;
+      }
+
+      tbody tr:nth-child(even) td {
+        background: #fbfcfb;
+      }
+
+      .tagline {
+        color: var(--muted);
+      }
+
+      .source-list {
+        columns: 2;
+        column-gap: 28px;
+        margin-bottom: 0;
+      }
+
+      footer {
+        margin-top: 40px;
+        color: var(--muted);
+        font-size: 0.88rem;
+      }
+
+      @media (max-width: 820px) {
+        .wrap {
+          width: min(100vw - 28px, 1160px);
+        }
+
+        header {
+          padding: 34px 18px 26px;
+        }
+
+        .two,
+        .three {
+          grid-template-columns: 1fr;
+        }
+
+        .source-list {
+          columns: 1;
+        }
+
+        th,
+        td {
+          font-size: 0.88rem;
+          padding: 9px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap">
+        <p class="eyebrow">MNX Proposal</p>
+        <h1>Funding design for perpetual markets</h1>
+        <p class="lede">
+          Recommendation: keep MNX's current funding-index settlement engine,
+          replace the weak trade-clearing-price rate input with deterministic
+          impact-depth samples, and fix session-boundary funding toggles before
+          U.S. equity markets carry real money.
+        </p>
+        <nav class="toc" aria-label="Page sections">
+          <a href="#recommendation">Recommendation</a>
+          <a href="#formula">Formula</a>
+          <a href="#sessions">Equity sessions</a>
+          <a href="#contracts">Contracts</a>
+          <a href="#risk">Liquidation and ADL</a>
+          <a href="#prior-art">Prior art</a>
+          <a href="#implementation">Implementation</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section id="recommendation">
+        <h2>Concrete recommendation</h2>
+        <div class="panel">
+          <p>
+            Do not redesign MNX funding settlement. Keep the current
+            <code>Perpetual.globalIndex</code>, account-local
+            <code>PackedAccountState.fundingIndex</code>,
+            <code>_loadContext(true)</code>,
+            <code>_settlePendingFunding</code>, and
+            <code>settleFundingForAccounts</code> model. The change is the rate
+            input: stop deriving normal funding from one batch clearing price
+            or a broad <code>setOffChainFundingRate</code> override. Compute
+            <code>FundingOracle.currentFundingRate</code> from deterministic
+            one-minute impact-depth samples against the contract oracle price.
+          </p>
+          <div class="grid three param-grid">
+            <div class="metric">
+              <span class="label">Window</span>
+              <span class="value">1 hour</span>
+              <span class="tagline">Keep <code>FUNDING_RATE_WINDOW</code>.</span>
+            </div>
+            <div class="metric">
+              <span class="label">Normal rate input</span>
+              <span class="value">1 depth sample / minute</span>
+              <span class="tagline">Replace clearing-price samples.</span>
+            </div>
+            <div class="metric">
+              <span class="label">Funding cap</span>
+              <span class="value">+/- 5 bps / hour</span>
+              <span class="tagline">10 bps only for approved liquid markets.</span>
+            </div>
+          </div>
+        </div>
+
+        <h3>Current MNX code path</h3>
+        <table aria-label="Current MNX funding code path">
+          <thead>
+            <tr>
+              <th>Layer</th>
+              <th>What exists now</th>
+              <th>Recommendation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Sample</td>
+              <td>
+                Regular FBA batches execute at one uniform clearing price.
+                <code>Perpetual.trade()</code> records exactly one funding
+                sample per regular batch:
+                <code>recordTrade(fundingTradePrice, context.price, settlementTimestamp)</code>.
+              </td>
+              <td>
+                Keep the provider-gated sample path, but replace
+                <code>fundingTradePrice</code> with an impact bid/ask depth
+                sample from the HTV1 book. No organic fill should be required
+                for funding measurement.
+              </td>
+            </tr>
+            <tr>
+              <td>Rate</td>
+              <td>
+                <code>FundingOracle.recordTrade</code> time-weights
+                <code>(tradePrice - oraclePrice) / oraclePrice</code>.
+                <code>setFundingRate()</code> averages the window, divides by
+                <code>24</code>, clamps to <code>maxFunding</code>, and stores a
+                per-second <code>currentFundingRate</code>.
+              </td>
+              <td>
+                Reuse the same one-hour accumulator, but accumulate a capped
+                impact premium:
+                <code>(max(impactBid-index,0)-max(index-impactAsk,0))/index</code>.
+                Keep <code>/24</code> and the per-window cap.
+              </td>
+            </tr>
+            <tr>
+              <td>Index</td>
+              <td>
+                <code>Perpetual._loadContext(true)</code> reads the oracle and
+                current funding rate, then lazily updates
+                <code>globalIndex.value += fundingRate * elapsedSeconds * oraclePrice</code>.
+                It is not advanced only once per window.
+              </td>
+              <td>
+                Keep this exact lazy global-index accrual path and keep
+                <code>updateGlobalIndex()</code> as the lightweight freshness
+                transaction.
+              </td>
+            </tr>
+            <tr>
+              <td>Account</td>
+              <td>
+                Each account stores its local funding baseline in
+                <code>PackedAccountState.fundingIndex</code>.
+                <code>_settlePendingFunding</code> compares local vs global,
+                credits/debits isolated margin, floors margin at zero, and
+                emits <code>SettlementAmountNotPaidCompletely</code> for any
+                forgiven debit.
+              </td>
+              <td>
+                Keep this settlement math. Risk gates should continue to
+                simulate the same debit before accepting risk-increasing
+                actions.
+              </td>
+            </tr>
+            <tr>
+              <td>Keeper</td>
+              <td>
+                <code>funding-settlement-keeper</code> settles every open
+                perpetual holder through <code>settleFundingForAccounts</code>,
+                chunked at 25 accounts per transaction with retry handling.
+              </td>
+              <td>
+                Keep the hourly settle-all pass after each funding-rate update.
+                Add smaller fallback chunks only if gas or account-count data
+                requires it.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table aria-label="Recommended launch parameters">
+          <thead>
+            <tr>
+              <th>Parameter</th>
+              <th>Launch value</th>
+              <th>Reason</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>fundingWindowSeconds</code></td>
+              <td><code>3600</code></td>
+              <td>Matches current <code>FundingOracle.FUNDING_RATE_WINDOW</code> and user expectation.</td>
+            </tr>
+            <tr>
+              <td><code>fundingSampleIntervalSeconds</code></td>
+              <td><code>60</code>, deterministic jitter inside each bucket</td>
+              <td>Avoids 200 ms auction spam while preventing predictable minute-boundary manipulation.</td>
+            </tr>
+            <tr>
+              <td><code>fundingImpactNotional</code></td>
+              <td><code>10,000 USDC</code> default; <code>2,500</code> testnet minimum; <code>100,000</code> for approved FX / major index markets</td>
+              <td>Close to QFEX default, but tunable for MNX's thinner launch books.</td>
+            </tr>
+            <tr>
+              <td><code>premiumToWindowDivisor</code></td>
+              <td><code>24</code></td>
+              <td>Preserves current MNX convergence speed and old TickSpread daily convergence shape.</td>
+            </tr>
+            <tr>
+              <td><code>maxFundingPremium</code></td>
+              <td><code>+/- 1.00%</code> per accepted sample</td>
+              <td>Caps bad samples without clipping normal spreads.</td>
+            </tr>
+            <tr>
+              <td><code>maxFundingRatePerWindow</code></td>
+              <td><code>+/- 0.05%</code> per hour default; <code>+/- 0.10%</code> only after market-specific approval</td>
+              <td>Current configs commonly use 10 bps; default lower for launch. Every market must still satisfy <code>maxFundingRate * maxLeverage &lt;= 0.5</code> and <code>maxFundingRate &lt;= mmr / 2</code>.</td>
+            </tr>
+            <tr>
+              <td><code>interestRateComponent</code></td>
+              <td><code>0</code></td>
+              <td>USDC-collateralized MNX does not need a venue interest spread in v1.</td>
+            </tr>
+            <tr>
+              <td><code>missingDepthPolicy</code></td>
+              <td>zero-premium heartbeat plus alert</td>
+              <td>Do not charge funding from one-sided or empty depth; do keep freshness observable.</td>
+            </tr>
+            <tr>
+              <td><code>fundingProducts</code></td>
+              <td>perpetual swaps only</td>
+              <td>Binary and numeric futures should keep <code>maxFundingRate = 0</code>.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="formula">
+        <h2>Funding formula</h2>
+        <p>
+          Use the impact-bid / impact-ask premium used by QFEX, dYdX, Binance,
+          and related venues, but normalize it to MNX's one-hour window and
+          conservative launch caps.
+        </p>
+
+        <div class="formula mono">raw_premium =
+  (max(impact_bid - index_price, 0)
+   - max(index_price - impact_ask, 0)) / index_price
+
+sample_premium = clamp(raw_premium, -maxFundingPremium, maxFundingPremium)
+window_premium = time_weighted_average(sample_premium over active seconds)
+funding_rate_window = clamp(window_premium / 24,
+                            -maxFundingRatePerWindow,
+                            +maxFundingRatePerWindow)</div>
+
+        <div class="callout">
+          <p>
+            If <code>impact_bid &lt;= index_price &lt;= impact_ask</code>,
+            funding is zero. A normal spread around the fair index should not
+            create funding; persistent directional pressure should.
+          </p>
+        </div>
+      </section>
+
+      <section id="sessions">
+        <h2>U.S. equity sessions</h2>
+        <div class="grid two">
+          <div class="panel">
+            <h3>Launch rule</h3>
+            <p>
+              For U.S.-listed equities and indexes, MNX v1 should accrue
+              funding only during the regular U.S. equity session: 9:30 AM to
+              4:00 PM New York time on trading days, with holidays and early
+              closes respected. Overnight, weekends, and holidays must record
+              zero-accrual funding heartbeats, not smear Friday premium across
+              closed-market time.
+            </p>
+          </div>
+          <div class="panel">
+            <h3>Trading outside session</h3>
+            <p>
+              Trading may remain available with after-hours reference prices,
+              but funding should be frozen unless MNX has a market-specific
+              reference-source policy for that session. While frozen, tighten
+              open-interest growth, require fresh risk marks, and allow
+              cancels, reductions, margin adds, liquidation, and ADL.
+            </p>
+          </div>
+        </div>
+
+        <table aria-label="Funding session matrix">
+          <thead>
+            <tr>
+              <th>Market type</th>
+              <th>Funding session</th>
+              <th>Reopen behavior</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Crypto, FX, metals with continuous reference</td>
+              <td><code>always</code></td>
+              <td>Normal hourly windows.</td>
+            </tr>
+            <tr>
+              <td>U.S. equities and equity indexes</td>
+              <td><code>us_equity_regular</code></td>
+              <td>Settle to close boundary, freeze accrual, reset accumulator at next open.</td>
+            </tr>
+            <tr>
+              <td>Approved extended-hours equities</td>
+              <td><code>us_equity_extended</code> later only</td>
+              <td>4:00 AM to 8:00 PM ET after reference and depth policy is approved.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="contracts">
+        <h2>Contracts</h2>
+        <p>
+          The contract change should be small: preserve settlement, change the
+          premium source, and make emergency overrides auditable.
+        </p>
+
+        <table aria-label="Contract deltas">
+          <thead>
+            <tr>
+              <th>Area</th>
+              <th>Keep</th>
+              <th>Change</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>State</td>
+              <td>
+                <code>FundingOracle.currentFundingRate</code>,
+                <code>currentFundingWindow</code>, <code>windowSet</code>,
+                <code>Perpetual.globalIndex</code>, and per-account
+                <code>fundingIndex</code>.
+              </td>
+              <td>
+                Add sample metadata only if needed for replay/audit:
+                impact notional, depth-valid flag, config sequence, and sample
+                timestamp. Do not add a second funding index.
+              </td>
+            </tr>
+            <tr>
+              <td>Sample entrypoint</td>
+              <td>
+                Provider gating: today the provider is the
+                <code>Perpetual</code>, and only it calls
+                <code>FundingOracle.recordTrade</code>.
+              </td>
+              <td>
+                Replace or extend <code>recordTrade</code> with
+                <code>recordImpactSample(impactBid, impactAsk, oraclePrice, timestamp, flags)</code>.
+                The oracle price should still be the contract-accepted price,
+                not a separate submitter-provided mark.
+              </td>
+            </tr>
+            <tr>
+              <td>Window close</td>
+              <td>
+                <code>Perpetual.setFundingRate()</code> first calls
+                <code>_loadContext(true)</code> to settle the old per-second
+                rate into <code>globalIndex</code>, then calls
+                <code>FundingOracle.setFundingRate()</code>.
+              </td>
+              <td>
+                Keep that ordering. The rate update changes the next
+                per-second rate; index accrual remains lazy through
+                <code>_loadContext(true)</code>.
+              </td>
+            </tr>
+            <tr>
+              <td>Override path</td>
+              <td>
+                Keep an owner/operator emergency path for stuck markets.
+              </td>
+              <td>
+                Treat <code>setOffChainFundingRate</code> as break-glass only:
+                require a reason/event, alerting, max duration, and postmortem
+                note. It should not be the ordinary funding-rate setter.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout warn">
+          <p>
+            The normal production path should be reproducible from accepted
+            impact samples, <code>FundingRateUpdate</code> events, and
+            <code>GlobalIndexUpdate</code> events. A human-entered funding rate
+            is an incident response tool, not market design.
+          </p>
+        </div>
+      </section>
+
+      <section id="risk">
+        <h2>Liquidation and ADL invariants</h2>
+        <div class="grid two">
+          <div class="panel">
+            <h3>Settlement ordering</h3>
+            <p>
+              Preserve the current invariant: position-mutating contract paths
+              apply funding before final account-state checks, and HTV1
+              preflight mirrors pending debits with
+              <code>computePendingFundingDebitRaw</code> before accepting
+              risk-increasing orders. Cancels, margin adds, closes, liquidation,
+              and ADL must remain available even when settlement floors margin.
+            </p>
+          </div>
+          <div class="panel">
+            <h3>ADL capacity</h3>
+            <p>
+              Funding moves the same isolated margin that liquidation and ADL
+              consume. The ADL planner already uses funding-adjusted balances;
+              keep that and size <code>maxFunding</code> so one window cannot
+              consume more margin than the liquidation and backstop waterfall can
+              process between hourly settle-all passes.
+            </p>
+          </div>
+        </div>
+
+        <table aria-label="Risk invariants">
+          <thead>
+            <tr>
+              <th>Invariant</th>
+              <th>Implementation rule</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Funding cannot hide debt.</td>
+              <td>Risk-increasing actions must apply on-chain funding or simulate the same index debit before admission.</td>
+            </tr>
+            <tr>
+              <td>Funding settlement cannot block repair.</td>
+              <td>Funding settlement should not revert for underfunded accounts; it should floor margin, emit write-off telemetry, and route the account to liquidation / ADL.</td>
+            </tr>
+            <tr>
+              <td>ADL takers are evaluated after funding.</td>
+              <td>Planner ranking must continue to use funding-adjusted balances, matching <code>_settlePendingFunding</code>.</td>
+            </tr>
+            <tr>
+              <td>Closed-session accrual cannot surprise reopen.</td>
+              <td>Equity-market funding status changes must settle the current index to the boundary or fail closed; never silently skip settlement.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="prior-art">
+        <h2>Prior-art compression</h2>
+        <table aria-label="Funding prior art">
+          <thead>
+            <tr>
+              <th>Source</th>
+              <th>Keep</th>
+              <th>Do not copy</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Quiver / TickSpread</td>
+              <td>Funding is part of position accounting and changes bankruptcy / liquidation price.</td>
+              <td>Centralized <code>schedule_funding</code> rate messages from a watcher.</td>
+            </tr>
+            <tr>
+              <td>QFEX</td>
+              <td>Impact bid/ask premium, zero interest, per-market trading/funding hours, cross-account liquidation lens.</td>
+              <td>Recency weighting and 24/5 equity funding before MNX has strong reference depth.</td>
+            </tr>
+            <tr>
+              <td>Hyperliquid</td>
+              <td>Hourly funding, premium against oracle price, robust mark discipline.</td>
+              <td>Very high max funding caps for MNX's thinner launch markets.</td>
+            </tr>
+            <tr>
+              <td>dYdX / Binance</td>
+              <td>Impact prices and caps tied to market risk parameters.</td>
+              <td>Interest-rate component in v1.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="implementation">
+        <h2>Implementation path</h2>
+        <div class="grid three">
+          <div class="plain-panel">
+            <h3>1. Shadow sample</h3>
+            <p>
+              Add an HTV1 shadow sampler that records one impact bid/ask sample
+              per minute. Compare its window output against today's
+              <code>recordTrade</code> clearing-price output for at least two
+              weeks before switching production funding.
+            </p>
+          </div>
+          <div class="plain-panel">
+            <h3>2. Swap input</h3>
+            <p>
+              Replace or extend <code>FundingOracle.recordTrade</code> with an
+              impact-sample entrypoint. Keep
+              <code>Perpetual.setFundingRate()</code> ordering:
+              <code>_loadContext(true)</code> first, then compute the next
+              per-second rate.
+            </p>
+          </div>
+          <div class="plain-panel">
+            <h3>3. Operate</h3>
+            <p>
+              Keep <code>funding-rate-updater</code>,
+              <code>updateGlobalIndex()</code> refreshes, and
+              <code>funding-settlement-keeper</code> hourly settle-all batches.
+              Make <code>setOffChainFundingRate</code> alerting and duration
+              limits mandatory for emergency use.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout bad">
+          <p>
+            Launch blocker: the current after-hours funding disable path may
+            emit <code>FundingStatusSettlementSkipped</code> if index refresh
+            reverts, discarding unsettled accrual. The replacement must settle
+            to the session boundary or fail closed before toggling accrual.
+          </p>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>Sources</h2>
+        <ul class="source-list">
+          <li><a href="https://docs.qfex.com/qfex/funding">QFEX funding</a></li>
+          <li><a href="https://docs.dydx.xyz/concepts/trading/funding">dYdX funding</a></li>
+          <li><a href="https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding">Hyperliquid funding</a></li>
+          <li><a href="https://www.binance.com/en/support/faq/detail/360033525031">Binance USD-M funding</a></li>
+          <li><a href="https://hyperliquid.gitbook.io/hyperliquid-docs/trading/auto-deleveraging">Hyperliquid ADL</a></li>
+          <li>MNX exchange repo: <code>FundingOracle.sol</code>, <code>Perpetual.sol</code>, <code>Guardian.sol</code>, <code>runtime-funding-settlement.ts</code>, <code>us-equity-session.ts</code>.</li>
+          <li>Futarchy repos: <code>watcher/funding_watcher.py</code>, <code>engine/matchengine/src/libme/me_liquidation.c</code>, <code>engine/README.md</code>.</li>
+        </ul>
+      </section>
+
+      <footer>
+        Published for MNX research. Recommended default is intentionally
+        conservative until production depth, holder count, and ADL telemetry
+        prove higher caps are safe.
+      </footer>
+    </main>
+  </body>
+</html>

@@ -1,13 +1,13 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>MNX Research</title>
     <meta
       name="description"
       content="Research notes and technical reports for MNX market structure, risk, and protocol behavior."
-    />
+    >
     <style>
       :root {
         color-scheme: light;
@@ -253,10 +253,54 @@
       <main>
         <div class="section-head">
           <h2>Published Pages</h2>
-          <span class="count">3 reports</span>
+          <span class="count">5 reports</span>
         </div>
 
         <ul class="report-list">
+          <li class="report">
+            <a href="/simulation-findings" aria-label="Open MNX simulation findings">
+              <div>
+                <h3 class="report-title">
+                  MNX Simulation Findings
+                </h3>
+                <p class="report-summary">
+                  Current replay and ADL stress-test results: clean 1M planning,
+                  bounded local-chain proofs, liquidation observations, and
+                  active ADL findings.
+                </p>
+                <div class="meta">
+                  <span class="tag">simulation</span>
+                  <span class="tag">replay</span>
+                  <span class="tag important">partial 1M</span>
+                  <span class="tag">ADL stress</span>
+                </div>
+              </div>
+              <span class="open" aria-hidden="true">&rarr;</span>
+            </a>
+          </li>
+
+          <li class="report">
+            <a href="/funding" aria-label="Open MNX funding proposal">
+              <div>
+                <h3 class="report-title">
+                  MNX Funding Proposal
+                </h3>
+                <p class="report-summary">
+                  Concrete funding design for MNX perpetuals: impact-price
+                  sampling, funding indexes, U.S. equity sessions, liquidation
+                  ordering, and ADL-safe launch parameters.
+                </p>
+                <div class="meta">
+                  <span class="tag">funding</span>
+                  <span class="tag">perpetuals</span>
+                  <span class="tag important">5 bps/hr cap</span>
+                  <span class="tag">equity sessions</span>
+                </div>
+              </div>
+              <span class="open" aria-hidden="true">&rarr;</span>
+            </a>
+          </li>
+
           <li class="report">
             <a href="/adl" aria-label="Open ADL replacement capacity invariants">
               <div>
@@ -268,7 +312,7 @@
                   settings, and the practical IMR recommendation for 5% MTB
                   markets.
                 </p>
-                <div class="meta" aria-label="Report topics">
+                <div class="meta">
                   <span class="tag">ADL</span>
                   <span class="tag">replacement capacity</span>
                   <span class="tag important">5% MTB</span>
@@ -290,7 +334,7 @@
                   Kafka and Redpanda fanouts, projections, and the equivalent
                   MNX HTV1 event flow.
                 </p>
-                <div class="meta" aria-label="Report topics">
+                <div class="meta">
                   <span class="tag">engine egress</span>
                   <span class="tag">orderbook APIs</span>
                   <span class="tag">MNX HTV1</span>
@@ -312,7 +356,7 @@
                   Ikon, and Hyperliquid, focused on funding, liquidations, ADL,
                   oracle updates, and execution guarantees.
                 </p>
-                <div class="meta" aria-label="Report topics">
+                <div class="meta">
                   <span class="tag">contracts</span>
                   <span class="tag">StarkEx</span>
                   <span class="tag">IDEX/Kuma Ikon</span>
