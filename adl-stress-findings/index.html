@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MNX ADL Stress Findings</title>
+    <meta
+      name="description"
+      content="Findings from the MNX ADL stress loop on branch codex/adl-stress-findings-20260630."
+    >
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4f6f7;
+        --paper: #ffffff;
+        --ink: #15191b;
+        --muted: #5b656a;
+        --line: #d4dde1;
+        --line-strong: #afbcc2;
+        --green: #146c43;
+        --green-soft: #e8f6ee;
+        --teal: #0b6b61;
+        --teal-soft: #e4f3f1;
+        --blue: #2458c8;
+        --blue-soft: #edf3ff;
+        --amber: #985c12;
+        --amber-soft: #fff4df;
+        --red: #9f2d2d;
+        --red-soft: #fff1f1;
+        --violet: #5b4ec4;
+        --violet-soft: #f0edff;
+        --code: #eff3f4;
+        --shadow: 0 18px 42px rgba(21, 25, 27, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0)),
+          var(--bg);
+        color: var(--ink);
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        line-height: 1.55;
+      }
+
+      a {
+        color: var(--blue);
+        text-underline-offset: 3px;
+      }
+
+      header {
+        background: #17201d;
+        color: #ffffff;
+        border-bottom: 6px solid #17a394;
+        padding: 40px 24px 30px;
+      }
+
+      .wrap {
+        width: min(1180px, calc(100vw - 40px));
+        margin: 0 auto;
+      }
+
+      .eyebrow {
+        margin: 0 0 14px;
+        color: #99f6e4;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        max-width: 1040px;
+        margin: 0;
+        font-size: clamp(2rem, 5.2vw, 4.7rem);
+        line-height: 0.98;
+        letter-spacing: 0;
+      }
+
+      .lede {
+        max-width: 940px;
+        margin: 18px 0 0;
+        color: #d9e3de;
+        font-size: clamp(1rem, 2vw, 1.2rem);
+      }
+
+      .toc {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 20px;
+      }
+
+      .toc a {
+        display: inline-flex;
+        min-height: 38px;
+        align-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        border-radius: 7px;
+        padding: 8px 11px;
+        color: #ffffff;
+        background: rgba(255, 255, 255, 0.08);
+        text-decoration: none;
+        font-size: 0.9rem;
+      }
+
+      main {
+        padding: 28px 0 60px;
+      }
+
+      section {
+        margin: 30px 0;
+      }
+
+      h2 {
+        margin: 0 0 13px;
+        font-size: clamp(1.45rem, 3vw, 2.25rem);
+        line-height: 1.16;
+        letter-spacing: 0;
+      }
+
+      h3 {
+        margin: 0 0 9px;
+        font-size: 1.08rem;
+        line-height: 1.25;
+        letter-spacing: 0;
+      }
+
+      p {
+        margin: 0 0 13px;
+      }
+
+      ul {
+        margin: 10px 0 0;
+        padding-left: 20px;
+      }
+
+      li {
+        margin: 7px 0;
+      }
+
+      code,
+      .mono {
+        font-family:
+          "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        font-size: 0.94em;
+      }
+
+      code {
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--code);
+        padding: 0.12rem 0.32rem;
+      }
+
+      .panel {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        box-shadow: var(--shadow);
+        padding: 22px;
+      }
+
+      .plain-panel {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 22px;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .two {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .three {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .four {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .metric {
+        min-height: 150px;
+      }
+
+      .metric .label {
+        margin: 0 0 8px;
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      .metric .value {
+        margin: 0;
+        font-size: clamp(1.45rem, 3vw, 2.15rem);
+        font-weight: 820;
+        line-height: 1.05;
+      }
+
+      .metric .note {
+        margin: 10px 0 0;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .status {
+        display: inline-flex;
+        align-items: center;
+        min-height: 28px;
+        border-radius: 999px;
+        padding: 0 11px;
+        font-size: 0.78rem;
+        font-weight: 800;
+      }
+
+      .status.good {
+        background: var(--green-soft);
+        color: var(--green);
+      }
+
+      .status.watch {
+        background: var(--amber-soft);
+        color: var(--amber);
+      }
+
+      .status.bad {
+        background: var(--red-soft);
+        color: var(--red);
+      }
+
+      .status.info {
+        background: var(--blue-soft);
+        color: var(--blue);
+      }
+
+      .status.research {
+        background: var(--violet-soft);
+        color: var(--violet);
+      }
+
+      .callout {
+        border-left: 5px solid var(--teal);
+        background: var(--teal-soft);
+        padding: 16px 18px;
+      }
+
+      .callout.warn {
+        border-left-color: var(--amber);
+        background: var(--amber-soft);
+      }
+
+      .callout.danger {
+        border-left-color: var(--red);
+        background: var(--red-soft);
+      }
+
+      .top-gap {
+        margin-top: 16px;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--paper);
+      }
+
+      table {
+        width: 100%;
+        min-width: 760px;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid var(--line);
+        padding: 12px 14px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        background: #eef3f4;
+        color: #2d383d;
+        font-size: 0.78rem;
+        font-weight: 850;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .severity {
+        display: inline-flex;
+        min-height: 26px;
+        align-items: center;
+        border-radius: 999px;
+        padding: 0 10px;
+        font-size: 0.76rem;
+        font-weight: 850;
+        white-space: nowrap;
+      }
+
+      .severity.critical {
+        background: var(--red-soft);
+        color: var(--red);
+      }
+
+      .severity.high {
+        background: var(--amber-soft);
+        color: var(--amber);
+      }
+
+      .severity.medium {
+        background: var(--blue-soft);
+        color: var(--blue);
+      }
+
+      .timeline {
+        display: grid;
+        gap: 12px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .timeline li {
+        margin: 0;
+        border-left: 4px solid var(--line-strong);
+        background: var(--paper);
+        border-radius: 0 8px 8px 0;
+        padding: 14px 16px;
+      }
+
+      .timeline strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      footer {
+        border-top: 1px solid var(--line);
+        margin-top: 42px;
+        padding-top: 18px;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      @media (max-width: 900px) {
+        .two,
+        .three,
+        .four {
+          grid-template-columns: 1fr;
+        }
+
+        .wrap {
+          width: min(100% - 28px, 1180px);
+        }
+
+        header {
+          padding: 32px 14px 26px;
+        }
+
+        .panel,
+        .plain-panel {
+          padding: 18px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap">
+        <p class="eyebrow">MNX Research</p>
+        <h1>ADL Stress Findings</h1>
+        <p class="lede">
+          Running summary for the ADL stress loop on
+          <code>codex/adl-stress-findings-20260630</code>. The loop is
+          intentionally incremental: one focused invariant, one red test, one
+          fix, one full-suite verification, then a new analysis step.
+        </p>
+        <nav class="toc" aria-label="Page sections">
+          <a href="#current-state">Current State</a>
+          <a href="#serious-findings">Serious Findings</a>
+          <a href="#latest-hardening">Latest Hardening</a>
+          <a href="#method">Method</a>
+          <a href="#next">Next</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section id="current-state">
+        <h2>Current State</h2>
+        <div class="grid four">
+          <article class="panel metric">
+            <p class="label">Completed Stress Files</p>
+            <p class="value">54</p>
+            <p class="note">
+              A01 through A54 are complete in
+              <code>adl-stress/ADL_STRESS_CHAIN.md</code>.
+            </p>
+          </article>
+          <article class="panel metric">
+            <p class="label">Latest Full ADL Suite</p>
+            <p class="value">79 pass</p>
+            <p class="note">
+              A54 verification: <code>79 pass</code>, <code>0 fail</code>,
+              <code>632 expect()</code> calls.
+            </p>
+          </article>
+          <article class="panel metric">
+            <p class="label">Latest Exchange Fix</p>
+            <p class="value mono">16c9b339</p>
+            <p class="note">
+              Rejects ADL receipts with invalid receipt
+              <code>blockNumber</code> cursors.
+            </p>
+          </article>
+          <article class="panel metric">
+            <p class="label">Active Step</p>
+            <p class="value">A55</p>
+            <p class="note">
+              Invalid top-level ADL receipt <code>txHash</code> cursor stress
+              test.
+            </p>
+          </article>
+        </div>
+
+        <div class="panel top-gap">
+          <h3>Status</h3>
+          <p>
+            A54 is complete and classified as <strong>bug found and
+            fixed</strong>. A55 is active and targets a still-different
+            receipt provenance risk: a malformed but internally consistent
+            transaction hash should be rejected before ADL receipt effects,
+            source-event keys, or chain cursors are journaled.
+          </p>
+          <p>
+            "Fixed" here means the focused stress first reproduced the bug,
+            the exchange runtime was changed, a focused regression passed, the
+            full ADL state suite passed, and the exchange plus orchestrator
+            evidence was committed and pushed on this branch.
+          </p>
+          <p>
+            Latest research evidence lives in the replay orchestrator under
+            <code>runs/20260701-adl-a54-stress/</code> and
+            <code>runs/20260701-adl-a54-analysis/</code>.
+          </p>
+        </div>
+      </section>
+
+      <section id="serious-findings">
+        <h2>Most Serious Bugs Found</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Class</th>
+                <th>Severity</th>
+                <th>What Was Wrong</th>
+                <th>Representative Fixes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Child-vault balance effects</td>
+                <td><span class="severity critical">Critical</span></td>
+                <td>
+                  ADL receipts could apply child-vault position/PnL state while
+                  skipping MarginBank balance effects for nonzero ADL funds
+                  flow or position margin deltas.
+                </td>
+                <td>
+                  A29 <code>7d178442</code>, A30 <code>a5ee9ed9</code>
+                </td>
+              </tr>
+              <tr>
+                <td>Incomplete receipt evidence</td>
+                <td><span class="severity critical">Critical</span></td>
+                <td>
+                  Successful ADL receipts could apply decoded trade, position,
+                  settlement, or participant effects without the required
+                  event-name or participant-address evidence.
+                </td>
+                <td>
+                  A49 <code>3e388fe1</code>, A50 <code>026d7a74</code>, A51
+                  <code>b3444367</code>, A52 <code>b78e26a1</code>
+                </td>
+              </tr>
+              <tr>
+                <td>Cross-family receipt contamination</td>
+                <td><span class="severity high">High</span></td>
+                <td>
+                  ADL receipt observation accepted liquidation, regular batch,
+                  backstop inheritance, or forbidden metadata in otherwise
+                  ADL-shaped receipts.
+                </td>
+                <td>
+                  A33 <code>a083ea79</code>, A42, A43, A46
+                  <code>1092b457</code>, A47 <code>d66b6b23</code>
+                </td>
+              </tr>
+              <tr>
+                <td>Receipt cursor and provenance gaps</td>
+                <td><span class="severity high">High</span></td>
+                <td>
+                  Duplicate or invalid log indexes, mismatched decoded event
+                  transaction hashes, and invalid receipt block cursors could
+                  reach journaling paths before rejection.
+                </td>
+                <td>
+                  A31 <code>975b4102</code>, A35 <code>3a9f9a69</code>, A36
+                  <code>9857ef4d</code>, A53 <code>663866e8</code>, A54
+                  <code>16c9b339</code>
+                </td>
+              </tr>
+              <tr>
+                <td>Plan reconciliation and degenerate trades</td>
+                <td><span class="severity high">High</span></td>
+                <td>
+                  Receipt application needed stricter checks that observed ADL
+                  quantity, direction, count, price, and funds-flow semantics
+                  matched the plan and stayed economically meaningful.
+                </td>
+                <td>
+                  A37 <code>94472499</code>, A39, A40, A41, A45
+                  <code>545a075a</code>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="latest-hardening">
+        <h2>Latest Receipt Hardening Series</h2>
+        <p>
+          A49 through A54 were all classified as <strong>bug found and
+          fixed</strong>. Each one keeps failed receipts from journaling local
+          effects, leaves the ADL submission non-applied, and keeps the active
+          ADL round plus ADL-owned cancel-only pin in place for retry or
+          operator investigation.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Step</th>
+                <th>Invariant</th>
+                <th>Exchange Commit</th>
+                <th>Full Suite Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>A49</td>
+                <td>
+                  Decoded ADL trade updates require <code>TradeExecuted</code>
+                  or <code>ADLTradeExecuted</code> evidence.
+                </td>
+                <td><code>3e388fe1</code></td>
+                <td><code>74 pass</code>, <code>0 fail</code></td>
+              </tr>
+              <tr>
+                <td>A50</td>
+                <td>
+                  Decoded position updates require
+                  <code>AccountPositionUpdate</code> evidence.
+                </td>
+                <td><code>026d7a74</code></td>
+                <td><code>75 pass</code>, <code>0 fail</code></td>
+              </tr>
+              <tr>
+                <td>A51</td>
+                <td>
+                  Decoded settlement updates require
+                  <code>AccountSettlementUpdate</code> evidence.
+                </td>
+                <td><code>b3444367</code></td>
+                <td><code>76 pass</code>, <code>0 fail</code></td>
+              </tr>
+              <tr>
+                <td>A52</td>
+                <td>
+                  Every decoded ADL trade/effect participant must appear in
+                  <code>participant_addresses</code>.
+                </td>
+                <td><code>b78e26a1</code></td>
+                <td><code>77 pass</code>, <code>0 fail</code></td>
+              </tr>
+              <tr>
+                <td>A53</td>
+                <td>
+                  Decoded ADL receipt updates must use non-negative integer
+                  <code>log_index</code> cursors.
+                </td>
+                <td><code>663866e8</code></td>
+                <td><code>78 pass</code>, <code>0 fail</code></td>
+              </tr>
+              <tr>
+                <td>A54</td>
+                <td>
+                  Receipt-level <code>blockNumber</code> must be a
+                  non-negative integer string.
+                </td>
+                <td><code>16c9b339</code></td>
+                <td><code>79 pass</code>, <code>0 fail</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="method">
+        <h2>Method</h2>
+        <div class="grid three">
+          <article class="plain-panel">
+            <span class="status research">Analysis</span>
+            <h3>Choose One New Failure Mode</h3>
+            <p>
+              Each analysis file reads the previous result and selects a
+              meaningfully different invariant. The point is to avoid retesting
+              the same guard under a new name.
+            </p>
+          </article>
+          <article class="plain-panel">
+            <span class="status bad">Red</span>
+            <h3>Prove the Gap</h3>
+            <p>
+              The focused stress test is expected to fail before the fix. The
+              failure is useful only if it shows the bad receipt applying or
+              journaling effects that should have been rejected.
+            </p>
+          </article>
+          <article class="plain-panel">
+            <span class="status good">Green</span>
+            <h3>Fix and Regress</h3>
+            <p>
+              The runtime fix must make the focused test pass, preserve
+              retry-safe ADL state, and keep the full ADL state suite green
+              before the next analysis begins.
+            </p>
+          </article>
+        </div>
+        <div class="callout warn top-gap">
+          <p>
+            The loop is intentionally not bounded to a fixed number of steps.
+            A55 is active now. More AXX steps should continue while the
+            analysis can identify a distinct high-value invariant, malformed
+            receipt shape, or runtime sequencing risk.
+          </p>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>Next</h2>
+        <ul class="timeline">
+          <li>
+            <strong>A55 active: invalid receipt tx-hash cursor.</strong>
+            Test an internally consistent but non-canonical ADL receipt
+            <code>txHash</code>. It should fail before any source-event keys,
+            chain cursors, receipt-applied facts, or local effects are
+            journaled.
+          </li>
+          <li>
+            <strong>A55 analysis after the stress run.</strong>
+            Decide whether the next distinct class should target tx-hash
+            normalization, block/log cursor ordering, receipt idempotency,
+            replay recovery, or ADL round state transitions.
+          </li>
+          <li>
+            <strong>Continue with one focused stress at a time.</strong>
+            The strongest pattern so far has been small, adversarial receipts
+            that isolate a single omitted pre-apply guard.
+          </li>
+        </ul>
+      </section>
+
+      <footer>
+        Branch: <code>codex/adl-stress-findings-20260630</code>. Generated as a
+        static report for <code>mnx-research</code>. Last source state:
+        A54 complete, A55 active, 2026-07-01.
+      </footer>
+    </main>
+  </body>
+</html>

@@ -7,6 +7,7 @@ https://mnx-research.vercel.app
 ## Pages
 
 - `/simulation-findings` - MNX Simulation Findings
+- `/adl-stress-findings` - MNX ADL Stress Findings
 - `/adl` - ADL Replacement-Capacity Invariants
 - `/funding` - MNX Funding Proposal
 - `/engine-egress` - Engine Egress: Quiver/TickSpread vs MNX
