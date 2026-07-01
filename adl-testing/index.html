@@ -379,11 +379,15 @@
         <p class="eyebrow">MNX Research</p>
         <h1>ADL and Liquidation Testing</h1>
         <p class="lede">
-          Summary of the targeted stress tests behind the ADL/liquidation work:
-          what was tested, where the harness lives, which branch was pushed,
-          and how to rerun the focused checks.
+          What actually ran, what was synthetic, what touched a local
+          blockchain, how liquidation or ADL was manufactured, and what scale
+          the replay work reached.
         </p>
         <nav class="toc" aria-label="Page sections">
+          <a href="#start-here">Start Here</a>
+          <a href="#scale">Scale</a>
+          <a href="#trigger-mechanics">Trigger Mechanics</a>
+          <a href="#blockchain">Blockchain Boundary</a>
           <a href="#branch-state">Branch State</a>
           <a href="#harness">Harness</a>
           <a href="#coverage">Coverage</a>
@@ -395,6 +399,267 @@
     </header>
 
     <main class="wrap">
+      <section id="start-here">
+        <h2>Start Here</h2>
+        <div class="grid four">
+          <article class="panel metric">
+            <p class="label">Not One Big E2E</p>
+            <p class="value">3 layers</p>
+            <p class="note">
+              Contract unit tests, synthetic exchange-runtime tests, and
+              disposable local-chain replay runs.
+            </p>
+          </article>
+          <article class="panel metric">
+            <p class="label">ADL Runtime Suite</p>
+            <p class="value">79 pass</p>
+            <p class="note">
+              Latest focused synthetic ADL state suite after A54:
+              <code>632 expect()</code> calls.
+            </p>
+          </article>
+          <article class="panel metric">
+            <p class="label">Largest Clean Replay</p>
+            <p class="value">10k</p>
+            <p class="note">
+              10,000 public API orders passed through a local-chain stack with
+              3,557 fills and no liquidation/ADL outcomes.
+            </p>
+          </article>
+          <article class="panel metric">
+            <p class="label">Largest Attempt</p>
+            <p class="value">65k</p>
+            <p class="note">
+              The 100k replay reached a clean 65k-order checkpoint before an
+              order-expiration wakeup bug stopped it.
+            </p>
+          </article>
+        </div>
+
+        <div class="callout top-gap">
+          <p>
+            The honest summary: the ADL/liquidation work is strong targeted
+            regression coverage, not a completed production-scale liquidation
+            campaign. Contract tests prove ADL behavior with real Solidity on
+            local Hardhat. Runtime tests prove ADL planning, receipt rejection,
+            journaling, and cancel-only state in synthetic exchange state.
+            Local-chain replay proves order placement, relayers, settlement
+            observation, and materializer plumbing at scale, but those scale
+            runs were overfunded baseline runs and intentionally produced no
+            liquidations or ADL.
+          </p>
+          <p>
+            We do not yet have a clean passing local-chain proof that starts
+            from public API order placement, shocks price/funding, triggers
+            ADL, mines a successful ADL transaction, observes the receipt, and
+            applies every local effect.
+          </p>
+        </div>
+      </section>
+
+      <section id="scale">
+        <h2>Scale and End-To-End Boundary</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Layer</th>
+                <th>What Ran</th>
+                <th>Scale</th>
+                <th>End-To-End Boundary</th>
+                <th>Liquidation / ADL Outcome</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Contract unit tests</td>
+                <td>
+                  <code>Perpetual</code>, <code>IsolatedADL</code>, and
+                  <code>ADLTrades</code> tests.
+                </td>
+                <td>Single market, a few deterministic accounts.</td>
+                <td>
+                  Real Solidity contracts on Hardhat local network. Direct
+                  contract calls; no exchange API, relayer, or receipt
+                  observer.
+                </td>
+                <td>
+                  Yes at contract level: open positions, move oracle, call ADL
+                  trade paths.
+                </td>
+              </tr>
+              <tr>
+                <td>Synthetic ADL runtime tests</td>
+                <td>
+                  <code>automatic-deleveraging-state.test.ts</code> with
+                  in-memory journal, seeded positions, stubbed relayer, and
+                  synthetic decoded receipts.
+                </td>
+                <td>79 tests after A54; usually 1-3 accounts per focused case.</td>
+                <td>
+                  Exchange runtime state only: ADL planning, submission state,
+                  cancel-only pinning, and receipt journaling. No live chain.
+                </td>
+                <td>
+                  Yes in synthetic state: positions are seeded underwater or
+                  receipts are injected as if mined.
+                </td>
+              </tr>
+              <tr>
+                <td>Local-chain tiny E2E</td>
+                <td>
+                  Disposable full stack: API, scheduler, Postgres, JetStream,
+                  Anvil, local contracts, relayers, order placement, batch
+                  seal, chain observation, and liquidation check.
+                </td>
+                <td>2-order and 20-order proofs.</td>
+                <td>
+                  True local-chain E2E, but small and synthetic fixtures. Fresh
+                  local deployment, not a mainnet/testnet fork.
+                </td>
+                <td>
+                  Plumbing checked. One M01B run manufactured an underwater
+                  position through funding/time manipulation.
+                </td>
+              </tr>
+              <tr>
+                <td>M03 clean replay scale</td>
+                <td>
+                  Public API order replay from transformed Hyperliquid rows
+                  against a disposable local-chain stack.
+                </td>
+                <td>10k passed; 100k attempted and reached clean 65k checkpoint.</td>
+                <td>
+                  Real API, local contracts, relayers, settlement observation,
+                  and materializer checks. Overfunded baseline profile.
+                </td>
+                <td>
+                  No. These runs produced zero liquidation/ADL and are not
+                  liquidation/ADL stress coverage.
+                </td>
+              </tr>
+              <tr>
+                <td>1M planning</td>
+                <td>
+                  Planner streamed the first 1,000,000 source rows and
+                  classified executable rows.
+                </td>
+                <td>
+                  1,000,000 rows planned; 562,603 baseline-executable rows.
+                </td>
+                <td>
+                  Planner only for the full 1M count. The 1M local-chain
+                  execution did not complete.
+                </td>
+                <td>No liquidation/ADL coverage.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="trigger-mechanics">
+        <h2>Trigger Mechanics</h2>
+        <div class="grid two">
+          <article class="panel">
+            <span class="status good">Contract ADL</span>
+            <h3>Open Position, Move Oracle, Call ADL</h3>
+            <p>
+              The clearest ADL trigger mechanics are in the Solidity tests.
+              They mint and deposit collateral, open opposing positions, move
+              the dummy oracle price, then call the ADL trader through
+              <code>Perpetual.trade</code>.
+            </p>
+            <p>
+              Examples: long ADL opens at price <code>100</code>, moves oracle
+              down to <code>70</code> or <code>89.1</code>, and deleverages
+              the bankrupt maker. Short ADL moves oracle up, for example
+              <code>100</code> to <code>130</code>. Funding tests also
+              advance time and set funding so a taker that looked solvent
+              becomes underwater inside the ADL call.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="status info">Runtime ADL</span>
+            <h3>Seed Underwater State, Then Run Planner</h3>
+            <p>
+              The Bun runtime tests do not open real positions on-chain. They
+              seed exchange state directly. A representative setup is maker
+              size <code>10</code>, margin <code>90</code>, entry price
+              <code>100</code>, oracle price <code>89</code>, plus an
+              opposing taker.
+            </p>
+            <p>
+              The test then calls
+              <code>triggerAutomaticDeleveragingPass</code>. The expected
+              result is one planned ADL round, one submission, market
+              cancel-only pinned, and a relayer submission captured by the
+              stubbed relayer.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="status warn">Local-Chain Trigger</span>
+            <h3>M01B Funding Shortfall</h3>
+            <p>
+              One disposable local-chain run created an actual AAPL position
+              through the public API: <code>2 @ 276.5</code>, long at
+              <code>10x</code> against a short at <code>2x</code>.
+            </p>
+            <p>
+              It advanced Anvil time by <code>3605s</code>, crystallized a
+              funding rate, then jumped another <code>1112388s</code> so the
+              funding debit overtook margin. Funding-adjusted equity became
+              negative, the liquidation monitor found one underwater position
+              with <code>MR=-0.0300</code>, book liquidation skipped it
+              because equity was non-positive, and the ADL path was expected.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="status bad">Not Yet Clean</span>
+            <h3>Local-Chain ADL Did Not Finish Cleanly</h3>
+            <p>
+              The M01B local-chain trigger produced useful signal but not a
+              clean ADL settlement proof. The notes record that ADL relayer
+              broadcasts were accepted by the runtime relayer but reverted on
+              receipt after the large time warp.
+            </p>
+            <p>
+              So the honest status is: contract ADL success is tested;
+              runtime ADL planning and receipt handling are tested; a full
+              local-chain ADL lifecycle from price/funding shock through
+              successful mined ADL receipt remains open.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="blockchain">
+        <h2>Blockchain Boundary</h2>
+        <div class="grid two">
+          <article class="panel">
+            <span class="status good">Yes, Local Chain</span>
+            <h3>Anvil With Fresh Local Deployments</h3>
+            <p>
+              The replay work used disposable local stacks with Anvil RPC,
+              local Postgres, local JetStream, exchange API/runtime,
+              scheduler, web, relayers, and locally deployed contracts. Runs
+              used <code>deploy_mode=one_each</code> for local markets such as
+              AAPL.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="status warn">No Mainnet Fork</span>
+            <h3>Not A Production Fork Simulation</h3>
+            <p>
+              These were not mainnet/testnet fork tests against existing
+              deployed state. Contract unit tests used Hardhat's local
+              network; local-chain exchange tests used fresh Anvil deployments
+              and synthetic users/funding.
+            </p>
+          </article>
+        </div>
+      </section>
+
       <section id="branch-state">
         <h2>Branch State</h2>
         <div class="grid four">
@@ -647,6 +912,25 @@
 
       <section id="commands">
         <h2>Rerun Commands</h2>
+        <div class="grid two">
+          <article class="plain-panel">
+            <h3>Contract ADL Tests</h3>
+            <p>
+              Runs Solidity ADL trade tests on the Hardhat local network.
+            </p>
+            <pre><code>cd /Users/kas/mnx-study/exchange-replay/packages/contracts
+bunx hardhat test --network hardhat test/unit/ADL.test.ts test/unit/ADLTrades.test.ts</code></pre>
+          </article>
+          <article class="plain-panel">
+            <h3>Local-Chain Funding Shortfall Trigger</h3>
+            <p>
+              Requires a disposable dev instance with Anvil, API, scheduler,
+              Postgres, and local markets already bootstrapped.
+            </p>
+            <pre><code>cd /Users/kas/mnx-study/exchange-replay
+./scripts/run-htv1-test.sh --instance N src/tests/high-throughput-v1-funding-shortfall-broadcast-errors-anvil.test.ts</code></pre>
+          </article>
+        </div>
         <div class="grid two">
           <article class="plain-panel">
             <h3>A54 Latest Focused ADL Regression</h3>
