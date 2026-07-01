@@ -1,0 +1,924 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MNX Replay Findings</title>
+    <meta
+      name="description"
+      content="A study page for MNX replay, local-chain exchange, liquidation, ADL, oracle, settlement, and lifecycle findings."
+    >
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4f6f7;
+        --paper: #ffffff;
+        --ink: #15191b;
+        --muted: #5b656a;
+        --line: #d4dde1;
+        --line-strong: #afbcc2;
+        --green: #146c43;
+        --green-soft: #e8f6ee;
+        --teal: #0b6b61;
+        --teal-soft: #e4f3f1;
+        --blue: #2458c8;
+        --blue-soft: #edf3ff;
+        --amber: #985c12;
+        --amber-soft: #fff4df;
+        --red: #9f2d2d;
+        --red-soft: #fff1f1;
+        --violet: #5b4ec4;
+        --violet-soft: #f0edff;
+        --code: #eff3f4;
+        --shadow: 0 18px 42px rgba(21, 25, 27, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0)),
+          var(--bg);
+        color: var(--ink);
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        line-height: 1.55;
+      }
+
+      a {
+        color: var(--blue);
+        text-underline-offset: 3px;
+      }
+
+      header {
+        background: #17201d;
+        color: #ffffff;
+        border-bottom: 6px solid #17a394;
+        padding: 40px 24px 30px;
+      }
+
+      .wrap {
+        width: min(1180px, calc(100vw - 40px));
+        margin: 0 auto;
+      }
+
+      .eyebrow {
+        margin: 0 0 14px;
+        color: #99f6e4;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        max-width: 1040px;
+        margin: 0;
+        font-size: clamp(2rem, 5.4vw, 4.8rem);
+        line-height: 0.98;
+        letter-spacing: 0;
+      }
+
+      .lede {
+        max-width: 940px;
+        margin: 18px 0 0;
+        color: #d9e3de;
+        font-size: clamp(1rem, 2vw, 1.2rem);
+      }
+
+      .toc {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 20px;
+      }
+
+      .toc a {
+        display: inline-flex;
+        min-height: 38px;
+        align-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        border-radius: 7px;
+        padding: 8px 11px;
+        color: #ffffff;
+        background: rgba(255, 255, 255, 0.08);
+        text-decoration: none;
+        font-size: 0.9rem;
+      }
+
+      main {
+        padding: 28px 0 60px;
+      }
+
+      section {
+        margin: 30px 0;
+      }
+
+      h2 {
+        margin: 0 0 13px;
+        font-size: clamp(1.45rem, 3vw, 2.25rem);
+        line-height: 1.16;
+        letter-spacing: 0;
+      }
+
+      h3 {
+        margin: 0 0 9px;
+        font-size: 1.08rem;
+        line-height: 1.25;
+        letter-spacing: 0;
+      }
+
+      p {
+        margin: 0 0 13px;
+      }
+
+      ul {
+        margin: 10px 0 0;
+        padding-left: 20px;
+      }
+
+      li {
+        margin: 7px 0;
+      }
+
+      code,
+      .mono {
+        font-family:
+          "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        font-size: 0.94em;
+      }
+
+      code {
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--code);
+        padding: 0.12rem 0.32rem;
+      }
+
+      .panel {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        box-shadow: var(--shadow);
+        padding: 22px;
+      }
+
+      .plain-panel {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 22px;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .two {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .three {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .four {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .metric {
+        min-height: 150px;
+      }
+
+      .metric .label {
+        margin: 0 0 8px;
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      .metric .value {
+        margin: 0;
+        font-size: clamp(1.45rem, 3vw, 2.15rem);
+        font-weight: 820;
+        line-height: 1.05;
+      }
+
+      .metric .note {
+        margin: 10px 0 0;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .status {
+        display: inline-flex;
+        align-items: center;
+        min-height: 28px;
+        border-radius: 999px;
+        padding: 0 11px;
+        font-size: 0.78rem;
+        font-weight: 800;
+      }
+
+      .status.good {
+        background: var(--green-soft);
+        color: var(--green);
+      }
+
+      .status.watch {
+        background: var(--amber-soft);
+        color: var(--amber);
+      }
+
+      .status.bad {
+        background: var(--red-soft);
+        color: var(--red);
+      }
+
+      .status.info {
+        background: var(--blue-soft);
+        color: var(--blue);
+      }
+
+      .status.research {
+        background: var(--violet-soft);
+        color: var(--violet);
+      }
+
+      .callout {
+        border: 1px solid var(--line);
+        border-left: 5px solid var(--teal);
+        border-radius: 8px;
+        background: var(--teal-soft);
+        padding: 18px;
+      }
+
+      .callout.warn {
+        border-left-color: var(--amber);
+        background: var(--amber-soft);
+      }
+
+      .callout.danger {
+        border-left-color: var(--red);
+        background: var(--red-soft);
+      }
+
+      .timeline {
+        display: grid;
+        gap: 12px;
+      }
+
+      .event {
+        display: grid;
+        grid-template-columns: 170px minmax(0, 1fr);
+        gap: 14px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--paper);
+        padding: 16px;
+      }
+
+      .event .when {
+        color: var(--muted);
+        font-size: 0.86rem;
+        font-weight: 750;
+      }
+
+      .event .title {
+        margin: 0 0 5px;
+        font-weight: 820;
+      }
+
+      .bar-set {
+        display: grid;
+        gap: 10px;
+      }
+
+      .bar-row {
+        display: grid;
+        grid-template-columns: 170px minmax(0, 1fr) 84px;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .track {
+        height: 12px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: #e6ecef;
+      }
+
+      .fill {
+        height: 100%;
+        border-radius: 999px;
+        background: var(--teal);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.94rem;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid var(--line);
+        padding: 11px 10px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .table-scroll {
+        overflow-x: auto;
+      }
+
+      .source-list {
+        columns: 2;
+        column-gap: 34px;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      footer {
+        margin-top: 34px;
+        color: var(--muted);
+        font-size: 0.86rem;
+      }
+
+      @media (max-width: 900px) {
+        .two,
+        .three,
+        .four {
+          grid-template-columns: 1fr;
+        }
+
+        .event {
+          grid-template-columns: 1fr;
+        }
+
+        .bar-row {
+          grid-template-columns: 1fr;
+          gap: 6px;
+        }
+
+        .source-list {
+          columns: 1;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .wrap {
+          width: min(100vw - 28px, 1180px);
+        }
+
+        header {
+          padding: 30px 18px 24px;
+        }
+
+        .panel,
+        .plain-panel {
+          padding: 18px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap">
+        <p class="eyebrow">MNX replay study</p>
+        <h1>Failures, fixes, and open system questions</h1>
+        <p class="lede">
+          A consolidated study page for the local-chain replay work: how the
+          exchange has failed under scale, what each failure taught us, which
+          fixes are already holding, and which behaviors still need research.
+        </p>
+        <nav class="toc" aria-label="Page sections">
+          <a href="#current">Current run</a>
+          <a href="#findings">Finding map</a>
+          <a href="#timeline">Failure timeline</a>
+          <a href="#adl">ADL research</a>
+          <a href="#next">Next decisions</a>
+          <a href="#sources">Sources</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section id="current">
+        <div class="grid four">
+          <article class="panel metric">
+            <p class="label">Active gate</p>
+            <p class="value">M03 100k</p>
+            <p class="note">
+              No-market-maker local-chain replay, bounded at 100,000 executable
+              public API orders.
+            </p>
+          </article>
+          <article class="panel metric">
+            <p class="label">Latest pushed checkpoint</p>
+            <p class="value">30,000</p>
+            <p class="note">
+              Batch 300: 0 API failures, 0 reverted batches, 118 applied
+              settlement batches.
+            </p>
+          </article>
+          <article class="panel metric">
+            <p class="label">Known active concern</p>
+            <p class="value">Lag</p>
+            <p class="note">
+              Planner latency and journal mirror lag are rising as live orders
+              grow past 10k.
+            </p>
+          </article>
+          <article class="panel metric">
+            <p class="label">Liquidations and ADL</p>
+            <p class="value">None</p>
+            <p class="note">
+              Baseline replay has not yet become meaningful liquidation or ADL
+              coverage.
+            </p>
+          </article>
+        </div>
+
+        <div class="callout warn" style="margin-top: 18px">
+          <h2>How to read the current result</h2>
+          <p>
+            The current retry is not a victory lap. It is a scale gate for
+            recent lifecycle fixes. So far the exchange has crossed 30k placed
+            orders without repeating the prior stale-order crashes, but the
+            run is showing performance pressure and one receipt-reconciliation
+            anomaly. The right interpretation is: lifecycle correctness looks
+            better; scale behavior still needs scrutiny.
+          </p>
+        </div>
+
+        <div class="panel" style="margin-top: 18px">
+          <h2>Batch 300 snapshot</h2>
+          <div class="grid two">
+            <div>
+              <div class="bar-set" aria-label="M03 batch 300 progress bars">
+                <div class="bar-row">
+                  <span>Placed orders</span>
+                  <span class="track"><span class="fill" style="width: 30%"></span></span>
+                  <span class="mono">30%</span>
+                </div>
+                <div class="bar-row">
+                  <span>Batch cycles</span>
+                  <span class="track"><span class="fill" style="width: 30%"></span></span>
+                  <span class="mono">300/1000</span>
+                </div>
+                <div class="bar-row">
+                  <span>Sealed batches</span>
+                  <span class="track"><span class="fill" style="width: 39%"></span></span>
+                  <span class="mono">118</span>
+                </div>
+                <div class="bar-row">
+                  <span>Empty wakeups</span>
+                  <span class="track"><span class="fill" style="width: 61%"></span></span>
+                  <span class="mono">182</span>
+                </div>
+              </div>
+            </div>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Signal</th>
+                    <th>Batch 300 value</th>
+                    <th>Interpretation</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>API failures</td>
+                    <td class="mono">0</td>
+                    <td>Public order placement is holding so far.</td>
+                  </tr>
+                  <tr>
+                    <td>Reverted batches</td>
+                    <td class="mono">0</td>
+                    <td>Local-chain settlement is not reverting in this retry.</td>
+                  </tr>
+                  <tr>
+                    <td>Receipt reconciliation failures</td>
+                    <td class="mono">1</td>
+                    <td>
+                      One mined receipt was quarantined because the observed
+                      batch was not a sealed batch or prepared liquidation.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Planner runtime max</td>
+                    <td class="mono">26.007s</td>
+                    <td>Scale pressure is real even without a fatal error.</td>
+                  </tr>
+                  <tr>
+                    <td>Live orders</td>
+                    <td class="mono">10,632</td>
+                    <td>Book accumulation is now a primary scaling variable.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="findings">
+        <h2>Finding map</h2>
+        <div class="grid three">
+          <article class="panel">
+            <span class="status bad">Original blocker</span>
+            <h3>Policy mismatch in the source data</h3>
+            <p>
+              The initial 1M plan mixed spot, synthetic, hyperliquid-index, and
+              perpetual records into an AAPL execution target. It also included
+              reduce-only rows and orders below min size or funding envelope.
+            </p>
+            <p>
+              Finding: the replay needs an explicit executable policy before
+              scale claims are meaningful.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="status good">Fixed for M03</span>
+            <h3>Clean executable policy</h3>
+            <p>
+              M03 now uses perpetual-only rows, skips reduce-only orders for
+              initially flat users, rejects below-min orders, and bounds initial
+              margin for the baseline-executable target.
+            </p>
+            <p>
+              Finding: the data stream can produce a deterministic clean 1M
+              baseline-executable plan.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="status watch">Scale risk</span>
+            <h3>Funding and user distribution</h3>
+            <p>
+              Smaller funding profiles failed before 10k orders. The first
+              viable scale profile used 1,024 users and large per-user USDM
+              funding.
+            </p>
+            <p>
+              Finding: a replay can fail from cumulative margin pressure before
+              it reaches the system path we meant to test.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="status good">Guarded</span>
+            <h3>Oracle staleness and P48</h3>
+            <p>
+              The global-index refresh failures were traced to local replay
+              oracle freshness. Batch-count refresh was insufficient once
+              batches slowed, so the harness added elapsed-time oracle refresh.
+            </p>
+            <p>
+              Finding: time matters in this exchange. Batch count is not a
+              substitute for wall-clock freshness.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="status good">Regression added</span>
+            <h3>Stale expiration cancellation</h3>
+            <p>
+              At scale, an order could expire and be removed milliseconds
+              before another path still tried to cancel it. Exact-hash stale
+              failures are now tolerated in the expiration loop.
+            </p>
+            <p>
+              Finding: lifecycle operations must be idempotent around already
+              finalized orders.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="status good">Regression added</span>
+            <h3>Stale matched-order cancellation</h3>
+            <p>
+              A later retry reached 70k orders and failed at batch 703 with
+              <code>No order found</code> after the same order had expired.
+              The matched-cancel finalizer now tolerates exact-hash stale
+              cancellation failures.
+            </p>
+            <p>
+              Finding: expiration and post-match cleanup can race on the same
+              order hash.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="status watch">Open</span>
+            <h3>Receipt reconciliation quarantine</h3>
+            <p>
+              The active retry has one quarantined mined receipt: an observed
+              chain batch could not be reconciled with an expected sealed batch
+              or prepared liquidation.
+            </p>
+            <p>
+              Finding: this is not yet fatal, but it is exactly the kind of
+              chain/effect consistency issue that needs a dedicated research
+              pass.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="status watch">Open</span>
+            <h3>Materializer and mirror lag</h3>
+            <p>
+              The active retry is producing many slow materializer batches and
+              growing journal mirror lag while the critical settlement path
+              remains aligned.
+            </p>
+            <p>
+              Finding: status and persistence subsystems may become the next
+              scale gate before exchange execution fully fails.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="status research">Not covered</span>
+            <h3>Liquidation and ADL in baseline</h3>
+            <p>
+              The no-market-maker baseline has produced no liquidations or ADL.
+              That is expected for this replay shape and does not validate the
+              liquidation or ADL systems.
+            </p>
+            <p>
+              Finding: liquidation/ADL coverage requires transformed price
+              paths, lower collateral buffers, or market-maker-specific stress.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="timeline">
+        <h2>Failure timeline</h2>
+        <div class="timeline">
+          <article class="event">
+            <div class="when">M03 initial 1M planning</div>
+            <div>
+              <p class="title">The replay was not yet an exchange test.</p>
+              <p>
+                It was first a policy problem: too many source kinds and order
+                shapes were being treated as if they were executable AAPL
+                perpetual orders.
+              </p>
+            </div>
+          </article>
+          <article class="event">
+            <div class="when">10k scale probes</div>
+            <div>
+              <p class="title">Insufficient margin became the first practical gate.</p>
+              <p>
+                Profiles with too few users or too little funding failed before
+                reaching the exchange behavior under investigation. The viable
+                shape moved to 1,024 users and larger per-user funding.
+              </p>
+            </div>
+          </article>
+          <article class="event">
+            <div class="when">Post-test diagnostics</div>
+            <div>
+              <p class="title">External snapshots misled the settlement analysis.</p>
+              <p>
+                The first 10k diagnostics showed a position-applied versus
+                settlement-applied gap. In-test diagnostics later showed the
+                gap was a capture-timing artifact after teardown resumed
+                background jobs.
+              </p>
+            </div>
+          </article>
+          <article class="event">
+            <div class="when">100k attempt, batch 115</div>
+            <div>
+              <p class="title">Global-index refresh hit stale oracle state.</p>
+              <p>
+                AAPL crossed the local oracle max-staleness window. This
+                produced refresh timeout behavior and later <code>P48</code>
+                signatures.
+              </p>
+            </div>
+          </article>
+          <article class="event">
+            <div class="when">100k retry, batch 149</div>
+            <div>
+              <p class="title">Batch-count oracle refresh was not enough.</p>
+              <p>
+                The batch cadence crossed the old failure point but later slow
+                batches made the wall-clock freshness window expire. The guard
+                became time-aware.
+              </p>
+            </div>
+          </article>
+          <article class="event">
+            <div class="when">100k retry, batch 697</div>
+            <div>
+              <p class="title">Expiration and wakeup raced.</p>
+              <p>
+                The runtime expired an order, then wakeup attempted to use that
+                same order as live eight milliseconds later. Exact-hash stale
+                expiration candidates are now non-fatal.
+              </p>
+            </div>
+          </article>
+          <article class="event">
+            <div class="when">100k retry, batch 703</div>
+            <div>
+              <p class="title">Matched-order cleanup had the sibling race.</p>
+              <p>
+                A matched/post-match cancellation path hit <code>No order found</code>
+                for an order that had already expired. Exact-hash stale
+                matched cancellations are now non-fatal.
+              </p>
+            </div>
+          </article>
+          <article class="event">
+            <div class="when">Active retry, batch 300</div>
+            <div>
+              <p class="title">Lifecycle fixes are holding so far.</p>
+              <p>
+                The current run has crossed 30k placed orders with zero API
+                failures, zero reverts, and no recurrence of the stale-order
+                crashes. The current watch item is performance and receipt
+                reconciliation, not placement failure.
+              </p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="adl">
+        <h2>ADL stress research findings</h2>
+        <div class="grid two">
+          <article class="panel">
+            <h3>Invariants that held</h3>
+            <ul>
+              <li>
+                Child-vault bankrupt maker state stayed classified as
+                <code>child_vault</code> through runtime ADL and relayer
+                handoff.
+              </li>
+              <li>
+                Child-vault taker routing preserved <code>taker_child_vault_id</code>
+                and did not require a taker user id.
+              </li>
+              <li>
+                Receipt routing applied child-vault taker and maker effects
+                through child-vault state where expected.
+              </li>
+            </ul>
+          </article>
+          <article class="panel">
+            <h3>Bugs found and fixed</h3>
+            <ul>
+              <li>
+                ADL funds-flow balance deltas were previously batched only for
+                user accounts, missing child-vault MarginBank balance effects.
+              </li>
+              <li>
+                ADL position margin-delta balance effects were previously
+                published only for users, skipping child-vault margin changes.
+              </li>
+              <li>
+                Duplicate decoded position or settlement log indexes now fail
+                before receipt effects are journaled.
+              </li>
+            </ul>
+          </article>
+        </div>
+        <div class="callout" style="margin-top: 18px">
+          <h3>Why ADL remains a separate workstream</h3>
+          <p>
+            The baseline replay is not naturally producing liquidations or ADL.
+            ADL correctness is therefore being tested with targeted stress
+            scenarios. The right next bridge is to make replay scenarios that
+            deliberately enter liquidation and ADL states, then compare runtime
+            and receipt behavior to the targeted ADL invariants.
+          </p>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>Next decisions</h2>
+        <div class="table-scroll panel">
+          <table>
+            <thead>
+              <tr>
+                <th>Decision</th>
+                <th>Why it matters</th>
+                <th>Current answer</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Can M03 advance to M03A analysis?</td>
+                <td>
+                  M03A is supposed to analyze the completed 1M no-market-maker
+                  baseline or the final bounded gate.
+                </td>
+                <td>
+                  Not yet. Let the active 100k gate either complete or fail
+                  with preserved evidence.
+                </td>
+              </tr>
+              <tr>
+                <td>Are stale-order lifecycle crashes fixed?</td>
+                <td>
+                  These were hard blockers at batches 697 and 703.
+                </td>
+                <td>
+                  Promising but not proven to 100k. Batch 300 has expirations
+                  and no stale-order crash.
+                </td>
+              </tr>
+              <tr>
+                <td>Is the receipt quarantine acceptable?</td>
+                <td>
+                  It points at a local-chain observation versus domain-effect
+                  reconciliation gap.
+                </td>
+                <td>
+                  Unknown. It should become focused research if it persists or
+                  repeats.
+                </td>
+              </tr>
+              <tr>
+                <td>Can the system sustain 100k and later 1M?</td>
+                <td>
+                  Planner latency, live-order accumulation, and mirror lag are
+                  growing before the 100k target.
+                </td>
+                <td>
+                  Still under test. The current evidence says correctness is
+                  ahead of observability/performance.
+                </td>
+              </tr>
+              <tr>
+                <td>Do we have liquidation or ADL replay coverage?</td>
+                <td>
+                  The goal requires liquidations and potential ADL, not just
+                  passive order placement.
+                </td>
+                <td>
+                  No. The next replay family needs transformed prices and
+                  deliberately stressed margin states.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>Evidence sources</h2>
+        <div class="plain-panel">
+          <p>
+            This page is a hand-curated static summary from the current local
+            evidence set. It intentionally avoids live JavaScript so the page
+            remains deployable under the site's strict content-security policy.
+          </p>
+          <ul class="source-list">
+            <li><code>MILESTONES.md</code> in <code>mnx-replay-orchestrator</code></li>
+            <li><code>milestones/M03_1M_NO_MM_BASELINE.md</code></li>
+            <li><code>runs/m03-streaming-f2-100k-stale-matched-cancel-fix-retry-20260701-004/</code></li>
+            <li><code>m03-progress-status-batch-000300.json</code></li>
+            <li><code>exchange-replay/dev-inst-27.log</code></li>
+            <li>Exchange fixes <code>fd36770a</code> and <code>7a8d239e</code></li>
+            <li>Orchestrator checkpoints through <code>b6c4c02</code></li>
+          </ul>
+        </div>
+      </section>
+
+      <footer>
+        Last curated from local evidence on 2026-07-01 while the M03 100k
+        retry was still running.
+      </footer>
+    </main>
+  </body>
+</html>
