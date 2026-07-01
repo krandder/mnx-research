@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MNX ADL and Liquidation Testing</title>
+    <meta
+      name="description"
+      content="What was tested in the MNX ADL and liquidation stress workstream, where the harness lives, and how to rerun the focused checks."
+    >
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4f7f6;
+        --paper: #ffffff;
+        --ink: #151817;
+        --muted: #596360;
+        --line: #d3ddda;
+        --dark: #17211e;
+        --teal: #0a6b61;
+        --teal-soft: #e2f3f0;
+        --blue: #2458c8;
+        --blue-soft: #edf3ff;
+        --amber: #9a5a12;
+        --amber-soft: #fff4df;
+        --red: #9f2d2d;
+        --red-soft: #fff1f1;
+        --green: #146c43;
+        --green-soft: #e8f6ee;
+        --code: #eef3f2;
+        --shadow: 0 18px 44px rgba(21, 24, 23, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0)),
+          var(--bg);
+        color: var(--ink);
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        line-height: 1.55;
+      }
+
+      a {
+        color: var(--blue);
+        text-underline-offset: 3px;
+      }
+
+      header {
+        background: var(--dark);
+        color: #ffffff;
+        border-bottom: 6px solid #17a394;
+        padding: 42px 24px 30px;
+      }
+
+      .wrap {
+        width: min(1160px, calc(100vw - 40px));
+        margin: 0 auto;
+      }
+
+      .eyebrow {
+        margin: 0 0 14px;
+        color: #99f6e4;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        max-width: 1020px;
+        margin: 0;
+        font-size: clamp(2rem, 5.4vw, 4.55rem);
+        line-height: 0.98;
+        letter-spacing: 0;
+      }
+
+      .lede {
+        max-width: 900px;
+        margin: 18px 0 0;
+        color: #d9e3de;
+        font-size: clamp(1rem, 2vw, 1.2rem);
+      }
+
+      .toc {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 20px;
+      }
+
+      .toc a {
+        display: inline-flex;
+        min-height: 38px;
+        align-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        border-radius: 7px;
+        padding: 8px 11px;
+        color: #ffffff;
+        background: rgba(255, 255, 255, 0.08);
+        text-decoration: none;
+        font-size: 0.9rem;
+      }
+
+      main {
+        padding: 28px 0 58px;
+      }
+
+      section {
+        margin: 30px 0;
+      }
+
+      h2 {
+        margin: 0 0 13px;
+        font-size: clamp(1.45rem, 3vw, 2.25rem);
+        line-height: 1.16;
+        letter-spacing: 0;
+      }
+
+      h3 {
+        margin: 0 0 9px;
+        font-size: 1.08rem;
+        line-height: 1.25;
+        letter-spacing: 0;
+      }
+
+      p {
+        margin: 0 0 13px;
+      }
+
+      ul {
+        margin: 10px 0 0;
+        padding-left: 20px;
+      }
+
+      li {
+        margin: 7px 0;
+      }
+
+      code,
+      .mono {
+        font-family:
+          "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        font-size: 0.94em;
+      }
+
+      code {
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--code);
+        padding: 0.12rem 0.32rem;
+      }
+
+      pre {
+        margin: 12px 0 0;
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #101917;
+        color: #e7f5f1;
+        padding: 16px;
+        line-height: 1.45;
+      }
+
+      pre code {
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        color: inherit;
+        padding: 0;
+      }
+
+      .panel {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        box-shadow: var(--shadow);
+        padding: 22px;
+      }
+
+      .plain-panel {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 22px;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .two {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .three {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .four {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .metric {
+        min-height: 144px;
+      }
+
+      .label {
+        margin: 0 0 8px;
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      .value {
+        margin: 0 0 8px;
+        color: var(--teal);
+        font-size: clamp(1.7rem, 3.4vw, 2.65rem);
+        font-weight: 850;
+        line-height: 1;
+      }
+
+      .note {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.94rem;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--paper);
+        box-shadow: var(--shadow);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 820px;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid var(--line);
+        padding: 14px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        background: #edf4f2;
+        color: #24332f;
+        font-size: 0.78rem;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .status {
+        display: inline-flex;
+        min-height: 26px;
+        align-items: center;
+        border-radius: 999px;
+        padding: 3px 10px;
+        font-size: 0.78rem;
+        font-weight: 800;
+      }
+
+      .good {
+        background: var(--green-soft);
+        color: var(--green);
+      }
+
+      .bad {
+        background: var(--red-soft);
+        color: var(--red);
+      }
+
+      .warn {
+        background: var(--amber-soft);
+        color: var(--amber);
+      }
+
+      .info {
+        background: var(--blue-soft);
+        color: var(--blue);
+      }
+
+      .tag-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        min-height: 28px;
+        border-radius: 999px;
+        padding: 4px 10px;
+        background: var(--teal-soft);
+        color: #17453f;
+        font-size: 0.82rem;
+        font-weight: 700;
+      }
+
+      .callout {
+        border: 1px solid var(--line);
+        border-left: 5px solid var(--teal);
+        border-radius: 8px;
+        background: var(--paper);
+        padding: 18px;
+      }
+
+      .callout p:last-child {
+        margin-bottom: 0;
+      }
+
+      .top-gap {
+        margin-top: 16px;
+      }
+
+      footer {
+        margin-top: 42px;
+        border-top: 1px solid var(--line);
+        padding-top: 18px;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      @media (max-width: 860px) {
+        .two,
+        .three,
+        .four {
+          grid-template-columns: 1fr;
+        }
+
+        .wrap {
+          width: min(100% - 28px, 1160px);
+        }
+
+        header {
+          padding: 32px 14px 26px;
+        }
+
+        .panel,
+        .plain-panel {
+          padding: 18px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap">
+        <p class="eyebrow">MNX Research</p>
+        <h1>ADL and Liquidation Testing</h1>
+        <p class="lede">
+          Summary of the targeted stress tests behind the ADL/liquidation work:
+          what was tested, where the harness lives, which branch was pushed,
+          and how to rerun the focused checks.
+        </p>
+        <nav class="toc" aria-label="Page sections">
+          <a href="#branch-state">Branch State</a>
+          <a href="#harness">Harness</a>
+          <a href="#coverage">Coverage</a>
+          <a href="#liquidation">Liquidation</a>
+          <a href="#commands">Commands</a>
+          <a href="#limits">Limits</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section id="branch-state">
+        <h2>Branch State</h2>
+        <div class="grid four">
+          <article class="panel metric">
+            <p class="label">Pushed Branch</p>
+            <p class="value mono">codex/adl-stress-findings-20260630</p>
+            <p class="note">
+              The same branch name exists on the research site, exchange
+              replay worktree, and replay orchestrator.
+            </p>
+          </article>
+          <article class="panel metric">
+            <p class="label">Completed Stress Files</p>
+            <p class="value">54</p>
+            <p class="note">
+              A01 through A54 are complete in
+              <code>adl-stress/ADL_STRESS_CHAIN.md</code>.
+            </p>
+          </article>
+          <article class="panel metric">
+            <p class="label">Latest Full Suite</p>
+            <p class="value">79 pass</p>
+            <p class="note">
+              A54 verification: <code>0 fail</code>,
+              <code>632 expect()</code> calls.
+            </p>
+          </article>
+          <article class="panel metric">
+            <p class="label">Active Next Test</p>
+            <p class="value">A55</p>
+            <p class="note">
+              Invalid top-level ADL receipt <code>txHash</code> cursor.
+            </p>
+          </article>
+        </div>
+
+        <div class="table-wrap top-gap">
+          <table>
+            <thead>
+              <tr>
+                <th>Repo</th>
+                <th>Role</th>
+                <th>Pushed Head</th>
+                <th>Where To Look</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>mnx-research</code></td>
+                <td>Static research site</td>
+                <td><code>629f958</code> before this page</td>
+                <td><code>/adl-stress-findings</code> and this page</td>
+              </tr>
+              <tr>
+                <td><code>exchange-replay</code></td>
+                <td>Executable tests and runtime fixes</td>
+                <td><code>16c9b339</code></td>
+                <td><code>apps/api/src/tests/automatic-deleveraging-state.test.ts</code></td>
+              </tr>
+              <tr>
+                <td><code>mnx-replay-orchestrator</code></td>
+                <td>Research ledger and run evidence</td>
+                <td><code>ff41873</code></td>
+                <td><code>adl-stress/</code> and <code>runs/20260701-adl-a54-*</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="harness">
+        <h2>Test Harness</h2>
+        <div class="grid two">
+          <article class="panel">
+            <span class="status info">Executable</span>
+            <h3>Single Bun State Suite</h3>
+            <p>
+              The ADL/liquidation stress checks are implemented as focused Bun
+              tests in
+              <code>apps/api/src/tests/automatic-deleveraging-state.test.ts</code>.
+              The tests run in <code>EXECUTION_MODE=synthetic</code> against an
+              in-memory journal and an <code>ExchangeShard</code>.
+            </p>
+            <div class="tag-row">
+              <span class="tag">in-memory journal</span>
+              <span class="tag">synthetic receipts</span>
+              <span class="tag">no live chain dependency</span>
+            </div>
+          </article>
+          <article class="panel">
+            <span class="status info">Evidence</span>
+            <h3>Research Loop</h3>
+            <p>
+              The replay orchestrator keeps the audit trail. Each step has one
+              <code>Axx_STRESS_TEST.md</code> file, one
+              <code>Axx_ANALYSIS.md</code> file, and a run folder with the
+              command, red result, fix commit, and green verification.
+            </p>
+            <div class="tag-row">
+              <span class="tag">analysis</span>
+              <span class="tag">red test</span>
+              <span class="tag">fix</span>
+              <span class="tag">full-suite verify</span>
+            </div>
+          </article>
+        </div>
+
+        <div class="callout top-gap">
+          <p>
+            The harness pattern is deliberately narrow: seed a submitted ADL
+            state, inject one adversarial decoded receipt through
+            <code>executionBackend.getReceipt</code>, call
+            <code>observeSubmittedAdlReceipts</code>, then assert that no
+            position, balance, PnL, or <code>adl_receipt_applied</code> facts
+            were journaled when the receipt should be rejected.
+          </p>
+        </div>
+      </section>
+
+      <section id="coverage">
+        <h2>Coverage Map</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Area</th>
+                <th>Representative Steps</th>
+                <th>What Was Tested</th>
+                <th>Result Pattern</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>ADL active-round control</td>
+                <td>A05-A13</td>
+                <td>
+                  Cancel-only pinning, operator intent, manual disable paths,
+                  stale replay, and release behavior around active ADL rounds.
+                </td>
+                <td>
+                  Failed receipts or recovery conditions must not accidentally
+                  clear ADL-owned cancel-only state.
+                </td>
+              </tr>
+              <tr>
+                <td>Receipt identity and provenance</td>
+                <td>A14-A18, A31, A35, A36, A53-A55</td>
+                <td>
+                  Round/submission/market mismatches, submitted transaction
+                  hash mismatch, duplicate or invalid log indexes, decoded
+                  event transaction hashes, block cursors, and tx-hash shape.
+                </td>
+                <td>
+                  Bad provenance must fail before source-event keys, cursors,
+                  receipt markers, or local effects become durable.
+                </td>
+              </tr>
+              <tr>
+                <td>Plan reconciliation</td>
+                <td>A37-A41, A45</td>
+                <td>
+                  Over-planned quantity, planned direction mismatch,
+                  zero-quantity trades, non-positive prices, positive funds
+                  flow, and trade-count consistency.
+                </td>
+                <td>
+                  Observed receipt economics must match the ADL plan and remain
+                  economically meaningful.
+                </td>
+              </tr>
+              <tr>
+                <td>Child-vault accounting</td>
+                <td>A25-A30</td>
+                <td>
+                  Child-vault bankrupt and taker routes, receipt routing, funds
+                  flow balance effects, and position margin-delta effects.
+                </td>
+                <td>
+                  Child-vault position/PnL updates must be paired with the
+                  correct MarginBank balance effects.
+                </td>
+              </tr>
+              <tr>
+                <td>Receipt evidence completeness</td>
+                <td>A49-A52</td>
+                <td>
+                  Missing ADL trade event-name evidence, missing position or
+                  settlement event names, and missing participant-address
+                  evidence.
+                </td>
+                <td>
+                  Decoded effects without matching event evidence are rejected
+                  before journaling.
+                </td>
+              </tr>
+              <tr>
+                <td>Recovery and sequencing</td>
+                <td>A08, A16, A20-A24</td>
+                <td>
+                  Replay/restart behavior, reconciliation-failure stale
+                  recovery, stale chain cursors, partial replan, cross-market
+                  isolation, and funding freshness before broadcast.
+                </td>
+                <td>
+                  Recovery must preserve retry-safe ADL state and avoid stale
+                  post-ADL mutation.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="liquidation">
+        <h2>Liquidation-Specific Testing</h2>
+        <div class="grid two">
+          <article class="panel">
+            <span class="status bad">Bug Found</span>
+            <h3>A33: Liquidation Contamination</h3>
+            <p>
+              A33 tested whether an otherwise ADL-shaped successful receipt
+              could carry decoded <code>liquidation_trade_updates</code> and
+              still apply the ADL-only view. Before the fix, this cross-family
+              contamination was not rejected early enough.
+            </p>
+            <p>
+              Fix commit <code>a083ea79</code> rejects contaminated ADL
+              liquidation receipts before any ADL receipt effects are
+              journaled.
+            </p>
+          </article>
+          <article class="panel">
+            <span class="status warn">Scope Note</span>
+            <h3>What "Liquidation" Means Here</h3>
+            <p>
+              This workstream did not try to exhaustively fuzz the standalone
+              liquidation engine. The liquidation coverage here is targeted at
+              the ADL receipt boundary: liquidation-family decoded events must
+              not contaminate ADL receipt application, source-event keys, or
+              accounting effects.
+            </p>
+            <p>
+              Related cross-family checks also cover regular batch-trade
+              contamination, backstop inheritance sidecars, forbidden event
+              names, and batch-trade-count contamination.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="commands">
+        <h2>Rerun Commands</h2>
+        <div class="grid two">
+          <article class="plain-panel">
+            <h3>A54 Latest Focused ADL Regression</h3>
+            <p>
+              Reject a successful ADL receipt whose top-level
+              <code>blockNumber</code> is <code>-1</code>.
+            </p>
+            <pre><code>cd /Users/kas/mnx-study/exchange-replay/apps/api
+source ../../scripts/replay-local-env.sh &amp;&amp; EXECUTION_MODE=synthetic bun test src/tests/automatic-deleveraging-state.test.ts -t "ADL receipt rejects negative block number before journaling"</code></pre>
+          </article>
+          <article class="plain-panel">
+            <h3>A33 Liquidation Boundary Regression</h3>
+            <p>
+              Reject an ADL receipt carrying decoded
+              <code>liquidation_trade_updates</code>.
+            </p>
+            <pre><code>cd /Users/kas/mnx-study/exchange-replay/apps/api
+source ../../scripts/replay-local-env.sh &amp;&amp; EXECUTION_MODE=synthetic bun test src/tests/automatic-deleveraging-state.test.ts -t "ADL receipt rejects liquidation updates before journaling"</code></pre>
+          </article>
+        </div>
+        <article class="plain-panel top-gap">
+          <h3>Full ADL State Suite</h3>
+          <pre><code>cd /Users/kas/mnx-study/exchange-replay/apps/api
+source ../../scripts/replay-local-env.sh &amp;&amp; EXECUTION_MODE=synthetic bun test src/tests/automatic-deleveraging-state.test.ts</code></pre>
+          <p class="note top-gap">
+            Last recorded full-suite result from A54: <code>79 pass</code>,
+            <code>0 fail</code>, <code>632 expect()</code> calls.
+          </p>
+        </article>
+      </section>
+
+      <section id="limits">
+        <h2>Limits and Next Work</h2>
+        <div class="grid three">
+          <article class="plain-panel">
+            <span class="status info">Current</span>
+            <h3>A55 Active</h3>
+            <p>
+              The next open stress targets malformed but internally consistent
+              top-level ADL receipt <code>txHash</code> values.
+            </p>
+          </article>
+          <article class="plain-panel">
+            <span class="status warn">Limit</span>
+            <h3>Targeted, Not Fuzz Exhaustive</h3>
+            <p>
+              The suite is a chain of focused adversarial cases, not a
+              property-based fuzzer over every receipt shape or every chain
+              reorg ordering.
+            </p>
+          </article>
+          <article class="plain-panel">
+            <span class="status good">Useful Signal</span>
+            <h3>Red-Green Discipline</h3>
+            <p>
+              The strongest findings came from small receipts that first
+              reproduced a specific bad application path, then proved the
+              runtime fix with the focused test and the full ADL suite.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <footer>
+        Static report for <code>mnx-research</code>. Source state summarized
+        from <code>exchange-replay</code> and <code>mnx-replay-orchestrator</code>
+        on <code>codex/adl-stress-findings-20260630</code>, July 1, 2026.
+        See also <a href="/adl-stress-findings">ADL Stress Findings</a>.
+      </footer>
+    </main>
+  </body>
+</html>
