@@ -361,9 +361,12 @@
             verified pipeline — batch clearing price vs oracle →
             time-weighted hourly premium → clamped per-second rate → lazy
             <code>globalIndex</code> accrual → settle-before-risk-check —
-            is sound and matches industry structure. Funding stays a pure
-            P-controller with zero rate components: no interest rate, no
-            dividend flows, no PID. The design work is per-market:
+            is sound and matches industry structure. Funding stays simple and
+            memoryless: the rate is the currently measured premium, scaled by
+            the market's half-life and capped — with no interest-rate
+            component, no dividend cash flows, and no terms that depend on
+            past premium history (each rejected explicitly
+            <a href="#rejected">below</a>). The design work is per-market:
           </p>
           <div class="grid three">
             <div class="metric">
@@ -446,7 +449,7 @@
       <section id="strength">
         <h2>Strength = a half-life, set per market</h2>
         <p>
-          Funding is a proportional controller: <code>rate = premium / D</code>
+          Funding is proportional: <code>rate = premium / D</code>
           per hour makes basis decay with time constant ≈ <code>D</code> hours.
           Today <code>D = 24</code> is a hardcoded literal — one strength for
           BTC and for a daily-published compute index. That is the wrong
@@ -654,11 +657,12 @@
               Trade log-odds <code>ln(p/(1−p))</code> instead of
               <code>p</code>: unbounded and roughly symmetric, so the boundary
               pathology is exposed as a coordinate artifact and the
-              <em>standard</em> P-funding of this document (logit basis ÷ D,
-              capped) applies unchanged. Margin and liquidation live in the
-              same coordinate — which is exactly what the published
-              boundary-corrected scheme didn't do (it patched funding while
-              margining in probability space, and failed its backtests).
+              <em>standard</em> funding of this document (premium ÷ D, capped
+              — just measured in log-odds) applies unchanged. Margin and
+              liquidation live in the same coordinate — which is exactly what
+              the one published academic attempt didn't do (it patched the
+              funding formula while leaving margin in probability space, and
+              failed its own backtests).
               TickSpread's engine already had a <code>log_perpetual</code>
               type. Validation gate: backtest funding + margin in log-odds
               space on public prediction-market tick data against
@@ -688,11 +692,12 @@
             <h3>Documented option: weekend weak-tether</h3>
             <p>
               If weekend basis proves persistent, enable accrual outside RTH at
-              the <strong>weak tier</strong> against the existing HL-based
-              oracle, with a <strong>per-closed-session accrual budget of
-              ≤ 40 bps</strong> as a hard bound on imported noise. Precedent:
-              trade.xyz itself halves funding strength during weekend
-              discovery. Risks to accept knowingly: HL <code>xyz</code> is
+              the <strong>weak tier</strong> against the existing
+              Hyperliquid-based after-hours oracle, with a
+              <strong>per-closed-session accrual budget of ≤ 40 bps</strong>
+              as a hard bound on imported noise. Precedent: trade.xyz itself
+              halves funding strength during weekend discovery. Risks to
+              accept knowingly: Hyperliquid's <code>xyz</code> market is
               &gt;90% of HIP-3 equity OI (every competing dex died) — a single
               external dependency — and its weekend oracle is its own book.
               This is a config flip, not new infrastructure.
@@ -751,18 +756,25 @@
           </thead>
           <tbody>
             <tr>
-              <td><strong>PI / PID funding</strong></td>
+              <td><strong>History-dependent funding</strong> (control-theory
+              "PI/PID": the rate also responds to <em>accumulated</em> past
+              premium, not just the current one, so a persistent gap gets
+              charged harder the longer it lasts)</td>
               <td>
-                TickSpread already ran one: an ad-hoc integral (gain 1/5,
-                sign-flip resets, quadratic dead-band decay, magic constants,
-                Decimal precision 8) in a single-point-of-failure watcher —
-                undocumented stability. In-house evidence, not theory.
-                Integral action also fights persistent basis that <em>is</em>
-                the price signal, is loadable by an attacker who repositions,
-                and makes carry path-dependent for MMs. RAI's arc (P-only
-                launch, leaky-integrator PI enabled a year later under strict
-                anti-windup preconditions) shows the cost of doing it
-                properly.
+                TickSpread already ran one: an ad-hoc accumulated-premium term
+                (gain 1/5, sign-flip resets, quadratic dead-band decay, magic
+                constants, low-precision arithmetic) in a
+                single-point-of-failure watcher — undocumented stability.
+                In-house evidence, not theory. Accumulation also fights
+                persistent basis that <em>is</em> the price signal, can be
+                loaded by an attacker who then repositions, and makes carry
+                path-dependent — market makers can no longer price their
+                holding cost from the current state alone. Reflexer's RAI
+                stablecoin, the best-known controller-managed crypto system,
+                shows the cost of doing it properly: it launched
+                proportional-only and took a year of live operation plus
+                strict anti-runaway preconditions before enabling a decaying
+                accumulator term.
               </td>
               <td>A sub-cap basis persists for weeks, demonstrably from positioning rather than oracle bias, with measurable cost.</td>
             </tr>
@@ -772,9 +784,9 @@
               <td>Evidence of clearing-price funding manipulation that the cap arithmetic failed to deter, or chronically fill-less markets that need a funding signal.</td>
             </tr>
             <tr>
-              <td><strong>"HL-implied spot"</strong> (inverting their funding out of their mark)</td>
-              <td>Degenerates: their weekend premium is measured against their own drifting oracle, so the inversion recovers noise; the correction is tens of bps while weekend information is percents.</td>
-              <td>HL publishes a genuine external-price series worth the machinery (their frozen "external price" field is not it).</td>
+              <td><strong>Hyperliquid-implied spot</strong> (estimating a "true" weekend stock price by stripping Hyperliquid's own funding premium out of its perp price, instead of using the perp price directly)</td>
+              <td>Degenerates: Hyperliquid's weekend premium is measured against its own drifting oracle, so the inversion recovers noise; the correction is tens of bps while the weekend information being sought is whole percents.</td>
+              <td>Hyperliquid publishes a genuine external-price series worth the machinery (their frozen "external price" field is not it).</td>
             </tr>
             <tr>
               <td><strong>Interest / borrow-rate components</strong></td>
