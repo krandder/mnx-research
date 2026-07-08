@@ -10,7 +10,10 @@ https://mnx-research.vercel.app
 - `/adl-stress-findings` - MNX ADL Stress Findings
 - `/adl-testing` - MNX ADL and Liquidation Testing
 - `/adl` - ADL Replacement-Capacity Invariants
-- `/funding` - MNX Funding Proposal
+- `/adl-funding` - MNX Funding-Stall Solvency Invariants
+- `/replay` - MNX Replay Findings
+- `/funding` - MNX Funding v2 — Market Definitions
+- `/funding-v1` - MNX Funding Proposal (v1, superseded)
 - `/engine-egress` - Engine Egress: Quiver/TickSpread vs MNX
 - `/contracts` - MNX Contract Research: StarkEx, IDEX/Kuma Ikon, Hyperliquid
 
