@@ -579,7 +579,7 @@
               <td>Leveraged probability markets</td>
               <td>Probability index</td>
               <td>Conditional — viability ladder below</td>
-              <td>Logit-space Standard</td>
+              <td>No funding — range-collateralized</td>
             </tr>
           </tbody>
         </table>
@@ -630,52 +630,26 @@
               <td>Far-out J<sub>max</sub> ≈ 0.2–0.3 → 3–5× is honest.</td>
             </tr>
             <tr>
-              <td>Right coordinate or bounded payoff</td>
-              <td>One of the two mechanisms below.</td>
+              <td>Bounded payoff</td>
+              <td>Full collateralization within explicit bounds — the mechanism below. Funded leverage on the raw probability does not survive the two hazards.</td>
               <td>—</td>
             </tr>
           </tbody>
         </table>
-        <div class="grid two">
-          <div class="panel">
-            <h3>Commit now — range-collateralized leverage</h3>
-            <p>
-              The near-term product. Leverage as narrowed bounds: a position
-              collateralized only over <code>[p_lo, p_hi]</code> is
-              <code>1/(p_hi − p_lo)</code>× levered, fully collateralized
-              inside the range, zero bad debt by construction, and needs no
-              funding at all. This is MNX's existing numeric-future min/max
-              machinery with tighter bounds (Levana runs the capped-payoff
-              equivalent in production). Cost: exposure truncates outside the
-              range. Bonus: the range ladder doubles as the hazard oracle the
-              leverage gate needs — prices of near-boundary ranges reveal the
-              market's own estimate of jump-to-resolution risk.
-            </p>
-          </div>
-          <div class="panel">
-            <h3>Research program — the logit-perp (with its cost stated)</h3>
-            <p>
-              Trade log-odds <code>ln(p/(1−p))</code> instead of
-              <code>p</code>: roughly symmetric, so the boundary funding
-              pathology disappears and the <em>standard</em> funding of this
-              document (premium ÷ D, capped — just measured in log-odds)
-              applies unchanged, with margin and liquidation in the same
-              coordinate — which is exactly what the one published academic
-              attempt didn't do (it patched the funding formula while leaving
-              margin in probability space, and failed its own backtests). The
-              honest trade-off: the same transform <em>amplifies</em> jumps —
-              0.95 → 0.99 is four cents of probability but a huge log-odds
-              move, and resolution itself is an infinite one. The coordinate
-              fixes funding and relocates the jump hazard; it does not remove
-              it. A logit-perp is therefore only tradable with a hard
-              logit-range truncation — making it the range product in another
-              coordinate — plus the hazard gate below. Validation gate:
-              backtest funding + margin + gate in log-odds space on public
-              prediction-market tick data against pre-registered floors;
-              build only if it clears them. (TickSpread's engine already had
-              a <code>log_perpetual</code> type.)
-            </p>
-          </div>
+        <div class="panel">
+          <h3>The mechanism — range-collateralized leverage</h3>
+          <p>
+            Leverage as narrowed bounds: a position collateralized only over
+            <code>[p_lo, p_hi]</code> is <code>1/(p_hi − p_lo)</code>×
+            levered, fully collateralized inside the range, zero bad debt by
+            construction, and needs no funding at all. This is MNX's existing
+            numeric-future min/max machinery with tighter bounds (Levana runs
+            the capped-payoff equivalent in production). Cost: exposure
+            truncates outside the range. Bonus: the range ladder doubles as
+            the hazard oracle the leverage gate needs — prices of
+            near-boundary ranges reveal the market's own estimate of
+            jump-to-resolution risk.
+          </p>
         </div>
         <div class="callout">
           <p>
@@ -812,6 +786,11 @@
               <td><strong>Hyperliquid-implied spot</strong> (estimating a "true" weekend stock price by stripping Hyperliquid's own funding premium out of its perp price, instead of using the perp price directly)</td>
               <td>Degenerates: Hyperliquid's weekend premium is measured against its own drifting oracle, so the inversion recovers noise; the correction is tens of bps while the weekend information being sought is whole percents.</td>
               <td>Hyperliquid publishes a genuine external-price series worth the machinery (their frozen "external price" field is not it).</td>
+            </tr>
+            <tr>
+              <td><strong>The logit-perp</strong> (trading log-odds <code>ln(p/(1−p))</code> so probability markets can carry standard funded leverage)</td>
+              <td>The coordinate that fixes funding near the 0/1 bounds amplifies the terminal jump in the same region — 0.95 → 0.99 is four cents of probability but a huge log-odds move, and resolution itself is an infinite one. Making it safe requires hard range truncation, at which point it is the range-collateralized product in a worse coordinate.</td>
+              <td>A truncated, hazard-gated variant demonstrably beats the plain range product on backtested liquidation and bad-debt metrics.</td>
             </tr>
             <tr>
               <td><strong>Interest / borrow-rate components</strong></td>
