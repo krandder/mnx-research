@@ -13,6 +13,7 @@ https://mnx-research.vercel.app
 - `/adl` - ADL Replacement-Capacity Invariants
 - `/adl-funding` - MNX Funding-Stall Solvency Invariants
 - `/replay` - MNX Replay Findings
+- `/market-params` - MNX Launch Parameters — What Should Change
 - `/funding` - MNX Funding v2 — Market Definitions
 - `/funding-v1` - MNX Funding Proposal (v1, superseded)
 - `/engine-egress` - Engine Egress: Quiver/TickSpread vs MNX
