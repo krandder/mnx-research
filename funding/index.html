@@ -626,7 +626,7 @@
             </tr>
             <tr>
               <td>Jump-bounded leverage</td>
-              <td><code>L<sub>max</sub> ≤ 1/J<sub>max</sub></code>, compressed toward 1× on a schedule as resolution approaches; halt-and-cash-settle at the pre-resolution mark.</td>
+              <td><code>L<sub>max</sub> ≤ 1/J<sub>max</sub></code>, with <code>J<sub>max</sub></code> read from markets (below), never below a deterministic time-to-resolution floor schedule; halt-and-cash-settle at the pre-resolution mark.</td>
               <td>Far-out J<sub>max</sub> ≈ 0.2–0.3 → 3–5× is honest.</td>
             </tr>
             <tr>
@@ -647,28 +647,53 @@
               funding at all. This is MNX's existing numeric-future min/max
               machinery with tighter bounds (Levana runs the capped-payoff
               equivalent in production). Cost: exposure truncates outside the
-              range. Ships leveraged probability exposure while the logit-perp
-              is validated.
+              range. Bonus: the range ladder doubles as the hazard oracle the
+              leverage gate needs — prices of near-boundary ranges reveal the
+              market's own estimate of jump-to-resolution risk.
             </p>
           </div>
           <div class="panel">
-            <h3>Research program — the logit-perp</h3>
+            <h3>Research program — the logit-perp (with its cost stated)</h3>
             <p>
               Trade log-odds <code>ln(p/(1−p))</code> instead of
-              <code>p</code>: unbounded and roughly symmetric, so the boundary
-              pathology is exposed as a coordinate artifact and the
-              <em>standard</em> funding of this document (premium ÷ D, capped
-              — just measured in log-odds) applies unchanged. Margin and
-              liquidation live in the same coordinate — which is exactly what
-              the one published academic attempt didn't do (it patched the
-              funding formula while leaving margin in probability space, and
-              failed its own backtests).
-              TickSpread's engine already had a <code>log_perpetual</code>
-              type. Validation gate: backtest funding + margin in log-odds
-              space on public prediction-market tick data against
-              pre-registered floors; build only if it clears them.
+              <code>p</code>: roughly symmetric, so the boundary funding
+              pathology disappears and the <em>standard</em> funding of this
+              document (premium ÷ D, capped — just measured in log-odds)
+              applies unchanged, with margin and liquidation in the same
+              coordinate — which is exactly what the one published academic
+              attempt didn't do (it patched the funding formula while leaving
+              margin in probability space, and failed its own backtests). The
+              honest trade-off: the same transform <em>amplifies</em> jumps —
+              0.95 → 0.99 is four cents of probability but a huge log-odds
+              move, and resolution itself is an infinite one. The coordinate
+              fixes funding and relocates the jump hazard; it does not remove
+              it. A logit-perp is therefore only tradable with a hard
+              logit-range truncation — making it the range product in another
+              coordinate — plus the hazard gate below. Validation gate:
+              backtest funding + margin + gate in log-odds space on public
+              prediction-market tick data against pre-registered floors;
+              build only if it clears them. (TickSpread's engine already had
+              a <code>log_perpetual</code> type.)
             </p>
           </div>
+        </div>
+        <div class="callout">
+          <p>
+            <strong>The leverage gate is itself market-priced.</strong>
+            Leverage should be available exactly when the market believes
+            terminal jumps are unlikely — so read
+            <code>J<sub>max</sub></code> from markets rather than scheduling
+            it: a hazard market ("resolves, or moves beyond X, within 30
+            days?") prices jump intensity directly, and the range ladder's
+            near-boundary prices imply the same density for free. Guardrails,
+            because a leverage gate fed by a manipulable market is an attack
+            surface (suppress the hazard price, get leverage granted,
+            detonate the jump): market-implied hazard may only
+            <em>tighten</em> leverage relative to a deterministic
+            time-to-resolution floor schedule, enters through a slow moving
+            average, and has bounded sensitivity — leverage is earned slowly
+            and revoked fast.
+          </p>
         </div>
       </section>
 
