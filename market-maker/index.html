@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>How the MNX Market Maker Works</title>
+    <meta
+      name="description"
+      content="An introduction to the MNX market-maker service for the CEO and CTO: what it does, how it prices, how it stays safe, and where to read the code."
+    >
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4f7f7;
+        --paper: #ffffff;
+        --paper-soft: #eef3f3;
+        --ink: #12181a;
+        --muted: #58666a;
+        --line: #d2dde0;
+        --line-soft: #e6edee;
+        --teal: #0b6b61;
+        --teal-dark: #064a42;
+        --teal-soft: #e2f2f0;
+        --ink-panel: #16211f;
+        --bid: #147a4e;
+        --bid-soft: #e6f5ec;
+        --bid-bar: #7fcea4;
+        --ask: #a5352f;
+        --ask-soft: #fceceb;
+        --ask-bar: #e5a19c;
+        --amber: #8f5410;
+        --amber-soft: #fbf1de;
+        --code: #eff3f4;
+        --shadow: 0 18px 44px rgba(18, 24, 26, 0.09);
+        --shadow-soft: 0 8px 22px rgba(18, 24, 26, 0.06);
+      }
+
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(1200px 520px at 78% -8%, rgba(11, 107, 97, 0.08), transparent 60%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0)),
+          var(--bg);
+        color: var(--ink);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        line-height: 1.62;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      a { color: var(--teal-dark); text-underline-offset: 3px; }
+
+      .wrap { width: min(1080px, calc(100vw - 40px)); margin: 0 auto; }
+
+      /* ---------- header ---------- */
+      header {
+        background:
+          radial-gradient(760px 320px at 88% -30%, rgba(23, 163, 148, 0.34), transparent 62%),
+          var(--ink-panel);
+        color: #ffffff;
+        border-bottom: 6px solid #17a394;
+        padding: 46px 24px 0;
+      }
+
+      .eyebrow {
+        margin: 0 0 16px;
+        color: #8ff0e0;
+        font-size: 0.76rem;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        max-width: 900px;
+        margin: 0;
+        font-size: clamp(2.1rem, 5.4vw, 4.3rem);
+        line-height: 0.99;
+        letter-spacing: -0.02em;
+        font-weight: 830;
+      }
+
+      .lede {
+        max-width: 760px;
+        margin: 20px 0 0;
+        color: #d3e2de;
+        font-size: clamp(1.02rem, 1.9vw, 1.24rem);
+      }
+
+      .audience {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin: 24px 0 0;
+      }
+
+      .aud {
+        flex: 1 1 300px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 14px 16px;
+      }
+
+      .aud b {
+        display: block;
+        color: #8ff0e0;
+        font-size: 0.74rem;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+      }
+
+      .aud span { color: #cfdedb; font-size: 0.94rem; }
+
+      /* hero ladder sits half-in-header */
+      .hero-ladder-wrap { padding: 34px 0 0; }
+
+      .toc-bar {
+        background: var(--paper);
+        border-bottom: 1px solid var(--line);
+        box-shadow: var(--shadow-soft);
+        position: sticky;
+        top: 0;
+        z-index: 5;
+      }
+
+      .toc {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 11px 0;
+        align-items: center;
+      }
+
+      .toc .toc-label {
+        color: var(--muted);
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin-right: 6px;
+      }
+
+      .toc a {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 5px 12px 5px 8px;
+        color: var(--ink);
+        background: var(--paper);
+        text-decoration: none;
+        font-size: 0.86rem;
+        font-weight: 600;
+      }
+
+      .toc a:hover, .toc a:focus-visible {
+        border-color: var(--teal);
+        background: var(--teal-soft);
+        color: var(--teal-dark);
+      }
+
+      .toc a .n {
+        font-variant-numeric: tabular-nums;
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: #fff;
+        background: var(--teal);
+        border-radius: 999px;
+        width: 18px;
+        height: 18px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      main { padding: 8px 0 64px; }
+
+      /* ---------- chapters ---------- */
+      section { margin: 54px 0; scroll-margin-top: 62px; }
+
+      .chap-head {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 20px;
+        align-items: start;
+        margin-bottom: 18px;
+      }
+
+      .chap-num {
+        font-variant-numeric: tabular-nums;
+        font-size: clamp(2.2rem, 6vw, 3.4rem);
+        font-weight: 850;
+        line-height: 0.9;
+        color: var(--teal);
+        letter-spacing: -0.03em;
+        padding-top: 2px;
+      }
+
+      .chap-head .kicker {
+        margin: 0 0 4px;
+        color: var(--muted);
+        font-size: 0.74rem;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      h2 {
+        margin: 0;
+        font-size: clamp(1.5rem, 3.2vw, 2.3rem);
+        line-height: 1.1;
+        letter-spacing: -0.015em;
+        font-weight: 800;
+      }
+
+      h3 {
+        margin: 26px 0 8px;
+        font-size: 1.1rem;
+        line-height: 1.3;
+        font-weight: 750;
+      }
+
+      p { margin: 0 0 14px; }
+      .body-col { max-width: 760px; }
+
+      ul { margin: 12px 0 14px; padding-left: 20px; }
+      li { margin: 8px 0; }
+
+      strong { font-weight: 720; }
+
+      code, .mono {
+        font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        font-size: 0.9em;
+      }
+
+      code {
+        border: 1px solid var(--line-soft);
+        border-radius: 6px;
+        background: var(--code);
+        padding: 0.1rem 0.34rem;
+      }
+
+      .panel {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+        padding: 24px;
+      }
+
+      .grid { display: grid; gap: 16px; }
+      .two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+      .card {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 11px;
+        box-shadow: var(--shadow-soft);
+        padding: 18px 18px 16px;
+      }
+
+      .card .cap {
+        margin: 0 0 6px;
+        color: var(--teal-dark);
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .card p:last-child { margin-bottom: 0; }
+
+      /* ---------- callouts ---------- */
+      .callout {
+        border: 1px solid var(--line);
+        border-left: 5px solid var(--teal);
+        border-radius: 10px;
+        background: var(--teal-soft);
+        padding: 16px 18px;
+        margin: 18px 0;
+      }
+      .callout.warn { border-left-color: var(--amber); background: var(--amber-soft); }
+      .callout p:last-child { margin-bottom: 0; }
+      .callout .tag {
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--teal-dark);
+      }
+      .callout.warn .tag { color: var(--amber); }
+
+      /* ---------- formula block ---------- */
+      .formula {
+        background: var(--ink-panel);
+        color: #eaf4f1;
+        border-radius: 11px;
+        padding: 20px 22px;
+        margin: 18px 0;
+        overflow-x: auto;
+        box-shadow: var(--shadow);
+      }
+      .formula .fx {
+        font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        font-size: 1.02rem;
+        line-height: 1.7;
+        white-space: nowrap;
+      }
+      .formula .fx .hl { color: #8ff0e0; font-weight: 700; }
+      .formula .fx .dim { color: #9fb4b0; }
+      .formula .fx .inv { color: #f0b8b3; }
+      .formula .fx .flo { color: #ffd9a3; }
+      .formula .note {
+        margin: 12px 0 0;
+        color: #9fb4b0;
+        font-size: 0.86rem;
+        white-space: normal;
+      }
+
+      /* ---------- the quote ladder (signature) ---------- */
+      .ladder {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        box-shadow: var(--shadow);
+        padding: 20px 22px 22px;
+      }
+
+      .ladder-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 12px;
+        border-bottom: 1px solid var(--line-soft);
+        padding-bottom: 12px;
+        margin-bottom: 10px;
+      }
+      .ladder-head .t { font-weight: 800; font-size: 0.95rem; }
+      .ladder-head .s {
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .lvl {
+        display: grid;
+        grid-template-columns: 62px 1fr 70px;
+        align-items: center;
+        gap: 12px;
+        padding: 2px 0;
+      }
+      .lvl .px {
+        font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        font-size: 0.86rem;
+        font-weight: 600;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      .lvl .bar-track { height: 16px; border-radius: 4px; position: relative; }
+      .lvl .bar {
+        height: 16px;
+        border-radius: 4px;
+        display: block;
+      }
+      .lvl.ask .px { color: var(--ask); }
+      .lvl.ask .bar { background: var(--ask-bar); }
+      .lvl.bid .px { color: var(--bid); }
+      .lvl.bid .bar { background: var(--bid-bar); }
+      .lvl .sz {
+        font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        font-size: 0.76rem;
+        color: var(--muted);
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .midband {
+        display: grid;
+        grid-template-columns: 62px 1fr 70px;
+        align-items: center;
+        gap: 12px;
+        margin: 8px 0;
+        padding: 9px 0;
+        border-top: 1px dashed var(--teal);
+        border-bottom: 1px dashed var(--teal);
+        background: var(--teal-soft);
+        border-radius: 6px;
+      }
+      .midband .rp {
+        font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        font-size: 0.86rem;
+        font-weight: 800;
+        text-align: right;
+        color: var(--teal-dark);
+      }
+      .midband .lab {
+        color: var(--teal-dark);
+        font-size: 0.8rem;
+        font-weight: 700;
+      }
+      .midband .lab span { color: var(--muted); font-weight: 600; }
+
+      .ladder-foot {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px solid var(--line-soft);
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+      .ladder-foot .dot {
+        display: inline-block; width: 10px; height: 10px; border-radius: 3px;
+        margin-right: 6px; vertical-align: -1px;
+      }
+      .dot.bidc { background: var(--bid-bar); }
+      .dot.askc { background: var(--ask-bar); }
+
+      /* ---------- file pointers ---------- */
+      .pointers {
+        margin: 22px 0 0;
+        border-top: 1px solid var(--line);
+        padding-top: 16px;
+      }
+      .pointers .ph {
+        margin: 0 0 10px;
+        color: var(--teal-dark);
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .pointers .ph::before {
+        content: "→";
+        color: var(--teal);
+        font-weight: 800;
+      }
+      .plist { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+      .plist li {
+        display: grid;
+        grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+        gap: 12px;
+        align-items: baseline;
+        margin: 0;
+        padding: 8px 12px;
+        background: var(--paper-soft);
+        border: 1px solid var(--line-soft);
+        border-radius: 8px;
+      }
+      .plist li .path {
+        font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--teal-dark);
+        word-break: break-all;
+      }
+      .plist li .what { color: var(--muted); font-size: 0.9rem; }
+
+      /* ---------- tick tour ---------- */
+      .tour { display: grid; gap: 10px; margin: 18px 0 0; }
+      .hop {
+        display: grid;
+        grid-template-columns: 40px minmax(0, 1fr);
+        gap: 16px;
+        align-items: start;
+        border: 1px solid var(--line);
+        border-radius: 11px;
+        background: var(--paper);
+        box-shadow: var(--shadow-soft);
+        padding: 16px 18px;
+      }
+      .hop .hn {
+        font-variant-numeric: tabular-nums;
+        font-size: 1.05rem;
+        font-weight: 850;
+        color: #fff;
+        background: var(--teal);
+        width: 34px; height: 34px;
+        border-radius: 9px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .hop .file {
+        font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        font-size: 0.86rem;
+        font-weight: 700;
+        color: var(--teal-dark);
+        display: block;
+        margin-bottom: 3px;
+        word-break: break-all;
+      }
+      .hop p { margin: 0; color: var(--ink); font-size: 0.95rem; }
+      .hop.mmcore { border-left: 4px solid var(--teal); }
+      .hop.mmcore .hn { background: var(--teal-dark); }
+      .hop .pill {
+        display: inline-block;
+        margin-left: 8px;
+        font-size: 0.68rem;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--teal-dark);
+        background: var(--teal-soft);
+        border: 1px solid var(--teal);
+        border-radius: 999px;
+        padding: 1px 8px;
+        vertical-align: 1px;
+      }
+
+      /* ---------- safety groups ---------- */
+      .safety { display: grid; gap: 14px; margin-top: 18px; }
+      .sgroup {
+        border: 1px solid var(--line);
+        border-radius: 11px;
+        background: var(--paper);
+        box-shadow: var(--shadow-soft);
+        padding: 18px 20px;
+      }
+      .sgroup .stop {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0 0 8px;
+      }
+      .sgroup .badge {
+        font-variant-numeric: tabular-nums;
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: var(--teal-dark);
+        background: var(--teal-soft);
+        border: 1px solid var(--teal);
+        border-radius: 999px;
+        padding: 2px 10px;
+      }
+      .sgroup h3 { margin: 0; font-size: 1.05rem; }
+      .sgroup p { margin: 0; color: var(--muted); font-size: 0.95rem; }
+      .sgroup p .fp {
+        font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        font-size: 0.86em;
+        color: var(--teal-dark);
+      }
+
+      .muted { color: var(--muted); }
+
+      /* ---------- reading path ---------- */
+      .steps { counter-reset: step; display: grid; gap: 4px; margin: 16px 0 0; padding: 0; list-style: none; }
+      .steps li {
+        display: grid;
+        grid-template-columns: 34px minmax(0, 1fr);
+        gap: 14px;
+        align-items: baseline;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--line-soft);
+        margin: 0;
+      }
+      .steps li:last-child { border-bottom: 0; }
+      .steps li::before {
+        counter-increment: step;
+        content: counter(step);
+        font-variant-numeric: tabular-nums;
+        font-weight: 850;
+        color: var(--teal);
+        font-size: 0.95rem;
+        text-align: center;
+      }
+      .steps .path {
+        font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        font-size: 0.84rem;
+        font-weight: 650;
+        color: var(--teal-dark);
+        word-break: break-all;
+      }
+      .steps .desc { color: var(--muted); font-size: 0.92rem; }
+
+      footer {
+        margin-top: 52px;
+        padding-top: 22px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.86rem;
+      }
+      footer a { font-weight: 600; }
+
+      @media (max-width: 820px) {
+        .two, .three { grid-template-columns: 1fr; }
+        .chap-head { grid-template-columns: 1fr; gap: 4px; }
+        .chap-num { font-size: 2.2rem; }
+      }
+      @media (max-width: 560px) {
+        .wrap { width: min(100% - 26px, 1080px); }
+        header { padding: 32px 14px 0; }
+        .panel, .ladder { padding: 18px; }
+        .lvl, .midband { grid-template-columns: 56px 1fr 56px; gap: 8px; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        html { scroll-behavior: auto; }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap">
+        <p class="eyebrow">MNX · Internal Explainer</p>
+        <h1>How the market maker works</h1>
+        <p class="lede">
+          Before you open the code, read this. It is the whole system in one
+          pass: what the market maker does for the business, how it decides
+          where to quote, how it protects the vault, and exactly which files to
+          open first.
+        </p>
+        <div class="audience">
+          <div class="aud">
+            <b>For the CEO</b>
+            <span>What it does, how it makes and manages risk, and why it is
+              safe. Lead with intuition; the formulas are optional.</span>
+          </div>
+          <div class="aud">
+            <b>For the CTO</b>
+            <span>The architecture, the invariants that must hold, and a map of
+              where each concept lives so the code reads confidently.</span>
+          </div>
+        </div>
+        <div class="hero-ladder-wrap">
+          <div class="ladder" aria-label="Illustrative quote ladder around a reservation price">
+            <div class="ladder-head">
+              <span class="t">A quote ladder, one market</span>
+              <span class="s">asks above · bids below · reservation price at center</span>
+            </div>
+
+            <div class="lvl ask"><span class="px">1 205</span><span class="bar-track"><span class="bar" style="width:34%"></span></span><span class="sz">$1.6k</span></div>
+            <div class="lvl ask"><span class="px">1 204</span><span class="bar-track"><span class="bar" style="width:34%"></span></span><span class="sz">$1.6k</span></div>
+            <div class="lvl ask"><span class="px">1 203</span><span class="bar-track"><span class="bar" style="width:34%"></span></span><span class="sz">$1.6k</span></div>
+            <div class="lvl ask"><span class="px">1 202</span><span class="bar-track"><span class="bar" style="width:34%"></span></span><span class="sz">$1.6k</span></div>
+
+            <div class="midband">
+              <span class="rp">1 200</span>
+              <span class="lab">Reservation price <span>= fair price, skewed for inventory &amp; recent flow</span></span>
+              <span class="sz" style="text-align:right">spread</span>
+            </div>
+
+            <div class="lvl bid"><span class="px">1 198</span><span class="bar-track"><span class="bar" style="width:34%"></span></span><span class="sz">$1.6k</span></div>
+            <div class="lvl bid"><span class="px">1 197</span><span class="bar-track"><span class="bar" style="width:34%"></span></span><span class="sz">$1.6k</span></div>
+            <div class="lvl bid"><span class="px">1 196</span><span class="bar-track"><span class="bar" style="width:34%"></span></span><span class="sz">$1.6k</span></div>
+            <div class="lvl bid"><span class="px">1 195</span><span class="bar-track"><span class="bar" style="width:34%"></span></span><span class="sz">$1.6k</span></div>
+
+            <div class="ladder-foot">
+              <span><span class="dot askc"></span>Asks — the maker sells here</span>
+              <span><span class="dot bidc"></span>Bids — the maker buys here</span>
+              <span>Depth per level scales with vault equity; the shape stays fixed.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <nav class="toc-bar" aria-label="Chapters">
+      <div class="wrap toc">
+        <span class="toc-label">Chapters</span>
+        <a href="#what"><span class="n">1</span>What it is</a>
+        <a href="#price"><span class="n">2</span>How it prices</a>
+        <a href="#ladder"><span class="n">3</span>Ladder &amp; capital</a>
+        <a href="#tick"><span class="n">4</span>One tick</a>
+        <a href="#safe"><span class="n">5</span>Fails closed</a>
+        <a href="#arch"><span class="n">6</span>Where to read</a>
+      </div>
+    </nav>
+
+    <main class="wrap">
+
+      <!-- ================= 1 ================= -->
+      <section id="what">
+        <div class="chap-head">
+          <div class="chap-num">01</div>
+          <div>
+            <p class="kicker">The business, in one paragraph</p>
+            <h2>What the market maker is</h2>
+          </div>
+        </div>
+
+        <div class="body-col">
+          <p>
+            The market maker is the software that provides liquidity on MNX
+            markets. On every market it runs, it posts a <strong>bid</strong>
+            (a price at which it will buy) and an <strong>ask</strong> (a price
+            at which it will sell), and it keeps those quotes live and current.
+            When a user trades, they trade against the maker. The maker earns
+            the <strong>spread</strong> — the gap between its buy and sell
+            prices — and in exchange it takes on <strong>inventory</strong>: a
+            position it now has to manage.
+          </p>
+          <p>
+            At launch the maker may <em>be</em> most of the order book. That
+            single fact drives the whole design. It cannot read prices off its
+            own quotes, and it cannot dump a position by selling into a market
+            that is mostly itself. So the posture is deliberately defensive:
+            quote around an <strong>external</strong> estimate of fair value,
+            take on risk slowly, charge more when flow looks informed, and stop
+            cleanly when something is wrong. It is far easier to tighten spreads
+            after watching real flow than to recover from being picked off in
+            week one.
+          </p>
+        </div>
+
+        <div class="grid three" style="margin-top:20px">
+          <div class="card">
+            <p class="cap">Earn the spread</p>
+            <p>Quote both sides continuously. The difference between bid and ask
+              is the maker's compensation for standing ready to trade.</p>
+          </div>
+          <div class="card">
+            <p class="cap">Manage inventory</p>
+            <p>Every fill leaves a position. The maker steers its quotes to keep
+              that position, and the vault's risk, inside limits it chooses.</p>
+          </div>
+          <div class="card">
+            <p class="cap">Fail closed</p>
+            <p>On any doubt — stale data, thin margin, a lost lease — it stops
+              adding risk rather than guessing. Safety beats liveness.</p>
+          </div>
+        </div>
+
+        <div class="callout">
+          <p><span class="tag">The one design idea</span></p>
+          <p>
+            The system is split into two independent layers. A
+            <strong>pricing model</strong> decides <em>where</em> the maker
+            wants to buy and sell. A <strong>quoting engine</strong> decides
+            <em>how</em> to place, refresh, and cancel the actual orders that
+            express it. Keeping these apart is what keeps the strategy small
+            enough to review by eye. In the code the split is physical: pure
+            strategy in <code>packages/mm-core/</code>, everything else —
+            exchange calls, database, scheduling — in <code>src/</code>.
+          </p>
+        </div>
+
+        <div class="pointers">
+          <p class="ph">Where this lives</p>
+          <ul class="plist">
+            <li><span class="path">packages/mm-core/</span><span class="what">The pure strategy: pricing, ladder, cancel/place decisions. No I/O. The high-review surface.</span></li>
+            <li><span class="path">src/</span><span class="what">The plumbing that runs the strategy against a real venue: clients, control plane, scheduling, telemetry.</span></li>
+            <li><span class="path">proposals/MARKET_MAKER_CORE_DESIGN.md</span><span class="what">The full strategy design memo this chapter summarizes.</span></li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ================= 2 ================= -->
+      <section id="price">
+        <div class="chap-head">
+          <div class="chap-num">02</div>
+          <div>
+            <p class="kicker">The pricing model</p>
+            <h2>How it decides where to quote</h2>
+          </div>
+        </div>
+
+        <div class="body-col">
+          <p>
+            The center of the maker's quotes is the <strong>reservation
+            price</strong>. It starts from an external fair price and then
+            shifts for two reasons: how much inventory the maker already holds,
+            and how aggressively users have been trading against it lately. In
+            plain terms:
+          </p>
+        </div>
+
+        <div class="formula">
+          <div class="fx">
+            <span class="hl">reservation_price</span> = <span class="dim">fair_price</span> &times; ( 1 &minus; <span class="inv">inventory_skew</span> &minus; <span class="flo">flow_skew</span> )
+          </div>
+          <p class="note">
+            All signs are defined from the <strong>maker's</strong> point of
+            view. A user buy is a maker sell, which lowers maker inventory. Get
+            this convention wrong and the whole model inverts — so it is written
+            into the code and the tests.
+          </p>
+        </div>
+
+        <div class="body-col">
+          <h3>Fair price — from outside, never from its own book</h3>
+          <p>
+            The anchor is an <strong>external</strong> fair-value estimate, not
+            the maker's own displayed mid. If the maker is the book, reading the
+            book just reflects its own quotes back at it — a self-referential
+            loop. If that external price is missing or stale, the maker refuses
+            to quote (see Chapter 5).
+          </p>
+
+          <h3>Inventory skew — a treasury knob</h3>
+          <p>
+            The more the maker already holds, the less eager it should be to
+            hold more. Long inventory pushes the reservation price
+            <em>down</em> (cheaper to sell, dearer to buy); short inventory
+            pushes it <em>up</em>. This is linear and slow. Its steepness is a
+            business decision about risk appetite — roughly a
+            <strong>1% shift per $100k</strong> of inventory in the starting
+            calibration. That is the CEO's dial: how much exposure is the vault
+            willing to warehouse, and at what discount.
+          </p>
+
+          <h3>Flow skew — the toxicity term</h3>
+          <p>
+            This is the idea that matters most. Recent trades carry more
+            information than old inventory. If users suddenly buy hard right
+            now, that burst is itself evidence someone knows something — so the
+            maker raises its price and sells only at a premium. This term decays
+            exponentially over minutes, and it is calibrated <strong>~5&times;
+            steeper</strong> than inventory (about a 1% shift per $20k of
+            immediate flow). It can <em>override</em> the inventory sign: the
+            maker may be long yet still quote to sell above fair value, because
+            the flow hitting it looks informed.
+          </p>
+
+          <h3>Spread and volatility</h3>
+          <p>
+            Around the reservation price sits the spread: a base amount, widened
+            when volatility rises. Volatility <em>only widens the spread</em> —
+            in this version it never moves the reservation price and never
+            resizes orders. That rule exists on purpose: computing volatility
+            from the same flow you are reacting to invites manipulation and
+            loss-making feedback loops.
+          </p>
+        </div>
+
+        <div class="grid two" style="margin-top:8px">
+          <div class="card">
+            <p class="cap">Inventory term asks</p>
+            <p>“How much balance-sheet exposure do we want to carry?” Slow,
+              linear, a treasury dial.</p>
+          </div>
+          <div class="card">
+            <p class="cap">Flow term asks</p>
+            <p>“How much might the trader hitting us right now know that we
+              don't?” Fast, decaying, a defense against adverse selection.</p>
+          </div>
+        </div>
+
+        <div class="pointers">
+          <p class="ph">Where this lives</p>
+          <ul class="plist">
+            <li><span class="path">packages/mm-core/src/quote.ts</span><span class="what"><code>buildQuoteModel</code> — reservation price, spread, inventory &amp; flow skew.</span></li>
+            <li><span class="path">packages/mm-core/src/flow.ts</span><span class="what"><code>computeDecayedRecentFlowUsd</code> — the exponentially decayed recent-flow measure.</span></li>
+            <li><span class="path">packages/mm-core/src/regime.ts</span><span class="what"><code>resolveFairPrice</code> — sources the external fair price and gates on staleness.</span></li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ================= 3 ================= -->
+      <section id="ladder">
+        <div class="chap-head">
+          <div class="chap-num">03</div>
+          <div>
+            <p class="kicker">Depth &amp; scale</p>
+            <h2>The ladder, and adding capital</h2>
+          </div>
+        </div>
+
+        <div class="body-col">
+          <p>
+            The maker does not post one bid and one ask. It posts a
+            <strong>ladder</strong>: around ten orders per side, stepped out on
+            a coarse price grid, so the book looks natural and price impact is
+            gradual rather than a single cliff. Orders live in persistent
+            <strong>ring slots</strong> — a fixed pool of ~100 slots per side —
+            so the maker updates only the levels that changed instead of
+            cancelling and rebuilding the whole book every cycle. Each slot
+            carries its own lifecycle, which is what makes fills-during-cancel
+            and partial fills safe to reason about.
+          </p>
+
+          <h3>Add capital, get a deeper book — same shape</h3>
+          <p>
+            The dollar knobs — inventory depth, flow depth, per-level size,
+            maximum inventory — are not hard-coded. They scale with the live
+            equity in the maker's vault. Fund the vault with more, and every
+            level of the ladder grows proportionally: the book gets deeper while
+            its shape stays fixed. Pull equity out, and it shrinks the same way.
+            A <strong>slew clamp</strong> bounds how fast the scale can move
+            tick-over-tick, so one corrupted balance read cannot inflate sizing,
+            caps, and budget all at once.
+          </p>
+        </div>
+
+        <div class="callout">
+          <p><span class="tag">Why a shared budget</span></p>
+          <p>
+            One process runs every market against one vault. Before it plans,
+            it computes a single ladder budget — total margin minus what is used,
+            with one safety floor held back — and then plans markets in a stable
+            order, charging each ladder's opening margin against the remainder.
+            Markets draw from a common pool of capital, fairly and predictably.
+          </p>
+        </div>
+
+        <div class="pointers">
+          <p class="ph">Where this lives</p>
+          <ul class="plist">
+            <li><span class="path">packages/mm-core/src/ladder.ts</span><span class="what"><code>buildLadder</code> — the margin-bounded, ring-slot ladder.</span></li>
+            <li><span class="path">packages/mm-core/src/slots.ts</span><span class="what"><code>selectActiveRingSlots</code> — ring-slot selection and sizing generation.</span></li>
+            <li><span class="path">packages/mm-core/src/sizing.ts</span><span class="what"><code>buildOrderForLevel</code> — per-level size and side capacities.</span></li>
+            <li><span class="path">src/capital-scaling.ts</span><span class="what"><code>resolveCapitalScaledMarkets</code> and <code>applyEquitySlew</code> — equity → knobs, with the slew clamp.</span></li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ================= 4 ================= -->
+      <section id="tick">
+        <div class="chap-head">
+          <div class="chap-num">04</div>
+          <div>
+            <p class="kicker">A guided tour</p>
+            <h2>One tick, end to end</h2>
+          </div>
+        </div>
+
+        <div class="body-col">
+          <p>
+            Everything above runs on a <strong>tick</strong>: a single quoting
+            cycle fired on a cadence and on wake-on-move interrupts. A tick
+            reads the operator's intent, plans every market, executes in a
+            safety-ordered sequence, and reports what it did. It touches exactly
+            eight files, and each hop names the next — no repo-wide search
+            needed to follow it. This is also the recommended reading path.
+          </p>
+        </div>
+
+        <div class="tour">
+          <div class="hop">
+            <span class="hn">1</span>
+            <div>
+              <span class="file">src/control-plane.ts</span>
+              <p>Read the operator's row from Postgres — process mode, vault,
+                capital fractions, per-market config. No control row for this
+                environment means the service runs <code>disabled</code>: an
+                empty control DB can never start quoting.</p>
+            </div>
+          </div>
+          <div class="hop">
+            <span class="hn">2</span>
+            <div>
+              <span class="file">src/client.ts</span>
+              <p>The MNX venue adapter merges those rows with live exchange
+                state — balances, positions, open orders, fills — into the
+                planner's inputs, and owns order placement and cancellation.</p>
+            </div>
+          </div>
+          <div class="hop">
+            <span class="hn">3</span>
+            <div>
+              <span class="file">src/runtime.ts — runTick</span>
+              <p>The linear audit trail. Renew the single-instance lease once,
+                load state, then resolve the effective mode through the
+                most-restrictive-wins lattice before anything trades.</p>
+            </div>
+          </div>
+          <div class="hop">
+            <span class="hn">4</span>
+            <div>
+              <span class="file">src/tick-plan.ts</span>
+              <p>The planning fold: apply capital scaling and the equity slew,
+                derive the shared-vault budget, then plan markets one at a time
+                against the running budget remainder.</p>
+            </div>
+          </div>
+          <div class="hop mmcore">
+            <span class="hn">5</span>
+            <div>
+              <span class="file">packages/mm-core/src/planner.ts <span class="pill">mm-core · pure</span></span>
+              <p>The strategy core. Given a snapshot, config, fair price, risk,
+                fills and open orders, it returns a plan — regime, desired
+                orders, what to cancel, what to place — with no I/O at all. This
+                is Chapters 2 and 3, in code.</p>
+            </div>
+          </div>
+          <div class="hop">
+            <span class="hn">6</span>
+            <div>
+              <span class="file">src/tick-pipeline.ts</span>
+              <p>Execution, in a fixed, fail-closed order: <strong>cancels
+                first</strong> for every market, then one aggregate validation
+                gate, then placements — isolated per market. Reducing exposure
+                always runs before adding any.</p>
+            </div>
+          </div>
+          <div class="hop">
+            <span class="hn">7</span>
+            <div>
+              <span class="file">src/telemetry-snapshot.ts</span>
+              <p>Turn the tick's result into the dashboard wire shape: per-market
+                quotes, orders, positions, signals, and health.</p>
+            </div>
+          </div>
+          <div class="hop">
+            <span class="hn">8</span>
+            <div>
+              <span class="file">src/telemetry-publisher.ts</span>
+              <p>POST the snapshot to the operator dashboard. Publish failures
+                are swallowed with a warning — telemetry can never break the
+                trading loop. The tick is now observable at
+                <code>mm.mnx.fi</code>; the next tick starts again at hop 1.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="pointers">
+          <p class="ph">Where this lives</p>
+          <ul class="plist">
+            <li><span class="path">docs/mm-tick-walkthrough.md</span><span class="what">The full 8-file walkthrough this tour condenses — read it alongside the code.</span></li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ================= 5 ================= -->
+      <section id="safe">
+        <div class="chap-head">
+          <div class="chap-num">05</div>
+          <div>
+            <p class="kicker">The section that earns trust</p>
+            <h2>How it stays safe — it fails closed</h2>
+          </div>
+        </div>
+
+        <div class="body-col">
+          <p>
+            A market-maker bug spends capital fast, so the system is built
+            around one rule: <strong>on uncertainty, refuse new exposure.</strong>
+            On error, contention, or missing configuration, the maker cancels or
+            holds rather than proceeding. And when it stops, it
+            <strong>holds its position rather than liquidating</strong> — dumping
+            inventory into a market that is mostly itself only deepens the loss.
+          </p>
+          <p>
+            There are <strong>25 catalogued fail-closed mechanisms</strong>,
+            each pinned by golden snapshot tests so its behavior cannot drift
+            silently. They fall into a few layers:
+          </p>
+        </div>
+
+        <div class="safety">
+          <div class="sgroup">
+            <div class="stop"><span class="badge">Group A</span><h3>Strategy regime gates</h3></div>
+            <p>Per market, per tick, the first tripped gate wins: a missing or
+              stale fair price, margin below the floor, exhausted hit-points, an
+              unconfigured grid, or a failed liquidity-impact invariant all drop
+              the market to <strong>cancel-only</strong>; inventory above its cap
+              drops it to <strong>reduce-only</strong>. <span class="fp">packages/mm-core/src/regime.ts</span></p>
+          </div>
+          <div class="sgroup">
+            <div class="stop"><span class="badge">Group B</span><h3>Lease &amp; the mode lattice</h3></div>
+            <p>Exactly one process may quote, held by an atomic single-instance
+              lease. The effective mode is the <strong>most restrictive</strong>
+              of the environment mode, the operator's row, and whether the lease
+              is held — <code>disabled &gt; cancel_only &gt; quote</code>. Lose
+              the lease and the tick caps at cancel-only. <span class="fp">src/lease.ts · src/tick-pipeline.ts</span></p>
+          </div>
+          <div class="sgroup">
+            <div class="stop"><span class="badge">Group C</span><h3>Execution ordering</h3></div>
+            <p>Cancels run before any other failable step; a per-market error
+              skips that market's placements without touching the others; an
+              aggregate validation gate can fail the whole tick <em>after</em>
+              the risk-reducing cancels have already run; and the lease is
+              re-checked one last time immediately before each market places.
+              <span class="fp">src/tick-pipeline.ts</span></p>
+          </div>
+          <div class="sgroup">
+            <div class="stop"><span class="badge">Group D</span><h3>Watchdogs &amp; independent backstop</h3></div>
+            <p>A venue-side <strong>dead-man's switch</strong> cancels every
+              order if the process goes quiet, and it is re-armed only at the end
+              of healthy ticks — so a stuck-but-alive process still lets the
+              cancel-all fire. A <strong>separate backstop service</strong>
+              independently closes stale positions when the maker is not doing
+              its job. <span class="fp">src/dead-man-switch.ts · src/backstop-runtime.ts</span></p>
+          </div>
+          <div class="sgroup">
+            <div class="stop"><span class="badge">Startup</span><h3>Continuity guards</h3></div>
+            <p>A large away-from-market jump in the fair price holds the market's
+              opening quotes until a human confirms — reduce-only closes still
+              pass. Boot without a control database fails fast rather than
+              trading degraded. <span class="fp">src/tick-plan.ts · src/bootstrap.ts</span></p>
+          </div>
+        </div>
+
+        <div class="callout warn">
+          <p><span class="tag">Two things fail open, on purpose</span></p>
+          <p>
+            Heartbeat writes and the tick loop itself never crash the process.
+            The reasoning is deliberate: a dead process strands live orders on
+            the venue with nothing managing them — strictly worse than a running
+            but degraded process that keeps cancelling and reporting. The
+            dead-man's switch and the backstop cover the wedged-process case
+            from the outside.
+          </p>
+        </div>
+
+        <div class="pointers">
+          <p class="ph">Where this lives</p>
+          <ul class="plist">
+            <li><span class="path">docs/mm-fail-closed-canon.md</span><span class="what">The canonical list of all 25 mechanisms, grouped by layer, with the exact file and symbol for each.</span></li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ================= 6 ================= -->
+      <section id="arch">
+        <div class="chap-head">
+          <div class="chap-num">06</div>
+          <div>
+            <p class="kicker">The map</p>
+            <h2>Architecture &amp; where to read next</h2>
+          </div>
+        </div>
+
+        <div class="body-col">
+          <p>
+            The architecture is one boundary drawn firmly.
+            <strong><code>packages/mm-core/</code> is pure</strong>: it holds
+            the quote math, inventory skew, ladder sizing, cancel/place
+            decisions, and regime logic, and it may not import HTTP clients,
+            databases, timers, or anything with a side effect. Everything a
+            trade decision depends on is a function of its inputs, which is why
+            the same plan can be replayed and snapshot-tested exactly.
+            <strong><code>src/</code> is plumbing</strong>: it fetches the
+            inputs, executes the outputs, and holds the mutable state the core
+            is forbidden to keep. When you read the code, that line tells you
+            what a file is allowed to do.
+          </p>
+          <p>
+            Two reference docs are the map. The
+            <strong>concept → file map</strong> answers “where does X live?” —
+            every concept points to exactly one owning file. The
+            <strong>tick walkthrough</strong> is the narrative path. Start with
+            the eight files below, in order; it is the same path Chapter 4
+            walked.
+          </p>
+        </div>
+
+        <ol class="steps">
+          <li><span class="path">src/control-plane.ts</span><span class="desc">the operator's row, read from Postgres</span></li>
+          <li><span class="path">src/client.ts</span><span class="desc">the MNX venue adapter — rows + live exchange state</span></li>
+          <li><span class="path">src/runtime.ts</span><span class="desc"><code>runTick</code>, the linear per-tick audit trail</span></li>
+          <li><span class="path">src/tick-plan.ts</span><span class="desc">capital scaling, budget, per-market planning fold</span></li>
+          <li><span class="path">packages/mm-core/src/planner.ts</span><span class="desc">the pure strategy plan — read this most carefully</span></li>
+          <li><span class="path">src/tick-pipeline.ts</span><span class="desc">execution: cancels → validate → places</span></li>
+          <li><span class="path">src/telemetry-snapshot.ts</span><span class="desc">tick result → dashboard wire shape</span></li>
+          <li><span class="path">src/telemetry-publisher.ts</span><span class="desc">the POST to the operator dashboard</span></li>
+        </ol>
+
+        <div class="pointers">
+          <p class="ph">Where this lives</p>
+          <ul class="plist">
+            <li><span class="path">docs/mm-concept-file-map.md</span><span class="what">Concept → owning file, across strategy core, runtime, venue adapters, control plane, and backstop.</span></li>
+            <li><span class="path">.claude/rules/mm-core-boundary.md</span><span class="what">The rule that keeps the strategy core pure and account-agnostic.</span></li>
+            <li><span class="path">proposals/1-INDEX.md</span><span class="what">The navigation layer for every architecture decision and human-ratified policy.</span></li>
+          </ul>
+        </div>
+      </section>
+
+      <footer>
+        A pre-reading introduction to the MNX market-maker service. Source of
+        truth remains the design memo, the tick walkthrough, the fail-closed
+        canon, and the concept–file map under
+        <code>market-maker/proposals/</code> and <code>market-maker/docs/</code>.
+        &nbsp;·&nbsp; <a href="/">← MNX Research</a>
+      </footer>
+    </main>
+  </body>
+</html>

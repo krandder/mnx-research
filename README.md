@@ -6,6 +6,7 @@ https://mnx-research.vercel.app
 
 ## Pages
 
+- `/market-maker` - How the MNX Market Maker Works
 - `/simulation-findings` - MNX Simulation Findings
 - `/adl-stress-findings` - MNX ADL Stress Findings
 - `/adl-testing` - MNX ADL and Liquidation Testing

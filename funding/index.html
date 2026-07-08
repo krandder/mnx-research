@@ -559,7 +559,7 @@
             </tr>
             <tr>
               <td><strong>Slow-published index</strong></td>
-              <td>H100 $/hr, compute-cost indices</td>
+              <td>H100 $/hr (flagship — below), compute-cost indices</td>
               <td>Silicon Data SDH100RT (daily; CME's pick) — the existing SemiAnalysis connector is monthly-grade, insufficient alone</td>
               <td>Accrue only on fresh prints; zero-premium heartbeat between</td>
               <td>Very weak</td>
@@ -580,6 +580,18 @@
             </tr>
           </tbody>
         </table>
+
+        <div class="callout">
+          <p>
+            <strong>Flagship AI-native listing: the H100 $/hr perp.</strong>
+            Anchor to Silicon Data's SDH100RT daily prints (Very-weak tier,
+            accrual only on fresh prints) and launch ahead of CME's H2-2026
+            compute futures — the crypto-native version of the same contract
+            on the same settlement index. Prerequisite: a data-licensing
+            agreement with Silicon Data (the index is distributed via
+            Bloomberg/API); fallback anchor is ICE/Ornn's OCPI.
+          </p>
+        </div>
 
         <h3>Prediction perpetuals: when leverage on probabilities works</h3>
         <p>
@@ -623,7 +635,21 @@
         </table>
         <div class="grid two">
           <div class="panel">
-            <h3>Mechanism 1 — logit-perp (research direction)</h3>
+            <h3>Commit now — range-collateralized leverage</h3>
+            <p>
+              The near-term product. Leverage as narrowed bounds: a position
+              collateralized only over <code>[p_lo, p_hi]</code> is
+              <code>1/(p_hi − p_lo)</code>× levered, fully collateralized
+              inside the range, zero bad debt by construction, and needs no
+              funding at all. This is MNX's existing numeric-future min/max
+              machinery with tighter bounds (Levana runs the capped-payoff
+              equivalent in production). Cost: exposure truncates outside the
+              range. Ships leveraged probability exposure while the logit-perp
+              is validated.
+            </p>
+          </div>
+          <div class="panel">
+            <h3>Research program — the logit-perp</h3>
             <p>
               Trade log-odds <code>ln(p/(1−p))</code> instead of
               <code>p</code>: unbounded and roughly symmetric, so the boundary
@@ -634,21 +660,9 @@
               boundary-corrected scheme didn't do (it patched funding while
               margining in probability space, and failed its backtests).
               TickSpread's engine already had a <code>log_perpetual</code>
-              type; the hypothesis is directly testable on public
-              prediction-market tick data before any build.
-            </p>
-          </div>
-          <div class="panel">
-            <h3>Mechanism 2 — range-collateralized leverage (shippable now)</h3>
-            <p>
-              Leverage as narrowed bounds: a position collateralized only over
-              <code>[p_lo, p_hi]</code> is <code>1/(p_hi − p_lo)</code>×
-              levered, fully collateralized inside the range, zero bad debt by
-              construction, and needs no funding at all. This is MNX's
-              existing numeric-future min/max machinery with tighter bounds
-              (Levana runs the capped-payoff equivalent in production). Cost:
-              exposure truncates outside the range. The cheapest way to offer
-              leveraged probability exposure while mechanism 1 is validated.
+              type. Validation gate: backtest funding + margin in log-odds
+              space on public prediction-market tick data against
+              pre-registered floors; build only if it clears them.
             </p>
           </div>
         </div>
@@ -828,6 +842,8 @@
         MNX research · funding v2 (2026-07-08) · supersedes
         <a href="/funding-v1">v1</a>. Mechanism claims verified against
         <code>exchange @ 412c202</code>; external claims carry source links.
+        Status: decision record — on CEO approval this version freezes and
+        subsequent changes ship as v3.
       </footer>
     </main>
   </body>
