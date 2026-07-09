@@ -299,10 +299,11 @@
         <p class="eyebrow">MNX Proposal — pre-launch parameter audit</p>
         <h1>Launch parameters: what should change</h1>
         <p class="lede">
-          Five changes before real launch, in priority order: add a minimum
+          Six changes before real launch, in priority order: add a minimum
           order floor (there is none), make the ANTHROPIC/OPENAI tick 10×
           finer, verify the live oracle jump cap, raise the per-account
-          open-notional tiers, and decide the zero-fee wash-trading question.
+          open-notional tiers, decide the zero-fee wash-trading question, and
+          mirror the on-chain born-liquidatable check at order placement.
           The take-bounds stay where they are — on the futures they are the
           only per-batch cap on a self-referential oracle. Everything else,
           including the CRWV/SPCX tick, should stay.
@@ -361,6 +362,12 @@
               <td><strong>Decide the zero-fee question</strong></td>
               <td>0/0 fees: keep for launch, <em>but</em> add ≥1 bp taker fee <em>or</em> verify self-match prevention</td>
               <td>With zero fees, self-crossing inside a batch is free — and the batch clearing price is the funding sample, the mark input, and the candle print. Free tape-painting plus MNX-paid settlement gas. See <a href="#integrity">integrity floor</a>.</td>
+            </tr>
+            <tr>
+              <td>6</td>
+              <td><strong>Mirror the P34 entry check at order placement</strong></td>
+              <td>New off-chain validator; no contract change</td>
+              <td>The contract already refuses positions born below maintenance margin (P34: entry margin ≥ IMR at fill, MR ≥ MMR at oracle — <a href="#doors">details</a>), but the placement validators don't mirror it: an order that will fail P34 is accepted, then reverts at settlement. The MM's 200 bps margin-health buffer exists to dodge exactly these reverts. Reject at placement any order whose own limit price would open the account below MMR-at-oracle.</td>
             </tr>
           </tbody>
         </table>
@@ -587,11 +594,27 @@
           from MNX's own market. On a self-referential oracle the take-bound
           is the only per-batch cap on how fast trading can drag the oracle —
           and every liquidation trigger with it. A wider band there is a
-          wider manipulation handle, not better price discovery: a single
-          print at −22% would already exceed the futures' entire maintenance
-          margin (16.7%). The past +24% OPENAI dislocation is an oracle
-          problem with an oracle fix in flight (the mark-price rework), not
-          evidence the band is too tight.
+          wider manipulation handle, not better price discovery. The past
+          +24% OPENAI dislocation is an oracle problem with an oracle fix in
+          flight (the mark-price rework), not evidence the band is too tight.
+        </p>
+        <p>
+          Two mechanics bound what the band can do. First,
+          <strong>born-liquidatable positions are already impossible</strong>:
+          on any new or flipped position the contract requires entry margin ≥
+          IMR at the fill price <em>and</em> margin ratio ≥ MMR at the oracle
+          price (P34, <code>Perpetual.sol:2696-2708</code>) — the further a
+          fill sits from the oracle, the more margin it demands. At max
+          leverage the openable distance is
+          <code>(imr − mmr) / (1 ∓ imr)</code>: <strong>25% long / 12.5%
+          short</strong> on the futures, 12.5%/8.3% on SPCX, 5.6%/4.5% on
+          CRWV. A 40% band would therefore not even function at its edge —
+          3× fills beyond 25% simply revert. Second, liquidations are driven
+          by the jump-capped oracle (≤250 bps per update), not by prints —
+          a single extreme print rejects its own losing side rather than
+          liquidating anyone. The band's live roles are bounding worst-case
+          taker fills and how far sustained printing can sit from a
+          self-referential oracle while dragging its inputs.
         </p>
         <p>
           The invariant math below is kept as the <em>reference ceiling</em> —
