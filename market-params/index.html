@@ -299,12 +299,13 @@
         <p class="eyebrow">MNX Proposal — pre-launch parameter audit</p>
         <h1>Launch parameters: what should change</h1>
         <p class="lede">
-          Six changes before real launch, in priority order: widen the futures
-          take-bounds to their invariant maxima while it is cheap, add a
-          minimum order floor (there is none), make the ANTHROPIC/OPENAI tick
-          10× finer, verify the live oracle jump cap, raise the per-account
+          Five changes before real launch, in priority order: add a minimum
+          order floor (there is none), make the ANTHROPIC/OPENAI tick 10×
+          finer, verify the live oracle jump cap, raise the per-account
           open-notional tiers, and decide the zero-fee wash-trading question.
-          Everything else — including the CRWV/SPCX tick — should stay.
+          The take-bounds stay where they are — on the futures they are the
+          only per-batch cap on a self-referential oracle. Everything else,
+          including the CRWV/SPCX tick, should stay.
         </p>
         <nav class="toc" aria-label="Page sections">
           <a href="#recommendation">Recommendation</a>
@@ -333,36 +334,30 @@
           <tbody>
             <tr>
               <td>1</td>
-              <td><strong>Widen ANTHROPIC/OPENAI take-bounds</strong> (and SPCX)</td>
-              <td>ANTHROPIC/OPENAI <code>mtb</code> 20/20% → <strong>40% long / 22% short</strong>; SPCX 5/5% → <strong>18% long / 12% short</strong></td>
-              <td>OPENAI already dislocated +24%, beyond its band. On-chain setters are tightening-only; widening means deploying a replacement Evaluator per market — trivial this week, painful with open positions. The ADL invariant caps the maxima (<a href="#doors">below</a>); these values sit just inside them.</td>
-            </tr>
-            <tr>
-              <td>2</td>
               <td><strong>Add a minimum order floor ≈ $10</strong></td>
               <td><code>minTradeQty</code>: CRWV 0.001 → <strong>0.1</strong> (~$9), SPCX → <strong>0.05</strong> (~$7), ANTHROPIC/OPENAI → <strong>0.005</strong> (~$9–13)</td>
               <td>Today a $0.09 order is accepted; there is no notional floor anywhere (the MM's min-notional gate is unwired for MNX). Every venue floors at $5–10 (Hyperliquid $10, Binance 5 USDT, Bybit 5, dYdX ≈$1–10 by construction) citing spam and state bloat — and MNX pays real settlement gas per dust position.</td>
             </tr>
             <tr>
-              <td>3</td>
+              <td>2</td>
               <td><strong>ANTHROPIC/OPENAI tick 10× finer</strong></td>
               <td><code>tickSize</code> 1 ($1B) → <strong>0.1 ($100M)</strong>; 3.8–5.3 bps → 0.4–0.5 bps</td>
               <td>4–5 bps relative tick is coarse-outlier territory (dYdX's governance is repairing exactly this class of market). Venue norm for $2,000-priced assets is 0.05–0.6 bps. The MM's $2 ladder grid is currently only 2 ticks wide — at 0.1 it becomes a healthy 20. Freely reversible, but cheapest before positions exist.</td>
             </tr>
             <tr>
-              <td>4</td>
+              <td>3</td>
               <td><strong>Verify the live oracle jump cap on-chain</strong></td>
               <td>Assumed 250 bps (repo default) — <strong>unverified in production</strong></td>
-              <td>Every take-bound number on this page is computed at j = 2.5%. The cap is tightening-only and not exposed by the API; read <code>maxUpdateBps()</code> from the four BackendPriceOracle contracts before executing change #1.</td>
+              <td>The invariant analysis below is computed at j = 2.5%. The cap is tightening-only and not exposed by the API; read <code>maxUpdateBps()</code> from the four BackendPriceOracle contracts so the leverage/band/oracle coupling is known exactly, not assumed.</td>
             </tr>
             <tr>
-              <td>5</td>
+              <td>4</td>
               <td><strong>Raise per-account open-notional tiers</strong></td>
               <td><code>maxAllowedOpenNotional[0]</code> $10k @ 1× → <strong>≈$50k</strong>, higher tiers scaled</td>
               <td>The $10k-at-1× cap is what the market maker clips against every tick (it currently parses reject strings and re-places haircut orders as a workaround). Sizing is a business call; $10k per account will also bind the first serious external trader.</td>
             </tr>
             <tr>
-              <td>6</td>
+              <td>5</td>
               <td><strong>Decide the zero-fee question</strong></td>
               <td>0/0 fees: keep for launch, <em>but</em> add ≥1 bp taker fee <em>or</em> verify self-match prevention</td>
               <td>With zero fees, self-crossing inside a batch is free — and the batch clearing price is the funding sample, the mark input, and the candle print. Free tape-painting plus MNX-paid settlement gas. See <a href="#integrity">integrity floor</a>.</td>
@@ -371,13 +366,14 @@
         </table>
         <div class="callout">
           <p>
-            <strong>Explicit keep:</strong> CRWV/SPCX tick 0.01, all step sizes
-            (0.001), leverage tiers (10×/5×/3×/3×), CRWV take-bounds (±5% —
-            the invariant caps them at 8.4/6.8% anyway), funding caps (see
-            <a href="/funding">/funding</a>), the $10M per-side market cap
-            (hot-changeable at runtime), and the price-bound ranges. Hygiene
-            only: the max-trade-quantity caps (a $80M market order on CRWV is
-            nominally allowed) should be cut to notional-consistent values.
+            <strong>Explicit keep:</strong> all take-bounds as deployed (±5%
+            stocks, ±20% futures — see <a href="#doors">why</a>), CRWV/SPCX
+            tick 0.01, all step sizes (0.001), leverage tiers (10×/5×/3×/3×),
+            funding caps (see <a href="/funding">/funding</a>), the $10M
+            per-side market cap (hot-changeable at runtime), and the
+            price-bound ranges. Hygiene only: the max-trade-quantity caps (a
+            $80M market order on CRWV is nominally allowed) should be cut to
+            notional-consistent values.
           </p>
         </div>
       </section>
@@ -578,30 +574,44 @@
       </section>
 
       <section id="doors">
-        <h2>Take-bounds and the ADL invariant</h2>
+        <h2>Take-bounds and the ADL invariant — keep them</h2>
         <p>
           The take-bounds (<code>mtbLong</code>/<code>mtbShort</code> — how
-          far a batch clearing price may sit from the oracle) are the audit's
-          real one-way-ish door: on-chain setters are
-          <strong>tightening-only</strong>, and widening requires deploying a
-          replacement Evaluator per market. Possible any time, but cheapest
-          this week, before open interest exists. The ceiling is not a
-          judgment call — the contract enforces it exactly
-          (<code>Perpetual.sol:1898</code>, re-run on every Evaluator/oracle/IMR
-          change):
+          far a batch clearing price may sit from the oracle) should stay
+          where they are: ±5% on the stocks, ±20% on the futures. The
+          decisive reason is what the oracle <em>is</em> on each market. CRWV
+          and SPCX have external oracles (stock aggregator, Hyperliquid after
+          hours) — there the band protects fills against a lagging reference,
+          and gaps move the oracle, not the band. ANTHROPIC and OPENAI have
+          <strong>no external reference at all</strong>: their oracle derives
+          from MNX's own market. On a self-referential oracle the take-bound
+          is the only per-batch cap on how fast trading can drag the oracle —
+          and every liquidation trigger with it. A wider band there is a
+          wider manipulation handle, not better price discovery: a single
+          print at −22% would already exceed the futures' entire maintenance
+          margin (16.7%). The past +24% OPENAI dislocation is an oracle
+          problem with an oracle fix in flight (the mark-price rework), not
+          evidence the band is too tight.
+        </p>
+        <p>
+          The invariant math below is kept as the <em>reference ceiling</em> —
+          what the contract permits, not what should be set
+          (<code>Perpetual.sol:1898</code>, re-run on every
+          Evaluator/oracle/IMR change). Setters are tightening-only; widening
+          would require a replacement Evaluator per market.
         </p>
         <div class="formula mono">(1 + j)(1 + mtbLong)(1 − imr) ≤ 1        (upward replacement capacity)
 (1 − j)(1 − mtbShort)(1 + imr) ≥ 1       (downward replacement capacity)
 
 j = oracle max update per refresh (assumed 0.025 — verify live)</div>
-        <table aria-label="Take-bound maxima and recommendations">
+        <table aria-label="Take-bound ceilings for reference">
           <thead>
             <tr>
               <th>Market</th>
               <th>imr</th>
-              <th>Invariant max (long / short)</th>
-              <th>Today</th>
-              <th>Recommended</th>
+              <th>Invariant ceiling (long / short)</th>
+              <th>Deployed</th>
+              <th>Verdict</th>
             </tr>
           </thead>
           <tbody>
@@ -610,34 +620,35 @@ j = oracle max update per refresh (assumed 0.025 — verify live)</div>
               <td>⅓</td>
               <td>46.3% / 23.1%</td>
               <td>20% / 20%</td>
-              <td><strong>40% / 22%</strong> — OPENAI's +24% dislocation already exceeded the current band once; valuation markets gap upward, and the invariant grants far more long-side room.</td>
+              <td><strong>Keep.</strong> Already near the short-side ceiling, and the self-referential oracle makes any widening a manipulation handle.</td>
             </tr>
             <tr>
               <td>SPCX</td>
               <td>0.20</td>
               <td>21.9% / 14.5%</td>
               <td>5% / 5%</td>
-              <td><strong>18% / 12%</strong> — a pre-IPO name is the gappiest thing on the venue; ±5% is calibrated for a listed large-cap.</td>
+              <td><strong>Keep.</strong> The oracle tracks Hyperliquid continuously, so pre-IPO gaps move the oracle, not the band.</td>
             </tr>
             <tr>
               <td>CRWV</td>
               <td>0.10</td>
               <td>8.4% / 6.8%</td>
               <td>5% / 5%</td>
-              <td><strong>Keep 5% / 5%</strong> — 10× leverage eats the headroom; the possible widening is marginal and the listed-equity oracle is good.</td>
+              <td><strong>Keep.</strong> 10× leverage leaves marginal headroom anyway; the listed-equity oracle is good.</td>
             </tr>
           </tbody>
         </table>
         <div class="callout warn">
           <p>
-            <strong>The three-way coupling to state explicitly:</strong> wider
-            take-bounds, higher leverage, and a faster oracle are mutually
-            exclusive — the invariant multiplies all three. If MNX later
-            wants 5× on ANTHROPIC (imr 0.2), the short-side bound ceiling
-            drops from 23.1% to 14.5%. Widening the oracle jump cap
-            (tightening-only, needs an oracle redeploy) shrinks both
-            ceilings. Any future leverage increase on the futures should be
-            checked against these bands <em>before</em> being promised.
+            <strong>The three-way coupling to state explicitly:</strong>
+            take-bound width, leverage, and oracle speed multiply into one
+            invariant — you cannot raise one without room from the others.
+            The concrete case: raising the futures to 5× (imr 0.2) drops the
+            short-side ceiling from 23.1% to 14.5%, <em>below</em> the
+            deployed 20% — so a future leverage increase there requires
+            tightening <code>mtbShort</code> first (a trivial setter call,
+            but it must be sequenced). Check this table before promising any
+            leverage change.
           </p>
         </div>
       </section>
@@ -724,7 +735,7 @@ j = oracle max update per refresh (assumed 0.025 — verify live)</div>
           <li><strong>Step size 0.001 everywhere</strong> — step notionals $0.09–$2.6 sit inside the comparable venue range; with the $10 order floor added, step is display granularity only.</li>
           <li><strong>Leverage 10×/5×/3×/3×</strong> — CRWV matches Hyperliquid's 10×; the futures' 3× is what buys their wide take-bounds (see the coupling). Any change re-runs the invariant.</li>
           <li><strong>Funding caps 10 bps/hr on the perps</strong> — the funding design is its own decision record at <a href="/funding">/funding</a>; nothing there needs to move this week.</li>
-          <li><strong>CRWV take-bounds ±5%</strong> — invariant ceiling is 8.4/6.8%; the gain isn't worth the redeploy.</li>
+          <li><strong>All take-bounds as deployed</strong> (±5% stocks, ±20% futures) — on the futures the band is the only per-batch cap on a self-referential oracle; on the stocks the external oracle absorbs gaps. See <a href="#doors">the invariant section</a>.</li>
           <li><strong>Zero maker fee</strong> — keep regardless of the taker-fee decision; maker rebates can come later.</li>
         </ul>
       </section>
@@ -740,7 +751,7 @@ j = oracle max update per refresh (assumed 0.025 — verify live)</div>
           coupling from <code>market-maker @ 1735c7d</code>
           (grid/reanchor/rounding in <code>mm-core</code>). <strong>Known
           unverified:</strong> live on-chain <code>maxUpdateBps</code> per
-          oracle (change #4) and the MM's live <code>effective_spread_bps</code>
+          oracle (change #3) and the MM's live <code>effective_spread_bps</code>
           (spread/tick ratios here use grid spacing as the proxy).
         </p>
         <ul class="source-list">
@@ -757,10 +768,9 @@ j = oracle max update per refresh (assumed 0.025 — verify live)</div>
 
       <footer>
         MNX research · launch parameter audit (2026-07-08) · companion to
-        <a href="/funding">/funding</a>. Status: proposal — parameters can
-        change before real launch this week; the take-bound changes require
-        replacement Evaluators, everything else is setters + config
-        re-materialization.
+        <a href="/funding">/funding</a>. Status: proposal — every recommended
+        change is setters + config re-materialization, executable before real
+        launch this week.
       </footer>
     </main>
   </body>
