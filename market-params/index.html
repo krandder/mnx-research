@@ -365,9 +365,9 @@
             </tr>
             <tr>
               <td>6</td>
-              <td><strong>Mirror the P34 entry check at order placement</strong></td>
-              <td>New off-chain validator; no contract change</td>
-              <td>The contract already refuses positions born below maintenance margin (P34: entry margin ≥ IMR at fill, MR ≥ MMR at oracle — <a href="#doors">details</a>), but the placement validators don't mirror it: an order that will fail P34 is accepted, then reverts at settlement. The MM's 200 bps margin-health buffer exists to dodge exactly these reverts. Reject at placement any order whose own limit price would open the account below MMR-at-oracle.</td>
+              <td><strong>Add the P34 check as a placement filter</strong> (and run a placement↔seal parity audit)</td>
+              <td>New placement validator; no contract change</td>
+              <td>Born-liquidatable positions are already blocked twice — on-chain (P34) and at batch sealing, which mirrors the full P34–P37 suite (<code>fill-validators.ts:1450-1626</code>) so doomed fills never reach chain. The remaining gap is placement: a doomed order is accepted, rests, matches, and only then has its fills silently dropped at seal — no user feedback, wasted matching. Reject it at the API instead, with a clear error (confirmed as "a good placement filter" by the exchange team). Since seal enforces more than placement does, the general version: enumerate every seal-time check and decide per-check whether placement should mirror it — there are likely other such edge cases.</td>
             </tr>
           </tbody>
         </table>
@@ -609,12 +609,22 @@
           <code>(imr − mmr) / (1 ∓ imr)</code>: <strong>25% long / 12.5%
           short</strong> on the futures, 12.5%/8.3% on SPCX, 5.6%/4.5% on
           CRWV. A 40% band would therefore not even function at its edge —
-          3× fills beyond 25% simply revert. Second, liquidations are driven
+          3× fills beyond 25% are dropped at batch sealing, which mirrors the
+          full P34–P37 suite off-chain (<code>fill-validators.ts:1450-1626</code>),
+          so they never reach chain at all. Second, liquidations are driven
           by the jump-capped oracle (≤250 bps per update), not by prints —
-          a single extreme print rejects its own losing side rather than
-          liquidating anyone. The band's live roles are bounding worst-case
-          taker fills and how far sustained printing can sit from a
-          self-referential oracle while dragging its inputs.
+          an extreme fill whose losing side would be born liquidatable is
+          prevented at seal rather than liquidating anyone. The band's live
+          roles are bounding worst-case taker fills and how far sustained
+          printing can sit from a self-referential oracle while dragging its
+          inputs.
+        </p>
+        <p class="tagline">
+          Related parity enforcement that already exists: a user who cancels
+          orders directly on-chain (bypassing the API) has all their orders
+          cancelled and new order creation paused — the off-chain book and
+          on-chain state are actively kept coherent, which is the same
+          principle change #6 extends to order placement.
         </p>
         <p>
           The invariant math below is kept as the <em>reference ceiling</em> —
