@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MNX Fee Schedule — Decision Sheet</title>
+    <meta
+      name="description"
+      content="Launch at 0/0 as a labeled promotion with the permanent schedule published on day one: 0 maker / 2.5 bps taker, flat, no tiers, no rebates."
+    >
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f5f7f5; --paper: #ffffff; --ink: #17201d; --muted: #5d6963;
+        --line: #d9dfda; --teal: #096b62; --teal-soft: #e4f2ef;
+        --rust: #92400e; --rust-soft: #fff2df; --blue: #1d4ed8;
+        --red: #9f2f2f; --red-soft: #fff1f1; --code: #f1f4f2;
+        --shadow: 0 16px 40px rgba(23, 32, 29, 0.08);
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--bg); color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.55; }
+      a { color: var(--blue); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+      header { background: #16211e; color: #fff; padding: 42px 24px 30px; border-bottom: 6px solid #d97706; }
+      .wrap { width: min(1160px, calc(100vw - 40px)); margin: 0 auto; }
+      .eyebrow { margin: 0 0 14px; color: #a7f3d0; font-size: 0.78rem; font-weight: 800; text-transform: uppercase; }
+      h1 { max-width: 940px; margin: 0; font-size: clamp(2rem, 6vw, 3.4rem); line-height: 0.98; }
+      .lede { max-width: 910px; margin: 18px 0 0; color: #d9e3de; font-size: clamp(1rem, 2vw, 1.18rem); }
+      main { padding: 28px 0 58px; }
+      section { margin: 30px 0; }
+      h2 { margin: 0 0 13px; font-size: clamp(1.45rem, 3vw, 2.1rem); line-height: 1.16; }
+      p { margin: 0 0 13px; }
+      ul { margin: 10px 0 0; padding-left: 20px; }
+      li { margin: 7px 0; }
+      code { font-family: "SFMono-Regular", Consolas, Menlo, monospace; font-size: 0.94em; background: var(--code); border: 1px solid var(--line); border-radius: 6px; overflow-wrap: anywhere; padding: 0.12rem 0.32rem; }
+      table { width: 100%; border-collapse: collapse; overflow: hidden; margin: 16px 0 24px; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); }
+      th, td { border: 1px solid var(--line); padding: 10px 12px; vertical-align: top; text-align: left; font-size: 0.92rem; }
+      th { background: #edf3f1; color: #25312e; font-weight: 760; }
+      tbody tr:nth-child(even) td { background: #fbfcfb; }
+      .callout { border-left: 5px solid var(--teal); background: var(--teal-soft); border-radius: 0 8px 8px 0; padding: 16px 18px; margin: 18px 0; }
+      .callout.warn { border-left-color: var(--rust); background: var(--rust-soft); }
+      footer { margin-top: 40px; color: var(--muted); font-size: 0.88rem; }
+      @media (max-width: 820px) { .wrap { width: min(100vw - 28px, 1160px); } th, td { font-size: 0.88rem; padding: 9px; } }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap">
+        <p class="eyebrow">MNX Proposal — fee schedule</p>
+        <h1>Fees: zero as a labeled promo, 2.5 bps taker as the published endgame</h1>
+        <p class="lede">
+          Launch at 0/0 explicitly labeled as a promotion with a date, and
+          publish the permanent schedule on day one: 0 maker / 2.5 bps taker,
+          flat, no tiers, no rebates. The pre-commitment converts the later
+          fee introduction from a betrayal into a kept promise — the exact
+          mistake Paradex made in reverse.
+        </p>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section>
+        <h2>The decision (F1–F4)</h2>
+        <table>
+          <thead>
+            <tr><th>#</th><th>Decision</th><th>Recommended</th><th>Why</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>F1</td>
+              <td>Structure</td>
+              <td><strong>Flat, no tiers, no rebates. Maker 0 permanently</strong> (until external makers exist, and even then a small positive fee — never a rebate).</td>
+              <td>Maker rebates compensate queue risk under continuous price-time priority; MNX's batch auction has no queue by construction, so the rebate rationale is void (Budish et al.; OneChronos — the closest TradFi analogue, ~10 auctions/sec — charges flat symmetric fees, explicitly no maker-taker). And today the only maker is MNX's own MM: a rebate is a self-payment that fabricates revenue/expense on the books. Tiers are pointless with one maker and no whales — add later if real flow demands.</td>
+            </tr>
+            <tr>
+              <td>F2</td>
+              <td>Launch schedule</td>
+              <td><strong>0/0 labeled "launch promotion until &lt;date, 4–6 weeks out&gt;"; permanent schedule published at launch: 0 maker / 2.5 bps taker.</strong> Date trigger, not volume trigger. Right to end early "for market integrity" reserved in the announcement.</td>
+              <td>Growth ≫ revenue now and the zero headline is free — but Paradex promised "always-on, not a promo" and imposed a taker fee 6 months later anyway; pre-committing the endgame keeps the promise instead of breaking one. 2.5 bps flat is exactly what Hyperliquid charged when it exited its own zero-fee alpha, and undercuts every current non-promo VIP0 taker rate (HL 4.5, Velocity 3.5, dYdX 5, Binance 5, Kalshi 12) except Paradex retail (0.75) and Lighter (0). Volume-triggered sunsets are gameable; dates aren't.</td>
+            </tr>
+            <tr>
+              <td>F3</td>
+              <td>Wash defense during the promo</td>
+              <td><strong>Per-account fill-rate limits + volume/OI alerting (flag &gt;5x) + the reserved early-end right.</strong></td>
+              <td>MNX's self-trade prevention is airtight for same-account fills within a batch (verified in the match engine), but it cannot price two colluding accounts, cross-batch round trips, or one-sided tape-painting — and at 0/0 all three are free while MNX pays settlement gas per fill and the prints feed our own funding/mark/candles. Lighter, with a $920M USDC float subsidizing zero fees, still hit a 27x volume/OI wash blowout on monitoring-only defense. The promo window carries this risk knowingly and briefly; the taker fee is what ends it.</td>
+            </tr>
+            <tr>
+              <td>F4</td>
+              <td>Documentation &amp; change rule</td>
+              <td><strong>A public Fees page on docs.mnx.fi</strong> (generated from the same market config the engine charges, so docs can't drift), stating: decreases/promotions effective immediately; <strong>increases with ≥7 days' public notice</strong>. The promo sunset date published at launch satisfies the notice for the first increase.</td>
+              <td>One venue-wide parameter-change norm (mirrors the oracle-methodology rule and the Class A/B split in <a href="/param-procedures">/param-procedures</a>). Kalshi's CFTC self-certification practice is the formal analogue. Today fees are documented nowhere except one soon-stale phrase in the markets guide.</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="callout warn">
+          <p>
+            <strong>Option rejected — 0/0 indefinitely (the Lighter play):</strong>
+            Lighter sustains retail-zero with LP-vault earnings, liquidation
+            revenue, and yield on ~$920M of USDC float — none of which MNX
+            has — and still could only fight wash volume with points-program
+            forensics after the fact. For MNX, wash volume is strictly
+            negative-margin (we pay gas per fill) and pollutes inputs our own
+            risk systems consume. Monitoring-only failed at a venue with far
+            more resources.
+          </p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Context: the market at VIP0 (taker bps, July 2026)</h2>
+        <table>
+          <thead><tr><th scope="col">Venue</th><th scope="col">Maker</th><th scope="col">Taker</th><th scope="col">Note</th></tr></thead>
+          <tbody>
+            <tr><td>Lighter (retail)</td><td>0</td><td>0</td><td>Subsidized by LLP vault + USDC float; premium/HFT accounts pay 0.4/2.8</td></tr>
+            <tr><td>Paradex (retail)</td><td>—</td><td>0.75</td><td>After walking back "permanent zero" in Mar 2026</td></tr>
+            <tr><td><strong>MNX (proposed endgame)</strong></td><td><strong>0</strong></td><td><strong>2.5</strong></td><td>Flat, no tiers, no rebates</td></tr>
+            <tr><td>Velocity (ex-Drift)</td><td>−0.25 (rebate)</td><td>3.5</td><td></td></tr>
+            <tr><td>Hyperliquid</td><td>1.5</td><td>4.5</td><td>2x on HIP-3 builder markets; launched via zero-fee alpha → 2.5 flat → tiers</td></tr>
+            <tr><td>dYdX v4</td><td>1.0</td><td>5.0</td><td>Governance-voted 0/0 holidays on selected markets — the clean promo precedent</td></tr>
+            <tr><td>Binance USD-M</td><td>2</td><td>5</td><td></td></tr>
+            <tr><td>Kalshi perps</td><td>5.0 (makers pay)</td><td>12.0</td><td>CFTC-filed schedule, tiers to 0.6/2.6</td></tr>
+            <tr><td>GMX v2</td><td colspan="2">4–6 bps each side + impact</td><td>Pool model; expensive end</td></tr>
+          </tbody>
+        </table>
+        <p>
+          Revenue reality check: at $1M/day taker volume, 2.5 bps ≈ $91k/yr —
+          noise. At $100M/day ≈ $9.1M/yr — real. The fee's job at launch
+          scale is wash-pricing and anchoring, not revenue; that's why the
+          promo costs little and the pre-published endgame matters more than
+          the start date.
+        </p>
+      </section>
+
+      <footer>
+        MNX research · fee decision sheet (2026-07-10) · status: proposal —
+        F1–F4 need sign-off; on approval, the docs.mnx.fi Fees page and the
+        promo announcement execute it. Companion to
+        <a href="/param-procedures">/param-procedures</a>.
+      </footer>
+    </main>
+  </body>
+</html>

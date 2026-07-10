@@ -14,6 +14,7 @@ https://mnx-research.vercel.app
 - `/adl-funding` - MNX Funding-Stall Solvency Invariants
 - `/replay` - MNX Replay Findings
 - `/market-params` - MNX Launch Parameters — What Should Change
+- `/fees` - MNX Fee Schedule — Decision Sheet
 - `/param-procedures` - Parameter-Change Procedures
 - `/mm-two-mode` - Two-Mode Market Making on MNX
 - `/bug-bounty` - MNX Bug Bounty — Decision Sheet
