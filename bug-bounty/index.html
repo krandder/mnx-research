@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MNX Bug Bounty — Decision Sheet</title>
+    <meta
+      name="description"
+      content="Platform choice, payout tiers sized to MNX's TVL, the launch-week minimal program, and the draft program page outline."
+    >
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f5f7f5;
+        --paper: #ffffff;
+        --ink: #17201d;
+        --muted: #5d6963;
+        --line: #d9dfda;
+        --teal: #096b62;
+        --teal-soft: #e4f2ef;
+        --rust: #92400e;
+        --rust-soft: #fff2df;
+        --blue: #1d4ed8;
+        --red: #9f2f2f;
+        --red-soft: #fff1f1;
+        --code: #f1f4f2;
+        --shadow: 0 16px 40px rgba(23, 32, 29, 0.08);
+      }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0; background: var(--bg); color: var(--ink);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        line-height: 1.55;
+      }
+      a { color: var(--blue); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+      header { background: #16211e; color: #fff; padding: 42px 24px 30px; border-bottom: 6px solid #d97706; }
+      .wrap { width: min(1160px, calc(100vw - 40px)); margin: 0 auto; }
+      .eyebrow { margin: 0 0 14px; color: #a7f3d0; font-size: 0.78rem; font-weight: 800; text-transform: uppercase; }
+      h1 { max-width: 940px; margin: 0; font-size: clamp(2rem, 6vw, 3.6rem); line-height: 0.98; }
+      .lede { max-width: 910px; margin: 18px 0 0; color: #d9e3de; font-size: clamp(1rem, 2vw, 1.18rem); }
+      main { padding: 28px 0 58px; }
+      section { margin: 30px 0; }
+      h2 { margin: 0 0 13px; font-size: clamp(1.45rem, 3vw, 2.1rem); line-height: 1.16; }
+      h3 { margin: 0 0 10px; font-size: 1.08rem; }
+      p { margin: 0 0 13px; }
+      ul, ol { margin: 10px 0 0; padding-left: 20px; }
+      li { margin: 7px 0; }
+      code { font-family: "SFMono-Regular", Consolas, Menlo, monospace; font-size: 0.94em; background: var(--code); border: 1px solid var(--line); border-radius: 6px; overflow-wrap: anywhere; padding: 0.12rem 0.32rem; }
+      .panel, table { background: var(--paper); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); }
+      .panel { padding: 22px; }
+      .grid { display: grid; gap: 16px; }
+      .two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .callout { border-left: 5px solid var(--teal); background: var(--teal-soft); border-radius: 0 8px 8px 0; padding: 16px 18px; margin: 18px 0; }
+      .callout.warn { border-left-color: var(--rust); background: var(--rust-soft); }
+      table { width: 100%; border-collapse: collapse; overflow: hidden; margin: 16px 0 24px; }
+      th, td { border: 1px solid var(--line); padding: 10px 12px; vertical-align: top; text-align: left; font-size: 0.92rem; }
+      th { background: #edf3f1; color: #25312e; font-weight: 760; }
+      tbody tr:nth-child(even) td { background: #fbfcfb; }
+      footer { margin-top: 40px; color: var(--muted); font-size: 0.88rem; }
+      @media (max-width: 820px) {
+        .wrap { width: min(100vw - 28px, 1160px); }
+        .two { grid-template-columns: 1fr; }
+        th, td { font-size: 0.88rem; padding: 9px; }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap">
+        <p class="eyebrow">MNX Proposal — security</p>
+        <h1>Bug bounty: ship the minimal program this week</h1>
+        <p class="lede">
+          Recommendation: publish a self-hosted security policy + interim
+          rewards promise in 1–2 days (the Hyperliquid/Drift pattern), then
+          convert to a Cantina Gold program in weeks 2–4. Critical payouts:
+          10% of funds at risk, min $25k, cap $250k — sized to MNX's TVL, not
+          copied from GMX.
+        </p>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section>
+        <h2>The decision</h2>
+        <table>
+          <thead>
+            <tr><th>#</th><th>Decision</th><th>Recommended</th><th>Why</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>B1</td>
+              <td>Launch-week move</td>
+              <td><strong>Self-hosted minimal program now</strong>: <code>/.well-known/security.txt</code> (RFC 9116) + a <code>/security</code> page with scope, rules, safe-harbor sentence, <code>security@mnx.fi</code> + PGP</td>
+              <td>Ships in 1–2 days with zero platform dependency. Hyperliquid — the #1 perp DEX — runs exactly this model; Drift self-hosts referencing Immunefi's severity rubric. Good-faith reporting needs a published promise, not a platform.</td>
+            </tr>
+            <tr>
+              <td>B2</td>
+              <td>Platform (weeks 2–4)</td>
+              <td><strong>Cantina Gold</strong>; reassess Immunefi at scale</td>
+              <td>3 free months, $250k reward limit matches MNX's size exactly, launch in days, AI+human spam triage, dYdX/Coinbase precedent. Immunefi has max researcher mindshare but 10% fees and 1–3 week onboarding; right choice later, at bigger TVL. Sherlock requires buying their audit first; HackenProof has weak DeFi mindshare (Vertex: 52 submissions, $0 paid).</td>
+            </tr>
+            <tr>
+              <td>B3</td>
+              <td>Payout tiers (contracts)</td>
+              <td><strong>Critical: 10% of funds at risk, min $25k, cap $250k</strong> · High $10–50k · Medium $5k · Low $1k</td>
+              <td>The Immunefi "scaling bug bounty" convention (10%-of-funds, capped) at Ostium's size-appropriate numbers, not GMX's $5M cap. Worst case per bug = 0.5–2.5% of early TVL. Raise the cap as TVL grows past ~$100M.</td>
+            </tr>
+            <tr>
+              <td>B4</td>
+              <td>Payout tiers (API/backend/web)</td>
+              <td>Critical (fund theft, unauthorized trades/withdrawals, key extraction): <strong>up to $50k</strong> · High $10k · Medium $2.5k · Low $500</td>
+              <td>MNX's TypeScript exchange backend holds real risk (the matching engine and risk checks are off-chain) — Hyperliquid and dYdX both scope their API/matching tiers; MNX must too.</td>
+            </tr>
+            <tr>
+              <td>B5</td>
+              <td>Rules</td>
+              <td>PoC required for Critical/High · local fork only, <strong>no mainnet testing</strong> · first-reporter wins · KYC + sanctions screening before payout · USDC payouts (on a chain researchers use, not only MegaETH) · severity per <strong>Immunefi VSC v2.3</strong> by reference</td>
+              <td>Standard set across every comparable program; adopting the Immunefi rubric by reference (Drift's approach) avoids writing our own taxonomy.</td>
+            </tr>
+            <tr>
+              <td>B6</td>
+              <td>SLAs</td>
+              <td>Acknowledge 24–72h · triage verdict ~5 business days · reward decision ≤15 days · payment ≤30 days · coordinated disclosure only after fix + authorization</td>
+              <td>Cantina's contractual numbers as the anchor; dYdX-style 24h reporting requirement.</td>
+            </tr>
+            <tr>
+              <td>B7</td>
+              <td>Safe harbor</td>
+              <td>Program-level good-faith authorization language now; adopt <strong>SEAL Whitehat Safe Harbor</strong> (on-chain registry) as a follow-up</td>
+              <td>SEAL is the emerging standard for active-exploit fund recovery (Uniswap/Balancer/Pendle), vetted by Cooley and Debevoise.</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="callout warn">
+          <p>
+            <strong>What a bounty does not cover:</strong> Drift's ~$285M
+            April-2026 incident was social engineering of multisig signers
+            plus governance manipulation — no bounty catches that. The ops
+            side (key ceremony, signer hygiene, pause runbook, payout
+            approvals) is a separate checklist item and should be treated as
+            equal in priority to the program itself.
+          </p>
+        </div>
+      </section>
+
+      <section>
+        <h2>What must exist regardless of platform</h2>
+        <div class="grid two">
+          <div class="panel">
+            <h3>Scope package</h3>
+            <ul>
+              <li>Canonical table of deployed MegaETH contract addresses + repo commit in scope.</li>
+              <li>API scope: hostnames and endpoint families (REST + WS), explicitly including the matching engine and risk-check paths.</li>
+              <li>Out of scope: testnet/devnet, known issues (prior audit findings listed), compromised-admin-key scenarios, social engineering, DDoS, third-party infra, oracle latency, UI-only display bugs, attacks whose cost exceeds extractable value.</li>
+            </ul>
+          </div>
+          <div class="panel">
+            <h3>Ops package</h3>
+            <ul>
+              <li>Funded payout wallet (USDC) + valuation snapshot rule (price at submission time).</li>
+              <li>Internal triage rota + escalation runbook (who can pause contracts / freeze withdrawals).</li>
+              <li>Payout approval threshold (e.g. anything &gt; $25k needs a second signer).</li>
+              <li><code>security.txt</code> with Contact, Policy, Encryption, Expires.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Program page outline (draft, ready to adapt)</h2>
+        <ol>
+          <li>Overview &amp; philosophy</li>
+          <li>Assets in scope — contracts table (address / commit / severity ceiling) + API endpoints table</li>
+          <li>Impacts in scope per severity (Immunefi VSC v2.3 mapping)</li>
+          <li>Rewards table + payout basis (10%-of-funds rule, min/cap, currency, valuation snapshot)</li>
+          <li>Out of scope &amp; known issues</li>
+          <li>Rules of engagement (no mainnet testing, PoC, first-reporter, no extortion)</li>
+          <li>Disclosure policy &amp; SLAs</li>
+          <li>Safe harbor statement (+ SEAL adoption reference)</li>
+          <li>KYC / eligibility (no employees or auditors, no sanctioned persons)</li>
+          <li>Contact: portal or <code>security@mnx.fi</code> + PGP; <code>security.txt</code> pointer</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Comparables (verified against primary pages)</h2>
+        <table>
+          <thead>
+            <tr><th>Program</th><th>Where</th><th>Critical</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Hyperliquid</td><td>Self-hosted</td><td>&lt; 1M USDC</td><td>KYC required; docs page + email; no mainnet testing</td></tr>
+            <tr><td>dYdX</td><td>Cantina</td><td>$150k–1M (to $5M extraordinary)</td><td>KYC + tax forms; 24h report requirement</td></tr>
+            <tr><td>GMX</td><td>Immunefi</td><td>10% of funds, min $50k, cap $5M</td><td>No KYC; the big-TVL version of the same convention</td></tr>
+            <tr><td>Ostium</td><td>Immunefi</td><td>10% of funds, min $20k, cap $200k</td><td>The size-matched template for MNX</td></tr>
+            <tr><td>Drift/Velocity</td><td>Self-hosted</td><td>ranges in flux post-rebrand</td><td>References Immunefi VSC while self-hosting — the pattern B1 copies</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <footer>
+        MNX research · bug bounty decision sheet (2026-07-10) · status:
+        proposal — B1–B7 need sign-off; B1 is executable this week.
+      </footer>
+    </main>
+  </body>
+</html>

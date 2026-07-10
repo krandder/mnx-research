@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Two-Mode Market Making on MNX</title>
+    <meta
+      name="description"
+      content="Small orders tight, big orders wide: why MNX's uniform-price batch auction makes this a ladder-shape question, not a two-MM question — with a concrete design and Stephen's three open questions."
+    >
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f5f7f5; --paper: #ffffff; --ink: #17201d; --muted: #5d6963;
+        --line: #d9dfda; --teal: #096b62; --teal-soft: #e4f2ef;
+        --rust: #92400e; --rust-soft: #fff2df; --blue: #1d4ed8;
+        --red: #9f2f2f; --red-soft: #fff1f1; --code: #f1f4f2;
+        --shadow: 0 16px 40px rgba(23, 32, 29, 0.08);
+      }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body { margin: 0; background: var(--bg); color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.55; }
+      a { color: var(--blue); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+      header { background: #16211e; color: #fff; padding: 42px 24px 30px; border-bottom: 6px solid #d97706; }
+      .wrap { width: min(1160px, calc(100vw - 40px)); margin: 0 auto; }
+      .eyebrow { margin: 0 0 14px; color: #a7f3d0; font-size: 0.78rem; font-weight: 800; text-transform: uppercase; }
+      h1 { max-width: 940px; margin: 0; font-size: clamp(2rem, 6vw, 3.6rem); line-height: 0.98; }
+      .lede { max-width: 910px; margin: 18px 0 0; color: #d9e3de; font-size: clamp(1rem, 2vw, 1.18rem); }
+      main { padding: 28px 0 58px; }
+      section { margin: 30px 0; }
+      h2 { margin: 0 0 13px; font-size: clamp(1.45rem, 3vw, 2.1rem); line-height: 1.16; }
+      h3 { margin: 0 0 10px; font-size: 1.08rem; }
+      p { margin: 0 0 13px; }
+      ul, ol { margin: 10px 0 0; padding-left: 20px; }
+      li { margin: 7px 0; }
+      code { font-family: "SFMono-Regular", Consolas, Menlo, monospace; font-size: 0.94em; background: var(--code); border: 1px solid var(--line); border-radius: 6px; overflow-wrap: anywhere; padding: 0.12rem 0.32rem; }
+      .panel, table { background: var(--paper); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); }
+      .panel { padding: 22px; }
+      .grid { display: grid; gap: 16px; }
+      .two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .callout { border-left: 5px solid var(--teal); background: var(--teal-soft); border-radius: 0 8px 8px 0; padding: 16px 18px; margin: 18px 0; }
+      .callout.warn { border-left-color: var(--rust); background: var(--rust-soft); }
+      table { width: 100%; border-collapse: collapse; overflow: hidden; margin: 16px 0 24px; }
+      th, td { border: 1px solid var(--line); padding: 10px 12px; vertical-align: top; text-align: left; font-size: 0.92rem; }
+      th { background: #edf3f1; color: #25312e; font-weight: 760; }
+      tbody tr:nth-child(even) td { background: #fbfcfb; }
+      footer { margin-top: 40px; color: var(--muted); font-size: 0.88rem; }
+      @media (max-width: 820px) { .wrap { width: min(100vw - 28px, 1160px); } .two { grid-template-columns: 1fr; } th, td { font-size: 0.88rem; padding: 9px; } }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap">
+        <p class="eyebrow">MNX Proposal — market making · for the Kelvin ↔ Stephen discussion</p>
+        <h1>Two-mode quoting: reshape the ladder, don't split the maker</h1>
+        <p class="lede">
+          Small orders at tight spreads, blocks at wide spreads — the goal is
+          right, but under MNX's uniform-price batch auction it is a
+          ladder-shape question. Two separate MMs buy nothing the shaped
+          ladder doesn't, and cost capital, ops, and inter-vault churn.
+        </p>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section>
+        <h2>The mechanic that decides everything</h2>
+        <p>
+          MNX matches in ~200ms batch auctions at <strong>one uniform
+          clearing price per batch</strong>, with pro-rata allocation (no
+          price priority among eligible makers). Verified in the match
+          engine, this changes how "size-dependent spreads" work compared to
+          a continuous book:
+        </p>
+        <ul>
+          <li>
+            <strong>A block pays the marginal price on ALL its units.</strong>
+            A large market buy clears at the ladder level where cumulative
+            depth covers its size — and every unit fills there, not at the
+            walk-the-book average. The ladder's shape <em>is</em> the
+            size→price schedule.
+          </li>
+          <li>
+            <strong>The tight front quote is never picked off cheaply.</strong>
+            In the batch a block lands in, the MM's tight level fills at the
+            same (wide, marginal) clearing price as the deep levels — strictly
+            better for the maker than a continuous book.
+          </li>
+          <li>
+            <strong>Small orders genuinely get the tight price</strong> when
+            they arrive alone: clearing lands on the front level (tie-break is
+            closest-to-oracle).
+          </li>
+          <li>
+            <strong>All resting depth aggregates into one clearing price —
+            regardless of who posted it.</strong> This is why two MM accounts
+            cannot produce different execution prices for different taker
+            sizes: the exchange already merges everyone's depth. Two-mode can
+            only be expressed through the <em>shape</em> of total resting
+            depth.
+          </li>
+        </ul>
+        <div class="callout warn">
+          <p>
+            <strong>The honest limit — slicing:</strong> a sophisticated
+            block can split itself across consecutive 200ms batches and
+            consume the ladder level-by-level, paying the book-walk average
+            instead of the uniform marginal price. Between MM ticks (~3s;
+            fills currently do <em>not</em> wake the maker, only fair-price
+            moves do) the discrimination degrades to continuous-book
+            behavior. Two-mode therefore taxes <em>naive</em> block flow;
+            defending against slicers is a separate knob (fill-triggered
+            wake, faster flow-impact repricing) — Stephen question 1.
+          </p>
+        </div>
+        <div class="callout">
+          <p>
+            <strong>Exchange-mechanics fact worth knowing regardless:</strong>
+            a small retail order sharing a batch with a block pays the
+            block's clearing price. If retail protection is a goal, that's a
+            property of uniform-price auctions themselves — no MM design
+            changes it.
+          </p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Options compared</h2>
+        <table>
+          <thead>
+            <tr><th>Option</th><th>Mechanics</th><th>Verdict</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>(a) Two-segment single ladder</strong> — small tight front level, large wide back levels</td>
+              <td>New per-segment config in mm-core (per-level notional weights don't exist today; the sizing curve is linear with a flat per-level cap). Capital scaling divides by segment weights; new knobs enter the sizing-generation hash for clean cancel-replace rollout; hysteresis matching needs no change.</td>
+              <td><strong>Recommended.</strong> One process, one vault, one flow-skew signal seeing all fills; zero capital fragmentation; margin funding already prioritizes front levels.</td>
+            </tr>
+            <tr>
+              <td><strong>(b) Two overlaid quote sets, one account</strong></td>
+              <td>Exchange-side fine (self-trade prevention only cancels <em>crossing</em> same-account orders; same-side coexistence OK; one-leverage-per-market satisfied at 1x). But the MM's hysteresis matcher cancels anything off its own desired ladder — two independent processes on one vault shred each other every tick.</td>
+              <td>Collapses into (a): one planner must emit both sets anyway. Not a separate option.</td>
+            </tr>
+            <tr>
+              <td><strong>(c) Two separate MMs</strong> (retail-tight vault + block-wide vault)</td>
+              <td>Mechanically possible (two child vaults, two lease/control/telemetry stacks). Real benefits: independent inventory regimes, doubled per-account open-notional headroom, blast-radius isolation.</td>
+              <td><strong>Not worth it.</strong> Uniform pricing means the second account changes no taker's execution price. Costs: capital fragmentation at 1x (every resting order reserves full notional), double ops surface, and a coupling trap — block fills allocate pro-rata across <em>both</em> vaults, blowing the retail vault's small inventory cap into reduce-only, whose clamped closing orders can then cross the block vault: the two vaults end up trading with each other on the public tape. The genuine benefits (cap headroom, isolation) are cheaper to get directly (raise the market's cap; per-market mode switches exist).</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Recommended design (option a, concrete)</h2>
+        <div class="grid two">
+          <div class="panel">
+            <h3>Starting parameters (per market)</h3>
+            <ul>
+              <li><strong>Front:</strong> 1 level at today's <code>effective_spread_bps</code> (the tight retail number, e.g. 20–40bps on liquid markets), notional ≈ $250–500.</li>
+              <li><strong>Back:</strong> 3–4 levels starting 150–300bps out, notional ≈ 5–10× front each, spacing 2–3× current grid (via level stride).</li>
+              <li><strong>Capital split:</strong> ≈ 15% front / 85% back of the market's book allocation; capital scaling divides by the sum of segment weights.</li>
+              <li>Constraints to respect: the back segment must sit inside oracle±MTB (quotes outside the band are excluded from matching entirely) and inside the margin-health buffer on the adverse side.</li>
+            </ul>
+          </div>
+          <div class="panel">
+            <h3>Rollout path</h3>
+            <ol>
+              <li>Segment fields in the MM config + piecewise sizing curve + segment-aware auto-depth (the invariant and goldens extend with it).</li>
+              <li>Stamp new knobs into the sizing-generation hash → enabling produces one clean cancel-replace.</li>
+              <li>Control-plane columns + audited operator function (same pattern as capital scaling).</li>
+              <li>Null config = exactly today's behavior (dark-ship idiom) → enable kas-devnet → testnet → one mainnet market.</li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>The three questions for Stephen</h2>
+        <ol>
+          <li>
+            <strong>Slicing economics.</strong> Two-mode discriminates against
+            naive blocks only; rational size slices across batches and gets
+            the book-walk average. Is that the intended target (probably fine
+            — naive blocks are the toxic flow), or do we also want cross-batch
+            defenses: fill-triggered MM wake (fills don't wake the maker
+            today) and/or a higher permanent-impact fraction (currently 0.2)
+            so consumed depth reprices faster?
+          </li>
+          <li>
+            <strong>MTB headroom.</strong> Wide-segment quotes outside
+            oracle×(1±MTB) are dead weight — excluded from matching. On the
+            stock perps (±5%) a 150–300bps back segment fits comfortably; is
+            the intended block spread ever wider than the band on any market?
+            If yes, that's an exchange market-config discussion, not an MM
+            change.
+          </li>
+          <li>
+            <strong>Capital &amp; the 1x cap.</strong> At 1x every resting
+            order reserves full notional: 4 markets × 2 sides × ~$10k back
+            segment ≈ $80k permanently reserved. Does vault equity support the
+            intended block depth — and should the per-account open-notional
+            cap be raised in step (else the PR #66 clamp silently shrinks the
+            block levels)?
+          </li>
+        </ol>
+      </section>
+
+      <footer>
+        MNX research · two-mode MM brief (2026-07-10) · grounded in
+        market-maker @ <code>1735c7d</code> and the exchange match engine ·
+        status: design brief for the Kelvin ↔ Stephen decision.
+      </footer>
+    </main>
+  </body>
+</html>
