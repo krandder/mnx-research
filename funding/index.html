@@ -482,7 +482,7 @@
               <td><strong>Weak</strong></td>
               <td>72 (~3 days)</td>
               <td>±2 bps</td>
-              <td>Thin or noisy short-term reference (small caps, new listings).</td>
+              <td>Thin or noisy short-term reference (small caps, new listings: CXMT, MINIMAX, ZHIPU).</td>
             </tr>
             <tr>
               <td><strong>Very weak</strong></td>
@@ -561,6 +561,13 @@
               <td>Standard</td>
             </tr>
             <tr>
+              <td><strong>Vol index perp</strong></td>
+              <td>VIX</td>
+              <td>Hyperliquid <code>oraclePx</code> (their external CBOE VIX republication; premium-free, alive even with an empty HL book)</td>
+              <td><code>always</code> (connector-derived; basis drifts continuously)</td>
+              <td>Very weak &mdash; deliberately, so the perp floats like a constant-maturity ~1-week VIX future (callout below)</td>
+            </tr>
+            <tr>
               <td><strong>Slow-published index</strong></td>
               <td>H100 $/hr (flagship — below), compute-cost indices</td>
               <td>Silicon Data SDH100RT (daily; CME's pick) — the existing SemiAnalysis connector is monthly-grade, insufficient alone</td>
@@ -593,6 +600,52 @@
             on the same settlement index. Prerequisite: a data-licensing
             agreement with Silicon Data (the index is distributed via
             Bloomberg/API); fallback anchor is ICE/Ornn's OCPI.
+          </p>
+        </div>
+
+        <div class="callout">
+          <p>
+            <strong>VIX: weak funding as a feature (decided 2026-07-20).</strong>
+            The VIX index has no tradable spot to arbitrage, so instead of
+            tethering the perp hard to spot, VIX runs Very-weak funding on
+            purpose: the perp is free to trade at the market's ~week-ahead
+            VIX expectation and behaves like a constant-maturity ~1-week VIX
+            future with no expiry and no roll. Holding a basis view costs at
+            most the cap (24&nbsp;bps/day at 1&nbsp;bp/hr). Two parameters move
+            with this or it silently fails: the take bound must widen to
+            &plusmn;15&ndash;20% (at the default &plusmn;5% the band, not
+            funding, becomes the tether and pins the perp to spot exactly
+            during vol spikes), and dashboards must judge basis against the
+            expected forward, not against zero. Interim note: until the
+            <code>fundingDivisor</code> delta ships, the 1&nbsp;bp/hr cap at
+            D=24 saturates beyond 24&nbsp;bps of basis &mdash; a flat nudge
+            that approximates the futures-like behavior even before D=168
+            lands.
+          </p>
+        </div>
+
+        <div class="callout">
+          <p>
+            <strong>Launch state (testnet, July 2026) &mdash; deployed truth vs. this proposal.</strong>
+            Deployed today: every perpetual (SPY, NVDA, META, GOOGL, ASML,
+            INTC, MU, TSM, SNDK, SMH, CXMT, MINIMAX, ZHIPU, CRWV, SPCX, H100,
+            VIX) runs 10&nbsp;bps/hr at the hardcoded D=24; expiring futures
+            and binaries run <code>maxFundingRate&nbsp;=&nbsp;0</code>.
+            Decided cap changes (owner setter, pre-flip): VIX &rarr;
+            1&nbsp;bp/hr; H100 &rarr; 1&nbsp;bp/hr (bringing it to this
+            document's Very-weak assignment &mdash; it currently contradicts
+            it on-chain). Weak-tier cap cuts for CXMT/MINIMAX/ZHIPU ship
+            together with the <code>fundingDivisor</code> delta rather than
+            piecemeal. Session assignment is automatic and connector-derived
+            (<code>getFundingSessionForConnector</code>): stock-aggregator US
+            tickers freeze funding outside RTH; VIX (Hyperliquid-primary) and
+            H100 (SemiAnalysis) accrue <code>always</code>. Verified against
+            code 2026-07-20: hourly settlement, per-hour cap semantics, and
+            &mdash; still open &mdash; required fix #1: the session toggle
+            path still emits <code>FundingStatusSettlementSkipped</code> and
+            permanently discards unsettled accrual
+            (<code>funding-status-updater.ts</code>); with ~10 equity markets
+            toggling twice daily this is live surface at launch.
           </p>
         </div>
 
