@@ -1,272 +1,809 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>MNX Market Parameters</title>
-<meta name="description" content="Complete per-market parameter reference: leverage, bands, funding strength, tick sizes, order caps, and the MM liquidity model behind them.">
-<style>
-:root { --bg:#0b1220; --panel:#111a2c; --line:#1f2b42; --text:#dbe4f3; --dim:#8fa2c0; --accent:#34d399; --warn:#fbbf24; }
-* { box-sizing:border-box; }
-body { margin:0; background:var(--bg); color:var(--text); font:15px/1.55 -apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; padding:32px 20px 80px; }
-main { max-width:1280px; margin:0 auto; }
-h1 { font-size:clamp(1.6rem,4vw,2.6rem); margin:0 0 4px; }
-.eyebrow { color:var(--accent); text-transform:uppercase; letter-spacing:.14em; font-size:.75rem; font-weight:700; }
-.sub { color:var(--dim); max-width:900px; }
-h2 { margin:44px 0 10px; font-size:1.25rem; }
-table { border-collapse:collapse; width:100%; font-size:.82rem; background:var(--panel); border:1px solid var(--line); border-radius:10px; overflow:hidden; }
-th,td { padding:7px 10px; text-align:right; border-bottom:1px solid var(--line); white-space:nowrap; }
-th:first-child,td:first-child { text-align:left; }
-th { background:#0e1626; color:var(--dim); font-weight:600; text-transform:uppercase; font-size:.68rem; letter-spacing:.06em; position:sticky; top:0; }
-tr:hover td { background:#152036; }
-.wrap { overflow-x:auto; border-radius:10px; }
-.note { background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:8px; padding:12px 16px; margin:14px 0; color:var(--dim); font-size:.9rem; }
-.note.warn { border-left-color:var(--warn); }
-code { background:#0e1626; padding:1px 5px; border-radius:4px; font-size:.85em; }
-.stamp { color:var(--dim); font-size:.75rem; margin-top:6px; }
-</style>
-</head>
-<body>
-<main>
-  <div class="eyebrow">MNX &middot; parameter reference</div>
-  <h1>Market Parameters</h1>
-  <p class="sub">Every live tradable market with its full parameter set and the market-maker liquidity model those parameters are derived from.
-  Snapshot of <strong>testnet</strong>; identical parameter methodology intended for production (pending review).</p>
-  <p class="stamp">Generated 2026-07-21 04:21 UTC from the live testnet read model.</p>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MNX Launch Parameters — What Should Change</title>
+    <meta
+      name="description"
+      content="Pre-launch parameter audit for the four production markets: tick sizes, take-bound maxima under the ADL invariant, a minimum order floor, and the explicit keep list."
+    >
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f5f7f5;
+        --paper: #ffffff;
+        --ink: #17201d;
+        --muted: #5d6963;
+        --line: #d9dfda;
+        --teal: #096b62;
+        --teal-soft: #e4f2ef;
+        --rust: #92400e;
+        --rust-soft: #fff2df;
+        --blue: #1d4ed8;
+        --blue-soft: #edf3ff;
+        --red: #9f2f2f;
+        --red-soft: #fff1f1;
+        --code: #f1f4f2;
+        --shadow: 0 16px 40px rgba(23, 32, 29, 0.08);
+      }
 
-  <h2>The liquidity model behind the numbers</h2>
-  <div class="note">
-    Assumed MM equity <strong>$50,000</strong>, distributed by the current capital-scaling parametrization:
-    book fraction <code>0.41</code>, inventory fraction <code>0.99</code>, capital weights <code>ANTHROPIC=OPENAI=4</code>, all other quoted markets <code>1</code> (weight sum 27).
-    Per-side resting depth = <code>0.41 &times; equity &times; weight/27</code>; the MM's max position = <code>0.99 &times; equity &times; weight/27</code>.
-    <strong>Max market order = a 3% price-impact budget</strong> (&asymp;3&times; one side's depth, since the resting ladder spans well under 1%);
-    <strong>max limit order = the MM's max position</strong> for that market. Quantities rounded to clean unit counts.
-  </div>
-  <div class="note warn">
-    Flag for review: with the current fractions, the MM max position ($1,833 at weight&nbsp;1) is <em>smaller</em> than the 3% market-order budget ($2,278),
-    so limit caps sit below market caps — unusual; taken literally from the sizing rule. Second flag: caps assume the $50k parametrization —
-    if vault equity or weights change, re-derive (scripts are one command).
-  </div>
+      * {
+        box-sizing: border-box;
+      }
 
-  <h2>Tick-size methodology</h2>
-  <div class="note">
-    Ticks are sized so one tick &asymp; the market's typical 5-minute move: median absolute 5-minute close-to-close change over 48h of
-    Hyperliquid candles, rounded to a 1/2/5 step. Markets with no trade history (VIX, H100) or fair-price-driven markets
-    (ANTHROPIC, OPENAI, DEEPSEEK, MOONSHOT) use modeled values from their fair-ramp rates / reference-index volatility, marked
-    <em>modeled</em> below. H100's tick is unchanged (slow-published daily reference).
-  </div>
+      html {
+        scroll-behavior: smooth;
+      }
 
-  <h2>Per-market parameters</h2>
-  <div class="wrap"><table>
-    <thead><tr>
-      <th>Market</th><th>Type</th><th>Mark</th><th>Max lev</th><th>Band (mtb)</th>
-      <th>Funding</th><th>Funding session</th>
-      <th>Tick</th><th>Vol (5m)</th>
-      <th>Max market order</th><th>Max limit order</th>
-      <th>W</th><th>MM depth/side</th><th>MM max pos</th>
-    </tr></thead>
-    <tbody>
-    <tr>
-      <td><strong>ANTHROPIC</strong></td><td>future</td>
-      <td>2004</td><td>3.0&times;</td>
-      <td>20%</td>
-      <td>none (0/hr)</td><td>—</td>
-      <td>5</td><td>modeled</td>
-      <td>5 (&asymp;$9,111)</td>
-      <td>4 (&asymp;$7,333)</td>
-      <td>4</td><td>$3,037</td><td>$7,333</td>
-    </tr><tr>
-      <td><strong>ASML</strong></td><td>perpetual</td>
-      <td>1772.4078786</td><td>5.0&times;</td>
-      <td>5%</td>
-      <td>Standard (10 bps/hr)</td><td>US-equity RTH</td>
-      <td>2</td><td>10.72 bps</td>
-      <td>1.5 (&asymp;$2,278)</td>
-      <td>1.5 (&asymp;$1,833)</td>
-      <td>1</td><td>$759</td><td>$1,833</td>
-    </tr><tr>
-      <td><strong>CRWV</strong></td><td>perpetual</td>
-      <td>75.59547493</td><td>10.0&times;</td>
-      <td>5%</td>
-      <td>Standard (10 bps/hr)</td><td>US-equity RTH</td>
-      <td>0.05</td><td>11.76 bps</td>
-      <td>40 (&asymp;$2,278)</td>
-      <td>25 (&asymp;$1,833)</td>
-      <td>1</td><td>$759</td><td>$1,833</td>
-    </tr><tr>
-      <td><strong>CXMT</strong></td><td>perpetual</td>
-      <td>6.72507734</td><td>3.0&times;</td>
-      <td>5%</td>
-      <td>Standard (10 bps/hr)</td><td>US-equity RTH</td>
-      <td>0.01</td><td>17.46 bps</td>
-      <td>400 (&asymp;$2,278)</td>
-      <td>300 (&asymp;$1,833)</td>
-      <td>1</td><td>$759</td><td>$1,833</td>
-    </tr><tr>
-      <td><strong>DEEPSEEK</strong></td><td>future</td>
-      <td>100</td><td>3.0&times;</td>
-      <td>20%</td>
-      <td>none (0/hr)</td><td>—</td>
-      <td>0.2</td><td>modeled</td>
-      <td>25 (&asymp;$2,278)</td>
-      <td>20 (&asymp;$1,833)</td>
-      <td>1</td><td>$759</td><td>$1,833</td>
-    </tr><tr>
-      <td><strong>GOOGL</strong></td><td>perpetual</td>
-      <td>355.5</td><td>10.0&times;</td>
-      <td>5%</td>
-      <td>Standard (10 bps/hr)</td><td>US-equity RTH</td>
-      <td>0.1</td><td>3.1 bps</td>
-      <td>8 (&asymp;$2,278)</td>
-      <td>6 (&asymp;$1,833)</td>
-      <td>1</td><td>$759</td><td>$1,833</td>
-    </tr><tr>
-      <td><strong>H100</strong></td><td>perpetual</td>
-      <td>3.136</td><td>12.5&times;</td>
-      <td>5%</td>
-      <td>Very weak (1 bp/hr)</td><td>always</td>
-      <td>0.001</td><td>n/a</td>
-      <td>800 (&asymp;$2,278)</td>
-      <td>600 (&asymp;$1,833)</td>
-      <td>1</td><td>$759</td><td>$1,833</td>
-    </tr><tr>
-      <td><strong>INTC</strong></td><td>perpetual</td>
-      <td>100.9078371</td><td>5.0&times;</td>
-      <td>5%</td>
-      <td>Standard (10 bps/hr)</td><td>US-equity RTH</td>
-      <td>0.05</td><td>9.1 bps</td>
-      <td>25 (&asymp;$2,278)</td>
-      <td>20 (&asymp;$1,833)</td>
-      <td>1</td><td>$759</td><td>$1,833</td>
-    </tr><tr>
-      <td><strong>META</strong></td><td>perpetual</td>
-      <td>646.78923332</td><td>10.0&times;</td>
-      <td>5%</td>
-      <td>Standard (10 bps/hr)</td><td>US-equity RTH</td>
-      <td>0.2</td><td>4.18 bps</td>
-      <td>4 (&asymp;$2,278)</td>
-      <td>3 (&asymp;$1,833)</td>
-      <td>1</td><td>$759</td><td>$1,833</td>
-    </tr><tr>
-      <td><strong>MINIMAX</strong></td><td>perpetual</td>
-      <td>27.23404831</td><td>5.0&times;</td>
-      <td>5%</td>
-      <td>Standard (10 bps/hr)</td><td>US-equity RTH</td>
-      <td>0.05</td><td>21.48 bps</td>
-      <td>100 (&asymp;$2,278)</td>
-      <td>80 (&asymp;$1,833)</td>
-      <td>1</td><td>$759</td><td>$1,833</td>
-    </tr><tr>
-      <td><strong>MOONSHOT</strong></td><td>future</td>
-      <td>55</td><td>3.0&times;</td>
-      <td>20%</td>
-      <td>none (0/hr)</td><td>—</td>
-      <td>0.1</td><td>modeled</td>
-      <td>50 (&asymp;$2,278)</td>
-      <td>40 (&asymp;$1,833)</td>
-      <td>1</td><td>$759</td><td>$1,833</td>
-    </tr><tr>
-      <td><strong>MU</strong></td><td>perpetual</td>
-      <td>906</td><td>5.0&times;</td>
-      <td>5%</td>
-      <td>Standard (10 bps/hr)</td><td>US-equity RTH</td>
-      <td>0.5</td><td>9.06 bps</td>
-      <td>3 (&asymp;$2,278)</td>
-      <td>2.5 (&asymp;$1,833)</td>
-      <td>1</td><td>$759</td><td>$1,833</td>
-    </tr><tr>
-      <td><strong>NVDA</strong></td><td>perpetual</td>
-      <td>204.78614287</td><td>12.5&times;</td>
-      <td>5%</td>
-      <td>Standard (10 bps/hr)</td><td>US-equity RTH</td>
-      <td>0.05</td><td>3.91 bps</td>
-      <td>15 (&asymp;$2,278)</td>
-      <td>10 (&asymp;$1,833)</td>
-      <td>1</td><td>$759</td><td>$1,833</td>
-    </tr><tr>
-      <td><strong>OPENAI</strong></td><td>future</td>
-      <td>1710</td><td>3.0&times;</td>
-      <td>20%</td>
-      <td>none (0/hr)</td><td>—</td>
-      <td>5</td><td>modeled</td>
-      <td>6 (&asymp;$9,111)</td>
-      <td>5 (&asymp;$7,333)</td>
-      <td>4</td><td>$3,037</td><td>$7,333</td>
-    </tr><tr>
-      <td><strong>SMH</strong></td><td>perpetual</td>
-      <td>570.09</td><td>10.0&times;</td>
-      <td>5%</td>
-      <td>Standard (10 bps/hr)</td><td>US-equity RTH</td>
-      <td>0.5</td><td>13.35 bps</td>
-      <td>5 (&asymp;$2,278)</td>
-      <td>4 (&asymp;$1,833)</td>
-      <td>1</td><td>$759</td><td>$1,833</td>
-    </tr><tr>
-      <td><strong>SNDK</strong></td><td>perpetual</td>
-      <td>1477</td><td>5.0&times;</td>
-      <td>5%</td>
-      <td>Standard (10 bps/hr)</td><td>US-equity RTH</td>
-      <td>2</td><td>12.86 bps</td>
-      <td>2 (&asymp;$2,278)</td>
-      <td>1.5 (&asymp;$1,833)</td>
-      <td>1</td><td>$759</td><td>$1,833</td>
-    </tr><tr>
-      <td><strong>SPCX</strong></td><td>perpetual</td>
-      <td>121.38272418</td><td>5.0&times;</td>
-      <td>5%</td>
-      <td>Standard (10 bps/hr)</td><td>US-equity RTH</td>
-      <td>0.05</td><td>7.42 bps</td>
-      <td>20 (&asymp;$2,278)</td>
-      <td>20 (&asymp;$1,833)</td>
-      <td>1</td><td>$759</td><td>$1,833</td>
-    </tr><tr>
-      <td><strong>SPY</strong></td><td>perpetual</td>
-      <td>745.2</td><td>10.0&times;</td>
-      <td>5%</td>
-      <td>Standard (10 bps/hr)</td><td>US-equity RTH</td>
-      <td>0.1</td><td>1.61 bps</td>
-      <td>4 (&asymp;$2,278)</td>
-      <td>2.5 (&asymp;$1,833)</td>
-      <td>1</td><td>$759</td><td>$1,833</td>
-    </tr><tr>
-      <td><strong>TSM</strong></td><td>perpetual</td>
-      <td>409.54047883</td><td>5.0&times;</td>
-      <td>5%</td>
-      <td>Standard (10 bps/hr)</td><td>US-equity RTH</td>
-      <td>0.2</td><td>5.87 bps</td>
-      <td>6 (&asymp;$2,278)</td>
-      <td>5 (&asymp;$1,833)</td>
-      <td>1</td><td>$759</td><td>$1,833</td>
-    </tr><tr>
-      <td><strong>VIX</strong></td><td>perpetual</td>
-      <td>20</td><td>2.0&times;</td>
-      <td>15%</td>
-      <td>Very weak (1 bp/hr)</td><td>always</td>
-      <td>0.1</td><td>modeled</td>
-      <td>150 (&asymp;$2,278)</td>
-      <td>100 (&asymp;$1,833)</td>
-      <td>1</td><td>$759</td><td>$1,833</td>
-    </tr><tr>
-      <td><strong>ZHIPU</strong></td><td>perpetual</td>
-      <td>200</td><td>5.0&times;</td>
-      <td>5%</td>
-      <td>Standard (10 bps/hr)</td><td>US-equity RTH</td>
-      <td>0.2</td><td>17.53 bps</td>
-      <td>20 (&asymp;$2,278)</td>
-      <td>15 (&asymp;$1,833)</td>
-      <td>1</td><td>$759</td><td>$1,833</td>
-    </tr>
-    </tbody>
-  </table></div>
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        line-height: 1.55;
+      }
 
-  <h2>Notes</h2>
-  <div class="note">
-    <strong>Funding.</strong> Hourly settlement; rate = hourly time-weighted premium / 24, clamped to the per-hour cap. All perps run the Standard
-    10&nbsp;bps/hr cap except VIX and H100 (Very weak, 1&nbsp;bp/hr &mdash; VIX deliberately, so the perp floats like a constant-maturity ~1-week future;
-    see the <a href="/funding" style="color:var(--accent)">funding-v2 doc</a>). Dated futures and binaries pay no funding. Per-market half-life (divisor) ships later; until then D=24 everywhere and tiers differ by cap only.
-    <strong>Bands.</strong> mtb is a fill bound: no fill can execute beyond oracle&nbsp;&plusmn;band. VIX runs &plusmn;15% (weak-tether design); everything else &plusmn;5%. Bands only ratchet tighter on-chain; widening requires redeploy.
-    <strong>Binaries</strong> (ANTHTOP26, DPREZ, OAITOP26) are fully collateralized, no funding, no MM coverage; market orders capped at &asymp;$500 notional.
-  </div>
-</main>
-</body>
+      a {
+        color: var(--blue);
+        text-decoration-thickness: 1px;
+        text-underline-offset: 3px;
+      }
+
+      header {
+        background: #16211e;
+        color: #ffffff;
+        padding: 42px 24px 30px;
+        border-bottom: 6px solid #d97706;
+      }
+
+      .wrap {
+        width: min(1160px, calc(100vw - 40px));
+        margin: 0 auto;
+      }
+
+      .eyebrow {
+        margin: 0 0 14px;
+        color: #a7f3d0;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      .eyebrow a {
+        color: #a7f3d0;
+      }
+
+      h1 {
+        max-width: 940px;
+        margin: 0;
+        font-size: clamp(2rem, 6vw, 4.2rem);
+        line-height: 0.98;
+        letter-spacing: 0;
+      }
+
+      .lede {
+        max-width: 910px;
+        margin: 18px 0 0;
+        color: #d9e3de;
+        font-size: clamp(1rem, 2vw, 1.18rem);
+      }
+
+      .toc {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 18px;
+      }
+
+      .toc a {
+        display: inline-flex;
+        min-height: 38px;
+        align-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        border-radius: 7px;
+        padding: 8px 11px;
+        color: #ffffff;
+        background: rgba(255, 255, 255, 0.08);
+        text-decoration: none;
+        font-size: 0.9rem;
+      }
+
+      main {
+        padding: 28px 0 58px;
+      }
+
+      section {
+        margin: 30px 0;
+      }
+
+      h2 {
+        margin: 0 0 13px;
+        font-size: clamp(1.45rem, 3vw, 2.2rem);
+        line-height: 1.16;
+        letter-spacing: 0;
+      }
+
+      h3 {
+        margin: 0 0 10px;
+        font-size: 1.08rem;
+        line-height: 1.25;
+        letter-spacing: 0;
+      }
+
+      p {
+        margin: 0 0 13px;
+      }
+
+      ul,
+      ol {
+        margin: 10px 0 0;
+        padding-left: 20px;
+      }
+
+      li {
+        margin: 7px 0;
+      }
+
+      code,
+      .mono {
+        font-family:
+          "SFMono-Regular",
+          Consolas,
+          "Liberation Mono",
+          Menlo,
+          monospace;
+        font-size: 0.94em;
+      }
+
+      code {
+        background: var(--code);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        overflow-wrap: anywhere;
+        padding: 0.12rem 0.32rem;
+      }
+
+      .panel,
+      table {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        box-shadow: var(--shadow);
+      }
+
+      .panel {
+        padding: 22px;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .two {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .callout {
+        border-left: 5px solid var(--teal);
+        background: var(--teal-soft);
+        border-radius: 0 8px 8px 0;
+        padding: 16px 18px;
+        margin: 18px 0;
+      }
+
+      .callout.warn {
+        border-left-color: var(--rust);
+        background: var(--rust-soft);
+      }
+
+      .callout.bad {
+        border-left-color: var(--red);
+        background: var(--red-soft);
+      }
+
+      .formula {
+        display: block;
+        border: 1px solid var(--line);
+        border-left: 5px solid var(--teal);
+        border-radius: 8px;
+        background: #fbfdfc;
+        padding: 18px;
+        overflow-x: auto;
+        white-space: pre;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        overflow: hidden;
+        margin: 16px 0 24px;
+      }
+
+      th,
+      td {
+        border: 1px solid var(--line);
+        padding: 10px 12px;
+        vertical-align: top;
+        text-align: left;
+        font-size: 0.92rem;
+      }
+
+      th {
+        background: #edf3f1;
+        color: #25312e;
+        font-weight: 760;
+      }
+
+      tbody tr:nth-child(even) td {
+        background: #fbfcfb;
+      }
+
+      td code {
+        overflow-wrap: anywhere;
+      }
+
+      .tagline {
+        color: var(--muted);
+      }
+
+      .source-list {
+        columns: 2;
+        column-gap: 28px;
+        margin-bottom: 0;
+      }
+
+      footer {
+        margin-top: 40px;
+        color: var(--muted);
+        font-size: 0.88rem;
+      }
+
+      @media (max-width: 820px) {
+        .wrap {
+          width: min(100vw - 28px, 1160px);
+        }
+
+        header {
+          padding: 34px 18px 26px;
+        }
+
+        .two {
+          grid-template-columns: 1fr;
+        }
+
+        .source-list {
+          columns: 1;
+        }
+
+        th,
+        td {
+          font-size: 0.88rem;
+          padding: 9px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap">
+        <p class="eyebrow">MNX Proposal — pre-launch parameter audit</p>
+        <h1>Launch parameters: what should change</h1>
+        <p class="lede">
+          Six changes before real launch, in priority order: add a minimum
+          order floor (there is none), make the ANTHROPIC/OPENAI tick 10×
+          finer, verify the live oracle jump cap, raise the per-account
+          open-notional tiers, decide the zero-fee wash-trading question, and
+          mirror the on-chain born-liquidatable check at order placement.
+          The take-bounds stay where they are — on the futures they are the
+          only per-batch cap on a self-referential oracle. Everything else,
+          including the CRWV/SPCX tick, should stay.
+        </p>
+        <nav class="toc" aria-label="Page sections">
+          <a href="#recommendation">Recommendation</a>
+          <a href="#current">Current state</a>
+          <a href="#ticks">Tick sizes</a>
+          <a href="#doors">Take-bounds &amp; the invariant</a>
+          <a href="#integrity">Integrity floor</a>
+          <a href="#capacity">Capacity</a>
+          <a href="#keep">Keep list</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section id="recommendation">
+        <h2>The recommendation</h2>
+        <table aria-label="Change list in priority order">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Change</th>
+              <th>From → To</th>
+              <th>Why now</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td><strong>Add a minimum order floor ≈ $10</strong></td>
+              <td><code>minTradeQty</code>: CRWV 0.001 → <strong>0.1</strong> (~$9), SPCX → <strong>0.05</strong> (~$7), ANTHROPIC/OPENAI → <strong>0.005</strong> (~$9–13)</td>
+              <td>Today a $0.09 order is accepted; there is no notional floor anywhere (the MM's min-notional gate is unwired for MNX). Every venue floors at $5–10 (Hyperliquid $10, Binance 5 USDT, Bybit 5, dYdX ≈$1–10 by construction) citing spam and state bloat — and MNX pays real settlement gas per dust position.</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td><strong>ANTHROPIC/OPENAI tick 10× finer</strong></td>
+              <td><code>tickSize</code> 1 ($1B) → <strong>0.1 ($100M)</strong>; 3.8–5.3 bps → 0.4–0.5 bps</td>
+              <td>4–5 bps relative tick is coarse-outlier territory (dYdX's governance is repairing exactly this class of market). Venue norm for $2,000-priced assets is 0.05–0.6 bps. The MM's $2 ladder grid is currently only 2 ticks wide — at 0.1 it becomes a healthy 20. Freely reversible, but cheapest before positions exist.</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td><strong>Oracle jump cap — VERIFIED on-chain (2026-07-10)</strong></td>
+              <td><code>maxUpdateBps() = 250</code> on all four production oracles (read via eth_call)</td>
+              <td>Done. The invariant analysis below is exact, not assumed: j = 2.5% for every market. The cap remains tightening-only.</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td><strong>Raise per-account open-notional tiers</strong></td>
+              <td><code>maxAllowedOpenNotional[0]</code> $10k @ 1× → <strong>≈$50k</strong>, higher tiers scaled</td>
+              <td>The $10k-at-1× cap is what the market maker clips against every tick (it currently parses reject strings and re-places haircut orders as a workaround). Sizing is a business call; $10k per account will also bind the first serious external trader.</td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td><strong>Decide the zero-fee question</strong></td>
+              <td>0/0 fees: keep for launch, <em>but</em> add ≥1 bp taker fee <em>or</em> verify self-match prevention</td>
+              <td>With zero fees, self-crossing inside a batch is free — and the batch clearing price is the funding sample, the mark input, and the candle print. Free tape-painting plus MNX-paid settlement gas. See <a href="#integrity">integrity floor</a>.</td>
+            </tr>
+            <tr>
+              <td>6</td>
+              <td><strong>Add the P34 check as a placement filter</strong> (and run a placement↔seal parity audit)</td>
+              <td>New placement validator; no contract change</td>
+              <td>Born-liquidatable positions are already blocked twice — on-chain (P34) and at batch sealing, which mirrors the full P34–P37 suite (<code>fill-validators.ts:1450-1626</code>) so doomed fills never reach chain. The remaining gap is placement: a doomed order is accepted, rests, matches, and only then has its fills silently dropped at seal — no user feedback, wasted matching. Reject it at the API instead, with a clear error (confirmed as "a good placement filter" by the exchange team). Since seal enforces more than placement does, the general version: enumerate every seal-time check and decide per-check whether placement should mirror it — there are likely other such edge cases.</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="callout">
+          <p>
+            <strong>Explicit keep:</strong> all take-bounds as deployed (±5%
+            stocks, ±20% futures — see <a href="#doors">why</a>), CRWV/SPCX
+            tick 0.01, all step sizes (0.001), leverage tiers (10×/5×/3×/3×),
+            funding caps (see <a href="/funding">/funding</a>), the $10M
+            per-side market cap (hot-changeable at runtime), and the
+            price-bound ranges. Hygiene only: the max-trade-quantity caps (a
+            $80M market order on CRWV is nominally allowed) should be cut to
+            notional-consistent values.
+          </p>
+        </div>
+      </section>
+
+      <section id="current">
+        <h2>Current state — live-verified</h2>
+        <p>
+          Production API read 2026-07-08 (<code>market_config_seq 3</code>,
+          all four trading); every value matches the repo deployment configs.
+        </p>
+        <table aria-label="Current parameters of the four production markets">
+          <thead>
+            <tr>
+              <th scope="col">Parameter</th>
+              <th scope="col">CRWV (perp)</th>
+              <th scope="col">SPCX (perp)</th>
+              <th scope="col">ANTHROPIC (future)</th>
+              <th scope="col">OPENAI (future)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Live mark / oracle</td>
+              <td>88.23 / 88.06</td>
+              <td>145.37 / 145.59</td>
+              <td>2,624 / 2,610.5 ($B)</td>
+              <td>1,898 / 1,900.0 ($B)</td>
+            </tr>
+            <tr>
+              <td><code>tickSize</code> (relative)</td>
+              <td>0.01 (1.1 bps)</td>
+              <td>0.01 (0.69 bps)</td>
+              <td>1 = $1B (3.8 bps)</td>
+              <td>1 = $1B (5.3 bps)</td>
+            </tr>
+            <tr>
+              <td><code>stepSize</code> / <code>minTradeQty</code></td>
+              <td>0.001 / 0.001 (~$0.09)</td>
+              <td>0.001 / 0.001 (~$0.15)</td>
+              <td>0.001 / 0.001 (~$2.6)</td>
+              <td>0.001 / 0.001 (~$1.9)</td>
+            </tr>
+            <tr>
+              <td><code>imr</code> / <code>mmr</code> (max leverage)</td>
+              <td>0.10 / 0.05 (10×)</td>
+              <td>0.20 / 0.10 (5×)</td>
+              <td>⅓ / ⅙ (3×)</td>
+              <td>⅓ / ⅙ (3×)</td>
+            </tr>
+            <tr>
+              <td><code>mtbLong</code> / <code>mtbShort</code></td>
+              <td>5% / 5%</td>
+              <td>5% / 5%</td>
+              <td>20% / 20%</td>
+              <td>20% / 20%</td>
+            </tr>
+            <tr>
+              <td><code>maxFundingRate</code></td>
+              <td>0.001 (10 bps/hr)</td>
+              <td>0.001</td>
+              <td>0 (futures)</td>
+              <td>0 (futures)</td>
+            </tr>
+            <tr>
+              <td>Maker / taker fee</td>
+              <td colspan="4">0 / 0 on all four</td>
+            </tr>
+            <tr>
+              <td><code>maxAllowedOpenNotional</code> (per account, by leverage)</td>
+              <td>$10k…$100k (1×–10×)</td>
+              <td>$10k…$50k (1×–5×)</td>
+              <td>$10k…$30k (1×–3×)</td>
+              <td>$10k…$30k (1×–3×)</td>
+            </tr>
+            <tr>
+              <td><code>maxMarketOpenNotional</code> (per side)</td>
+              <td colspan="4">$10M on all four (runtime-changeable via admin route)</td>
+            </tr>
+            <tr>
+              <td>Price bounds (<code>minOrderPrice</code>–<code>maxOrderPrice</code>)</td>
+              <td>1–10,000</td>
+              <td>10–10,000</td>
+              <td>10–10,000 ($B)</td>
+              <td>10–10,000 ($B)</td>
+            </tr>
+            <tr>
+              <td>Max market / limit order qty</td>
+              <td>909k / 9.09M (~$80M / $800M)</td>
+              <td>575.9k / 5.76M</td>
+              <td>540.5k / 5.4M</td>
+              <td>200k / 2M</td>
+            </tr>
+            <tr>
+              <td>Oracle</td>
+              <td colspan="2">Stock aggregator in RTH; Hyperliquid <code>xyz</code> after hours; jump cap 250 bps/update (repo default, live value unverified)</td>
+              <td colspan="2">No price connector — admin-fed valuation; funding disabled</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="ticks">
+        <h2>Tick sizes</h2>
+        <p>
+          The evidence gives a narrow target. Liquid perp venues cluster
+          relative tick at <strong>0.1–1.3 bps</strong> (Hyperliquid pins it
+          to 0.1–1.0 bps by construction; Binance and dYdX majors sit inside
+          it; QFEX quotes CRWV and SPCX at 1.13 and 0.69 bps — the same
+          underlyings as MNX). The empirical comfort band is
+          <strong>2–15 ticks inside the typical spread</strong> (SEC DERA:
+          below 2 the tick binds and spreads pin; above 15 quality degrades in
+          continuous markets). The coarse outliers — dYdX's $1 ticks on
+          $2,000-priced assets at 4–6 bps — are acknowledged defects being
+          repaired by governance.
+        </p>
+        <div class="callout">
+          <p>
+            <strong>The FBA tilt: when in doubt, err fine.</strong> Budish,
+            Cramton &amp; Shim address tick size in frequent batch auctions
+            directly: the message-traffic argument against fine ticks "is
+            moot here, because orders are opaque during the batch interval,"
+            coarse ticks increase rationing at the margin, and they
+            "conjecture that the optimal tick size in a frequent batch
+            auction is at least as fine as in the continuous market." The
+            classic fine-tick harms (queue-priority races, penny-jumping for
+            time priority, quote-flicker spam) are artifacts of continuous
+            matching that MNX's sealed batches don't have; the coarse-tick
+            harms (clearing-price rounding noise, a binding spread floor,
+            more pro-rata rationing ties) survive. So MNX should sit at the
+            fine end of the band.
+          </p>
+        </div>
+        <table aria-label="Per-market tick verdicts">
+          <thead>
+            <tr>
+              <th>Market</th>
+              <th>Today</th>
+              <th>Reference points</th>
+              <th>Verdict</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>CRWV</strong></td>
+              <td>0.01 → 1.1 bps</td>
+              <td>QFEX 0.01 (1.13 bps) · Hyperliquid 0.001 (0.11 bps) · US equity penny (1.1 bps)</td>
+              <td><strong>Keep.</strong> Exactly the equity/QFEX convention; spread ≫ tick; MM grid $0.05 = 5 ticks.</td>
+            </tr>
+            <tr>
+              <td><strong>SPCX</strong></td>
+              <td>0.01 → 0.69 bps</td>
+              <td>Hyperliquid 0.01 (0.69 bps) · QFEX 0.01 (0.69 bps)</td>
+              <td><strong>Keep.</strong> Dead-center of venue norm, tick-for-tick identical to both comparables.</td>
+            </tr>
+            <tr>
+              <td><strong>ANTHROPIC</strong></td>
+              <td>1 ($1B) → 3.8 bps</td>
+              <td>$2k-priced assets elsewhere: 0.05–0.6 bps · Ventuals (nearest analog, valuation ÷ 1e9) quoted cents · dYdX $1-ticks at 4–6 bps = flagged defects</td>
+              <td><strong>Change to 0.1 ($100M) → 0.38 bps.</strong></td>
+            </tr>
+            <tr>
+              <td><strong>OPENAI</strong></td>
+              <td>1 ($1B) → 5.3 bps</td>
+              <td>same</td>
+              <td><strong>Change to 0.1 ($100M) → 0.53 bps.</strong></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="grid two">
+          <div class="panel">
+            <h3>Why the futures tick matters mechanically</h3>
+            <p>
+              The market maker's ladder grid on ANTHROPIC/OPENAI is $2 —
+              currently just <strong>2 ticks</strong>. Its reanchor guard is
+              half a grid step (= 1 tick) and bid/ask rounding moves prices by
+              up to a tick (= half a grid step): the whole quoting apparatus
+              sits at the quantization edge. At tick 0.1 the same grid is 20
+              ticks and every derived threshold gets real resolution. The MM
+              reads tick/step from the exchange API at runtime, so the change
+              propagates with no MM deploy.
+            </p>
+          </div>
+          <div class="panel">
+            <h3>Standing recalibration policy</h3>
+            <p>
+              Adopt a published trigger instead of ad-hoc revisits:
+              <strong>recalibrate a market's tick when its median quoted
+              spread is &lt; 3 ticks (too coarse) or &gt; 30 ticks (too
+              fine)</strong>, checked monthly. Precedent: the SEC now
+              literally reassigns US-equity ticks semiannually on a
+              spread ≤ 1.5-tick trigger, and dYdX's governance runs batch
+              repairs on the same logic. <code>setTickSize</code> is freely
+              settable both directions — tick is not a one-way door, just a
+              coordinated config + DB re-materialization.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="doors">
+        <h2>Take-bounds and the ADL invariant — keep them</h2>
+        <p>
+          The take-bounds (<code>mtbLong</code>/<code>mtbShort</code> — how
+          far a batch clearing price may sit from the oracle) should stay
+          where they are: ±5% on the stocks, ±20% on the futures. The
+          decisive reason is what the oracle <em>is</em> on each market. CRWV
+          and SPCX have external oracles (stock aggregator, Hyperliquid after
+          hours) — there the band protects fills against a lagging reference,
+          and gaps move the oracle, not the band. ANTHROPIC and OPENAI have
+          <strong>no external reference at all</strong>: their oracle derives
+          from MNX's own market. On a self-referential oracle the take-bound
+          is the only per-batch cap on how fast trading can drag the oracle —
+          and every liquidation trigger with it. A wider band there is a
+          wider manipulation handle, not better price discovery. The past
+          +24% OPENAI dislocation is an oracle problem with an oracle fix in
+          flight (the mark-price rework), not evidence the band is too tight.
+        </p>
+        <p>
+          Two mechanics bound what the band can do. First,
+          <strong>born-liquidatable positions are already impossible</strong>:
+          on any new or flipped position the contract requires entry margin ≥
+          IMR at the fill price <em>and</em> margin ratio ≥ MMR at the oracle
+          price (P34, <code>Perpetual.sol:2696-2708</code>) — the further a
+          fill sits from the oracle, the more margin it demands. At max
+          leverage the openable distance is
+          <code>(imr − mmr) / (1 ∓ imr)</code>: <strong>25% long / 12.5%
+          short</strong> on the futures, 12.5%/8.3% on SPCX, 5.6%/4.5% on
+          CRWV. A 40% band would therefore not even function at its edge —
+          3× fills beyond 25% are dropped at batch sealing, which mirrors the
+          full P34–P37 suite off-chain (<code>fill-validators.ts:1450-1626</code>),
+          so they never reach chain at all. Second, liquidations are driven
+          by the jump-capped oracle (≤250 bps per update), not by prints —
+          an extreme fill whose losing side would be born liquidatable is
+          prevented at seal rather than liquidating anyone. The band's live
+          roles are bounding worst-case taker fills and how far sustained
+          printing can sit from a self-referential oracle while dragging its
+          inputs.
+        </p>
+        <p class="tagline">
+          Related parity enforcement that already exists: a user who cancels
+          orders directly on-chain (bypassing the API) has all their orders
+          cancelled and new order creation paused — the off-chain book and
+          on-chain state are actively kept coherent, which is the same
+          principle change #6 extends to order placement.
+        </p>
+        <p>
+          The invariant math below is kept as the <em>reference ceiling</em> —
+          what the contract permits, not what should be set
+          (<code>Perpetual.sol:1898</code>, re-run on every
+          Evaluator/oracle/IMR change). Setters are tightening-only; widening
+          would require a replacement Evaluator per market.
+        </p>
+        <div class="formula mono">(1 + j)(1 + mtbLong)(1 − imr) ≤ 1        (upward replacement capacity)
+(1 − j)(1 − mtbShort)(1 + imr) ≥ 1       (downward replacement capacity)
+
+j = oracle max update per refresh (assumed 0.025 — verify live)</div>
+        <table aria-label="Take-bound ceilings for reference">
+          <thead>
+            <tr>
+              <th>Market</th>
+              <th>imr</th>
+              <th>Invariant ceiling (long / short)</th>
+              <th>Deployed</th>
+              <th>Verdict</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>ANTHROPIC / OPENAI</td>
+              <td>⅓</td>
+              <td>46.3% / 23.1%</td>
+              <td>20% / 20%</td>
+              <td><strong>Keep.</strong> Already near the short-side ceiling, and the self-referential oracle makes any widening a manipulation handle.</td>
+            </tr>
+            <tr>
+              <td>SPCX</td>
+              <td>0.20</td>
+              <td>21.9% / 14.5%</td>
+              <td>5% / 5%</td>
+              <td><strong>Keep.</strong> The oracle tracks Hyperliquid continuously, so pre-IPO gaps move the oracle, not the band.</td>
+            </tr>
+            <tr>
+              <td>CRWV</td>
+              <td>0.10</td>
+              <td>8.4% / 6.8%</td>
+              <td>5% / 5%</td>
+              <td><strong>Keep.</strong> 10× leverage leaves marginal headroom anyway; the listed-equity oracle is good.</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="callout warn">
+          <p>
+            <strong>The three-way coupling to state explicitly:</strong>
+            take-bound width, leverage, and oracle speed multiply into one
+            invariant — you cannot raise one without room from the others.
+            The concrete case: raising the futures to 5× (imr 0.2) drops the
+            short-side ceiling from 23.1% to 14.5%, <em>below</em> the
+            deployed 20% — so a future leverage increase there requires
+            tightening <code>mtbShort</code> first (a trivial setter call,
+            but it must be sequenced). Check this table before promising any
+            leverage change.
+          </p>
+        </div>
+      </section>
+
+      <section id="integrity">
+        <h2>Market integrity floor</h2>
+        <div class="grid two">
+          <div class="panel">
+            <h3>Minimum order: none exists today</h3>
+            <p>
+              The effective floor is <code>minTradeQty × price</code> ≈
+              <strong>$0.09 on CRWV</strong>. No off-chain notional gate, and
+              the MM's own min-notional check is unwired for MNX markets.
+              Venue practice clusters hard at $5–10 (Hyperliquid $10, Binance
+              5 USDT, Bybit 5 USDT, Paradex $10, dYdX ≈$1–10 by design), with
+              spam and chain-state bloat as the stated reasons. MNX has a
+              sharper reason than any of them: <strong>every position
+              settles on-chain</strong> — funding keeper batches run ~5.3M gas
+              per 25 accounts, and dust accounts join every liquidation, ADL,
+              and settlement sweep forever. Set <code>minTradeQty</code> to
+              the ≈$10-equivalent per market (change #2); step size stays
+              0.001.
+            </p>
+          </div>
+          <div class="panel">
+            <h3>Zero fees × trade-driven signals</h3>
+            <p>
+              Zero fees are a fine launch promotion, but three signals derive
+              from batch prints: the funding sample <em>is</em> the clearing
+              price, the mark input includes last trades, and candles are
+              trades. With 0/0 fees, a self-crossed pair inside a batch costs
+              nothing, carries no market risk, paints all three signals, and
+              MNX pays the settlement gas. Two acceptable resolutions, either
+              is fine: <strong>verify the FBA prevents self-matching</strong>
+              (same-account buy/sell in one batch), or <strong>charge ≥1 bp
+              taker</strong> so painting has a price. Deciding neither is the
+              only wrong option. Fees are freely settable both directions
+              (<code>setDefaultMakerFee/TakerFee</code>), so this does not
+              block launch.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="capacity">
+        <h2>Capacity parameters</h2>
+        <table aria-label="Capacity parameter verdicts">
+          <thead>
+            <tr>
+              <th>Parameter</th>
+              <th>Today</th>
+              <th>Verdict</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>maxAllowedOpenNotional</code> (per account, per leverage tier)</td>
+              <td>$10k at 1×, scaling to $30k–$100k at max leverage</td>
+              <td><strong>Raise tier 0 to ≈$50k, scale tiers with it.</strong> This is the cap the MM clips against every tick (its workaround parses the reject string and re-places a haircut order), and $10k will bind the first serious external account. Exact sizing is a CEO/risk call. Caveat from the contract: a zero tier means <em>uncapped</em>, so never shrink the array carelessly.</td>
+            </tr>
+            <tr>
+              <td><code>maxMarketOpenNotional</code> (aggregate per side)</td>
+              <td>$10M all markets</td>
+              <td><strong>Keep.</strong> Right order of magnitude for launch, and it is the one capacity knob with a live admin route — adjustable in minutes as depth grows.</td>
+            </tr>
+            <tr>
+              <td>Max market / limit order quantity</td>
+              <td>e.g. CRWV 909k / 9.09M units (~$80M / $800M)</td>
+              <td><strong>Hygiene cut.</strong> Harmless today (open-notional caps bind first) but nominally allows an $80M market order. Scale to ≈$2M market / $10M limit notional-equivalents so no single order can be larger than the whole per-side market cap.</td>
+            </tr>
+            <tr>
+              <td>Price bounds (1 or 10 → 10,000)</td>
+              <td>ANTHROPIC at 2,624 vs ceiling 10,000 ($10T)</td>
+              <td><strong>Keep.</strong> ~4× headroom on the hottest market; revisit only if a valuation approaches the ceiling.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="keep">
+        <h2>Keep list — stated, not implied</h2>
+        <ul>
+          <li><strong>CRWV/SPCX tick 0.01</strong> — at venue norm exactly; no evidence of tick constraint.</li>
+          <li><strong>Step size 0.001 everywhere</strong> — step notionals $0.09–$2.6 sit inside the comparable venue range; with the $10 order floor added, step is display granularity only.</li>
+          <li><strong>Leverage 10×/5×/3×/3×</strong> — CRWV matches Hyperliquid's 10×; the futures' 3× is what buys their wide take-bounds (see the coupling). Any change re-runs the invariant.</li>
+          <li><strong>Funding caps 10 bps/hr on the perps</strong> — the funding design is its own decision record at <a href="/funding">/funding</a>; nothing there needs to move this week.</li>
+          <li><strong>All take-bounds as deployed</strong> (±5% stocks, ±20% futures) — on the futures the band is the only per-batch cap on a self-referential oracle; on the stocks the external oracle absorbs gaps. See <a href="#doors">the invariant section</a>.</li>
+          <li><strong>Zero maker fee</strong> — keep regardless of the taker-fee decision; maker rebates can come later.</li>
+        </ul>
+      </section>
+
+      <section id="sources">
+        <h2>Verification &amp; sources</h2>
+        <p>
+          Parameters live-verified against the production API (2026-07-08,
+          <code>market_config_seq 3</code>) and byte-identical to repo
+          deployment configs (<code>exchange @ 8812c00</code>); enforcement
+          paths traced in <code>Evaluator.sol</code>, <code>Perpetual.sol</code>
+          (invariant at :1898), and the order-placement validators. MM-side
+          coupling from <code>market-maker @ 1735c7d</code>
+          (grid/reanchor/rounding in <code>mm-core</code>). <strong>Known
+          unverified:</strong> the MM's live <code>effective_spread_bps</code>
+          (spread/tick ratios here use grid spacing as the proxy).
+        </p>
+        <ul class="source-list">
+          <li><a href="https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/tick-and-lot-size">Hyperliquid tick &amp; lot rules</a> + live API (xyz dex)</li>
+          <li><a href="https://api.qfex.com/refdata">QFEX refdata</a> (CRWV/SPCX ticks), <a href="https://fapi.binance.com/fapi/v1/exchangeInfo">Binance exchangeInfo</a>, <a href="https://indexer.dydx.trade/v4/perpetualMarkets">dYdX markets</a></li>
+          <li><a href="https://www.sec.gov/files/dera_wp_ticksize-pilot-revisit.pdf">SEC DERA tick-pilot revisit</a> (2–15 tick band), <a href="https://www.sec.gov/files/TICK%20PILOT%20ASSESSMENT%20FINAL%20Aug%202.pdf">Tick Pilot assessment</a></li>
+          <li><a href="https://ericbudish.org/files/implementation_details_frequent_batch_auctions.pdf">Budish–Cramton–Shim on FBA tick size</a> (AER P&amp;P 2014; QJE 2015 fn. 32)</li>
+          <li><a href="https://www.sec.gov/files/rules/final/2024/34-101070.pdf">SEC 2024 half-penny rule</a> (spread-triggered tick reassignment)</li>
+          <li><a href="https://dydx.forum/t/5021">dYdX tick-repair governance</a>, <a href="https://www.newyorkfed.org/medialibrary/media/research/staff_reports/sr886.pdf">NY Fed on the 2Y tick cut</a></li>
+          <li><a href="https://docs.ventuals.com/perp-specifications/private-companies">Ventuals valuation-÷1e9 spec</a> (nearest ANTHROPIC/OPENAI analog)</li>
+          <li><a href="https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/error-responses">Hyperliquid $10 min notional</a>, <a href="https://help.dydx.trade/en/articles/171918-equity-tiers-and-rate-limits">dYdX spam rationale</a></li>
+        </ul>
+      </section>
+
+      <footer>
+        MNX research · launch parameter audit (2026-07-08) · companion to
+        <a href="/funding">/funding</a>. Status: proposal — every recommended
+        change is setters + config re-materialization, executable before real
+        launch this week.
+      </footer>
+    </main>
+  </body>
 </html>
