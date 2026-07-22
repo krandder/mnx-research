@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MNX Market Parameters</title>
+<meta name="description" content="Complete per-market parameter reference: leverage, bands, funding strength, tick sizes, order caps, and the MM liquidity model behind them.">
+<style>
+:root { --bg:#0b1220; --panel:#111a2c; --line:#1f2b42; --text:#dbe4f3; --dim:#8fa2c0; --accent:#34d399; --warn:#fbbf24; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--text); font:15px/1.55 -apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; padding:32px 20px 80px; }
+main { max-width:1280px; margin:0 auto; }
+h1 { font-size:clamp(1.6rem,4vw,2.6rem); margin:0 0 4px; }
+.eyebrow { color:var(--accent); text-transform:uppercase; letter-spacing:.14em; font-size:.75rem; font-weight:700; }
+.sub { color:var(--dim); max-width:900px; }
+h2 { margin:44px 0 10px; font-size:1.25rem; }
+table { border-collapse:collapse; width:100%; font-size:.82rem; background:var(--panel); border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+th,td { padding:7px 10px; text-align:right; border-bottom:1px solid var(--line); white-space:nowrap; }
+th:first-child,td:first-child { text-align:left; }
+th { background:#0e1626; color:var(--dim); font-weight:600; text-transform:uppercase; font-size:.68rem; letter-spacing:.06em; position:sticky; top:0; }
+tr:hover td { background:#152036; }
+.wrap { overflow-x:auto; border-radius:10px; }
+.note { background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:8px; padding:12px 16px; margin:14px 0; color:var(--dim); font-size:.9rem; }
+.note.warn { border-left-color:var(--warn); }
+code { background:#0e1626; padding:1px 5px; border-radius:4px; font-size:.85em; }
+.stamp { color:var(--dim); font-size:.75rem; margin-top:6px; }
+</style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">MNX &middot; parameter reference</div>
+  <h1>Market Parameters</h1>
+  <p class="sub">Every live tradable market with its full parameter set and the market-maker liquidity model those parameters are derived from.
+  Snapshot of <strong>testnet</strong>; identical parameter methodology intended for production (pending review).</p>
+  <p class="stamp">Proposed revision &mdash; pending Kelvin confirmation. Generated 2026-07-22 02:09 UTC from the live testnet read model.</p>
+
+  <h2>The liquidity model behind the numbers</h2>
+  <div class="note">
+    Assumed MM equity <strong>$50,000</strong>, distributed by the current capital-scaling parametrization:
+    book fraction <code>0.41</code>, inventory fraction <code>0.99</code>, capital weights <code>ANTHROPIC=OPENAI=4</code>, all other quoted markets <code>1</code> (weight sum 27).
+    Per-side resting depth = <code>0.41 &times; equity &times; weight/27</code>; the MM's max position = <code>0.99 &times; equity &times; weight/27</code>.
+    <strong>Max limit order = the MM's max position</strong> (a resting maker order absorbed into inventory over time).
+    <strong>Max market order = the notional that moves the quote by the 2% slippage cap</strong> = <code>2 &times; (impact $-to-move-1%)</code>,
+    where impact is the immediate within-1% depth, set here at <code>5%</code> of the MM max position. This keeps max market order
+    &asymp;10&times; smaller than max limit order: a taker can move us at most ~2%, while a maker can rest up to full inventory capacity.
+    Quantities are rounded to clean unit counts.
+  </div>
+  <div class="note warn">
+    These caps assume the current $50k parametrization and the current capital weights. If vault equity or weights move, re-derive the
+    impact, max market order, and max limit order values from the same formulas.
+  </div>
+
+  <h2>Tick-size methodology</h2>
+  <div class="note">
+    Current displayed ticks are the legacy values: one tick &asymp; the market's typical 5-minute move, using median absolute 5-minute
+    close-to-close change over 48h of Hyperliquid candles, rounded to a 1/2/5 step. Markets with no trade history (H100) or fair-price-driven markets
+    (ANTHROPIC, OPENAI, DEEPSEEK, MOONSHOT) use modeled values from their fair-ramp rates / reference-index volatility, marked
+    <em>modeled</em> below. H100's tick is unchanged (slow-published daily reference).
+  </div>
+  <div class="note warn">
+    <strong>Pending.</strong> Tick methodology is changing, but the numbers below have <em>not</em> been recomputed yet. Next pass: use the
+    market's typical <strong>1-minute</strong> move (not 5-minute), and round only to the <code>{1,5} &times; 10^k</code> step set
+    (no <code>2</code> or <code>0.2</code> anywhere). Existing tick values remain as placeholders until that re-derivation is done.
+  </div>
+
+  <h2>Per-market parameters</h2>
+  <div class="note warn">CXMT and VIX are delisted for now and are omitted from the table below.</div>
+  <div class="wrap"><table>
+    <thead><tr>
+      <th>Market</th><th>Type</th><th>Mark</th><th>Max lev</th><th>Band (mtb)</th>
+      <th>Funding decay</th><th>Funding cap</th><th>Funding session</th>
+      <th>Tick</th><th>Vol (5m)</th>
+      <th>Impact ($/1%)</th><th>Max market order</th><th>Max limit order</th>
+      <th>W</th><th>MM depth/side</th><th>MM max pos</th>
+    </tr></thead>
+    <tbody>
+    <tr>
+      <td><strong>ANTHROPIC</strong></td><td>future</td>
+      <td>2004</td><td>3.0&times;</td>
+      <td>20%</td>
+      <td>—</td><td>0 bps/hr</td><td>—</td>
+      <td>5</td><td>modeled</td>
+      <td>$367</td>
+      <td>0.35 (&asymp;$701)</td>
+      <td>4 (&asymp;$7,333)</td>
+      <td>4</td><td>$3,037</td><td>$7,333</td>
+    </tr><tr>
+      <td><strong>ASML</strong></td><td>perpetual</td>
+      <td>1772.4078786</td><td>5.0&times;</td>
+      <td>5%</td>
+      <td>D=24 (~1 day)</td><td>10 bps/hr</td><td>US-equity RTH</td>
+      <td>2</td><td>10.72 bps</td>
+      <td>$92</td>
+      <td>0.1 (&asymp;$177)</td>
+      <td>1.5 (&asymp;$1,833)</td>
+      <td>1</td><td>$759</td><td>$1,833</td>
+    </tr><tr>
+      <td><strong>CRWV</strong></td><td>perpetual</td>
+      <td>75.59547493</td><td>10.0&times;</td>
+      <td>5%</td>
+      <td>D=24 (~1 day)</td><td>10 bps/hr</td><td>US-equity RTH</td>
+      <td>0.05</td><td>11.76 bps</td>
+      <td>$92</td>
+      <td>2.5 (&asymp;$189)</td>
+      <td>25 (&asymp;$1,833)</td>
+      <td>1</td><td>$759</td><td>$1,833</td>
+    </tr><tr>
+      <td><strong>DEEPSEEK</strong></td><td>future</td>
+      <td>100</td><td>3.0&times;</td>
+      <td>20%</td>
+      <td>—</td><td>0 bps/hr</td><td>—</td>
+      <td>0.2</td><td>modeled</td>
+      <td>$92</td>
+      <td>2 (&asymp;$200)</td>
+      <td>20 (&asymp;$1,833)</td>
+      <td>1</td><td>$759</td><td>$1,833</td>
+    </tr><tr>
+      <td><strong>GOOGL</strong></td><td>perpetual</td>
+      <td>355.5</td><td>10.0&times;</td>
+      <td>5%</td>
+      <td>D=24 (~1 day)</td><td>10 bps/hr</td><td>US-equity RTH</td>
+      <td>0.1</td><td>3.1 bps</td>
+      <td>$92</td>
+      <td>0.5 (&asymp;$178)</td>
+      <td>6 (&asymp;$1,833)</td>
+      <td>1</td><td>$759</td><td>$1,833</td>
+    </tr><tr>
+      <td><strong>H100</strong></td><td>perpetual</td>
+      <td>3.136</td><td>10.0&times;</td>
+      <td>5%</td>
+      <td>D=24 (~1 day)</td><td>1 bp/hr</td><td>always</td>
+      <td>0.001</td><td>n/a</td>
+      <td>$92</td>
+      <td>60 (&asymp;$188)</td>
+      <td>600 (&asymp;$1,833)</td>
+      <td>1</td><td>$759</td><td>$1,833</td>
+    </tr><tr>
+      <td><strong>INTC</strong></td><td>perpetual</td>
+      <td>100.9078371</td><td>5.0&times;</td>
+      <td>5%</td>
+      <td>D=24 (~1 day)</td><td>10 bps/hr</td><td>US-equity RTH</td>
+      <td>0.05</td><td>9.1 bps</td>
+      <td>$92</td>
+      <td>2 (&asymp;$202)</td>
+      <td>20 (&asymp;$1,833)</td>
+      <td>1</td><td>$759</td><td>$1,833</td>
+    </tr><tr>
+      <td><strong>META</strong></td><td>perpetual</td>
+      <td>646.78923332</td><td>10.0&times;</td>
+      <td>5%</td>
+      <td>D=24 (~1 day)</td><td>10 bps/hr</td><td>US-equity RTH</td>
+      <td>0.2</td><td>4.18 bps</td>
+      <td>$92</td>
+      <td>0.3 (&asymp;$194)</td>
+      <td>3 (&asymp;$1,833)</td>
+      <td>1</td><td>$759</td><td>$1,833</td>
+    </tr><tr>
+      <td><strong>MINIMAX</strong></td><td>perpetual</td>
+      <td>27.23404831</td><td>5.0&times;</td>
+      <td>5%</td>
+      <td>D=24 (~1 day)</td><td>10 bps/hr</td><td>US-equity RTH</td>
+      <td>0.05</td><td>21.48 bps</td>
+      <td>$92</td>
+      <td>6.5 (&asymp;$177)</td>
+      <td>80 (&asymp;$1,833)</td>
+      <td>1</td><td>$759</td><td>$1,833</td>
+    </tr><tr>
+      <td><strong>MOONSHOT</strong></td><td>future</td>
+      <td>55</td><td>3.0&times;</td>
+      <td>20%</td>
+      <td>—</td><td>0 bps/hr</td><td>—</td>
+      <td>0.1</td><td>modeled</td>
+      <td>$92</td>
+      <td>3.5 (&asymp;$193)</td>
+      <td>40 (&asymp;$1,833)</td>
+      <td>1</td><td>$759</td><td>$1,833</td>
+    </tr><tr>
+      <td><strong>MU</strong></td><td>perpetual</td>
+      <td>906</td><td>5.0&times;</td>
+      <td>5%</td>
+      <td>D=24 (~1 day)</td><td>10 bps/hr</td><td>US-equity RTH</td>
+      <td>0.5</td><td>9.06 bps</td>
+      <td>$92</td>
+      <td>0.2 (&asymp;$181)</td>
+      <td>2.5 (&asymp;$1,833)</td>
+      <td>1</td><td>$759</td><td>$1,833</td>
+    </tr><tr>
+      <td><strong>NVDA</strong></td><td>perpetual</td>
+      <td>204.78614287</td><td>10.0&times;</td>
+      <td>5%</td>
+      <td>D=24 (~1 day)</td><td>10 bps/hr</td><td>US-equity RTH</td>
+      <td>0.05</td><td>3.91 bps</td>
+      <td>$92</td>
+      <td>0.9 (&asymp;$184)</td>
+      <td>10 (&asymp;$1,833)</td>
+      <td>1</td><td>$759</td><td>$1,833</td>
+    </tr><tr>
+      <td><strong>OPENAI</strong></td><td>future</td>
+      <td>1710</td><td>3.0&times;</td>
+      <td>20%</td>
+      <td>—</td><td>0 bps/hr</td><td>—</td>
+      <td>5</td><td>modeled</td>
+      <td>$367</td>
+      <td>0.45 (&asymp;$770)</td>
+      <td>5 (&asymp;$7,333)</td>
+      <td>4</td><td>$3,037</td><td>$7,333</td>
+    </tr><tr>
+      <td><strong>SMH</strong></td><td>perpetual</td>
+      <td>570.09</td><td>10.0&times;</td>
+      <td>5%</td>
+      <td>D=24 (~1 day)</td><td>10 bps/hr</td><td>US-equity RTH</td>
+      <td>0.5</td><td>13.35 bps</td>
+      <td>$92</td>
+      <td>0.3 (&asymp;$171)</td>
+      <td>4 (&asymp;$1,833)</td>
+      <td>1</td><td>$759</td><td>$1,833</td>
+    </tr><tr>
+      <td><strong>SNDK</strong></td><td>perpetual</td>
+      <td>1477</td><td>5.0&times;</td>
+      <td>5%</td>
+      <td>D=24 (~1 day)</td><td>10 bps/hr</td><td>US-equity RTH</td>
+      <td>2</td><td>12.86 bps</td>
+      <td>$92</td>
+      <td>0.1 (&asymp;$148)</td>
+      <td>1.5 (&asymp;$1,833)</td>
+      <td>1</td><td>$759</td><td>$1,833</td>
+    </tr><tr>
+      <td><strong>SPCX</strong></td><td>perpetual</td>
+      <td>121.38272418</td><td>5.0&times;</td>
+      <td>5%</td>
+      <td>D=24 (~1 day)</td><td>10 bps/hr</td><td>US-equity RTH</td>
+      <td>0.05</td><td>7.42 bps</td>
+      <td>$92</td>
+      <td>1.5 (&asymp;$182)</td>
+      <td>20 (&asymp;$1,833)</td>
+      <td>1</td><td>$759</td><td>$1,833</td>
+    </tr><tr>
+      <td><strong>SPY</strong></td><td>perpetual</td>
+      <td>745.2</td><td>10.0&times;</td>
+      <td>5%</td>
+      <td>D=24 (~1 day)</td><td>10 bps/hr</td><td>US-equity RTH</td>
+      <td>0.1</td><td>1.61 bps</td>
+      <td>$92</td>
+      <td>0.25 (&asymp;$186)</td>
+      <td>2.5 (&asymp;$1,833)</td>
+      <td>1</td><td>$759</td><td>$1,833</td>
+    </tr><tr>
+      <td><strong>TSM</strong></td><td>perpetual</td>
+      <td>409.54047883</td><td>5.0&times;</td>
+      <td>5%</td>
+      <td>D=24 (~1 day)</td><td>10 bps/hr</td><td>US-equity RTH</td>
+      <td>0.2</td><td>5.87 bps</td>
+      <td>$92</td>
+      <td>0.45 (&asymp;$184)</td>
+      <td>5 (&asymp;$1,833)</td>
+      <td>1</td><td>$759</td><td>$1,833</td>
+    </tr><tr>
+      <td><strong>ZHIPU</strong></td><td>perpetual</td>
+      <td>200</td><td>5.0&times;</td>
+      <td>5%</td>
+      <td>D=24 (~1 day)</td><td>10 bps/hr</td><td>US-equity RTH</td>
+      <td>0.2</td><td>17.53 bps</td>
+      <td>$92</td>
+      <td>0.9 (&asymp;$180)</td>
+      <td>15 (&asymp;$1,833)</td>
+      <td>1</td><td>$759</td><td>$1,833</td>
+    </tr>
+    </tbody>
+  </table></div>
+
+  <h2>Notes</h2>
+  <div class="note">
+    <strong>Funding.</strong> Hourly settlement; settled rate = premium / D, clamped to the per-hour cap. The table now shows decay and cap separately:
+    <code>10 bps/hr</code> is the per-hour <strong>cap</strong>, while <code>Standard</code> means <code>D=24</code> decay plus a &plusmn;5&nbsp;bps band
+    (see the <a href="/funding" style="color:var(--accent)">funding-v2 doc</a>). H100 keeps the same <code>D=24</code> decay with a weaker
+    <code>1 bp/hr</code> cap. Dated futures and binaries pay no funding.
+    <strong>Bands.</strong> mtb is a fill bound: no fill can execute beyond oracle&nbsp;&plusmn;band. The active set here uses &plusmn;20% for the
+    AI-valuation futures and &plusmn;5% for the rest; the old VIX &plusmn;15% weak-tether band is retired with that delist for now. Bands only ratchet tighter
+    on-chain; widening requires redeploy.
+    <strong>Leverage.</strong> Selectable tiers are round only: <code>{3x, 5x, 10x, 20x}</code>. On-chain perpetual leverage caps require
+    <code>setMaxLeverage</code> plus redeploy; this page is the recommendation layer, not the chain state itself.
+    <strong>Binaries</strong> (ANTHTOP26, DPREZ, OAITOP26) are fully collateralized, no funding, no MM coverage; market orders capped at &asymp;$500 notional.
+  </div>
+</main>
+</body>
+</html>
