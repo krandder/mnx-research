@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Capitalization Harmonization — exchange PR #440</title>
+<meta name="description" content="Sentence case for descriptive market subtitles and docs titles: the convention, the rationale, and every change in exchange PR #440.">
+<style>
+:root { --bg:#0b1220; --panel:#111a2c; --line:#1f2b42; --text:#dbe4f3; --dim:#8fa2c0; --accent:#34d399; --warn:#fbbf24; --was:#f87171; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--text); font:15px/1.55 -apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; padding:32px 20px 80px; }
+main { max-width:1100px; margin:0 auto; }
+h1 { font-size:clamp(1.6rem,4vw,2.6rem); margin:0 0 4px; }
+.eyebrow { color:var(--accent); text-transform:uppercase; letter-spacing:.14em; font-size:.75rem; font-weight:700; }
+.sub { color:var(--dim); max-width:900px; }
+h2 { margin:44px 0 10px; font-size:1.25rem; }
+table { border-collapse:collapse; width:100%; font-size:.85rem; background:var(--panel); border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+th,td { padding:7px 10px; text-align:left; border-bottom:1px solid var(--line); }
+th { background:#0e1626; color:var(--dim); font-weight:600; text-transform:uppercase; font-size:.68rem; letter-spacing:.06em; }
+tr:hover td { background:#152036; }
+.wrap { overflow-x:auto; border-radius:10px; }
+.note { background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:8px; padding:12px 16px; margin:14px 0; color:var(--dim); font-size:.9rem; }
+.note.warn { border-left-color:var(--warn); }
+code { background:#0e1626; padding:1px 5px; border-radius:4px; font-size:.85em; }
+.stamp { color:var(--dim); font-size:.75rem; margin-top:6px; }
+.was { color:var(--was); text-decoration:line-through; text-decoration-thickness:1px; }
+.now { color:var(--accent); font-weight:600; }
+ol li, ul li { margin:4px 0; }
+a { color:var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">MNX &middot; copy convention</div>
+  <h1>Capitalization harmonization</h1>
+  <p class="sub">One casing rule for every user-facing descriptive title and subtitle across the exchange and docs.
+  Shipped as <a href="https://github.com/mnx-markets/exchange/pull/440">exchange PR #440</a> — casing only, zero rewording.</p>
+  <p class="stamp">Generated 2026-08-09 from the audit&rarr;verify workflow output. Status: PR open for review.</p>
+
+  <h2>What was inconsistent</h2>
+  <div class="note">
+    Market subtitles mixed Title Case descriptive phrases (&ldquo;Millennium Prize Problem Solved Before 2028&rdquo;,
+    &ldquo;US Inflation Rate, December 2026&rdquo;) with canonical instrument names that are inherently title-cased
+    (&ldquo;iShares 20+ Year Treasury Bond ETF&rdquo;) — prose propositions and proper names were indistinguishable.
+    The docs were split internally too: the sidebar and homepage are dominantly sentence case
+    (&ldquo;Markets &amp; margin&rdquo;, &ldquo;Trading fees&rdquo;), while the market-specs page titled itself
+    &ldquo;Market Specifications&rdquo; against its own nav entry.
+  </div>
+
+  <h2>The convention</h2>
+  <div class="note">
+    <strong>Sentence case for every descriptive title and subtitle</strong> — capitalize the first word only — with three standing exceptions:
+    <ol>
+      <li><strong>Proper nouns and institutions</strong> keep their capitals: Anthropic, Taiwan, Senate, San Francisco, Millennium Prize Problem, December.</li>
+      <li><strong>Tickers, acronyms, initialisms</strong> keep canonical casing: AI, US, IPO, ETF, ETN, ADR, CPI, SSI, ARC-AGI-2, H100, S&amp;P 500.</li>
+      <li><strong>Canonical product / instrument / company names</strong> are untouched byte-for-byte.</li>
+    </ol>
+    Why sentence case: it matches the docs&rsquo; existing dominant style and standard product-copy practice
+    (Stripe, Linear, Google style guides), it makes forecast subtitles read as the plain-English propositions they are,
+    and it needs zero changes to canonical names — the things that looked title-cased before were mostly proper names,
+    and they stay exactly as their owners spell them.
+  </div>
+
+  <h2>Subtitle changes (27 markets)</h2>
+  <p class="sub">Struck-through red words lose their capital; green words are the new casing. Every row is word-for-word identical ignoring case (machine-verified).</p>
+  <div class="wrap"><table>
+    <thead><tr><th>Market</th><th>Before</th><th>After</th></tr></thead>
+    <tbody><tr><td><code>ANTHROPIC</code></td><td>Anthropic IPO <span class="was">Market</span> <span class="was">Cap</span></td><td>Anthropic IPO <span class="now">market</span> <span class="now">cap</span></td></tr><tr><td><code>ANTHTOP26</code></td><td>Anthropic <span class="was">Produces</span> <span class="was">Top</span> AI of 2026</td><td>Anthropic <span class="now">produces</span> <span class="now">top</span> AI of 2026</td></tr><tr><td><code>ARC26</code></td><td>Highest ARC-AGI-2 <span class="was">Score</span> in 2026</td><td>Highest ARC-AGI-2 <span class="now">score</span> in 2026</td></tr><tr><td><code>CNTOP</code></td><td>Chinese <span class="was">Lab</span> <span class="was">Produces</span> <span class="was">Top</span> AI <span class="was">Before</span> 2028</td><td>Chinese <span class="now">lab</span> <span class="now">produces</span> <span class="now">top</span> AI <span class="now">before</span> 2028</td></tr><tr><td><code>CPI26</code></td><td>US <span class="was">Inflation</span> <span class="was">Rate,</span> December 2026</td><td>US <span class="now">inflation</span> <span class="now">rate,</span> December 2026</td></tr><tr><td><code>DEEPSEEK</code></td><td>DeepSeek IPO <span class="was">Market</span> <span class="was">Cap</span></td><td>DeepSeek IPO <span class="now">market</span> <span class="now">cap</span></td></tr><tr><td><code>DPREZ</code></td><td>Democrat <span class="was">Wins</span> 2028 <span class="was">Presidential</span> <span class="was">Election</span></td><td>Democrat <span class="now">wins</span> 2028 <span class="now">presidential</span> <span class="now">election</span></td></tr><tr><td><code>ECI26</code></td><td>Highest AI <span class="was">Capability</span> <span class="was">Score</span> in 2026</td><td>Highest AI <span class="now">capability</span> <span class="now">score</span> in 2026</td></tr><tr><td><code>FMATH26</code></td><td>Highest FrontierMath <span class="was">Score</span> in 2026</td><td>Highest FrontierMath <span class="now">score</span> in 2026</td></tr><tr><td><code>GOLD</code></td><td>Gold <span class="was">Spot</span></td><td>Gold <span class="now">spot</span></td></tr><tr><td><code>HORIZON</code></td><td>AI <span class="was">Completes</span> <span class="was">16-Hour</span> <span class="was">Tasks</span> <span class="was">Before</span> 2028</td><td>AI <span class="now">completes</span> <span class="now">16-hour</span> <span class="now">tasks</span> <span class="now">before</span> 2028</td></tr><tr><td><code>INVADE27</code></td><td>China <span class="was">Invades</span> Taiwan <span class="was">Before</span> 2028</td><td>China <span class="now">invades</span> Taiwan <span class="now">before</span> 2028</td></tr><tr><td><code>LABREV</code></td><td>OpenAI + Anthropic 2027 <span class="was">Revenue</span></td><td>OpenAI + Anthropic 2027 <span class="now">revenue</span></td></tr><tr><td><code>LEAP</code></td><td>9+ <span class="was">Point</span> AI <span class="was">Capability</span> <span class="was">Jump</span> <span class="was">Before</span> 2028</td><td>9+ <span class="now">point</span> AI <span class="now">capability</span> <span class="now">jump</span> <span class="now">before</span> 2028</td></tr><tr><td><code>LFPR</code></td><td>US <span class="was">Labor</span> <span class="was">Force</span> <span class="was">Participation,</span> December 2027</td><td>US <span class="now">labor</span> <span class="now">force</span> <span class="now">participation,</span> December 2027</td></tr><tr><td><code>MILLPROB</code></td><td>Millennium Prize Problem <span class="was">Solved</span> <span class="was">Before</span> 2028</td><td>Millennium Prize Problem <span class="now">solved</span> <span class="now">before</span> 2028</td></tr><tr><td><code>MOONSHOT</code></td><td>Moonshot AI IPO <span class="was">Market</span> <span class="was">Cap</span></td><td>Moonshot AI IPO <span class="now">market</span> <span class="now">cap</span></td></tr><tr><td><code>OAITOP26</code></td><td>OpenAI <span class="was">Produces</span> <span class="was">Top</span> AI of 2026</td><td>OpenAI <span class="now">produces</span> <span class="now">top</span> AI of 2026</td></tr><tr><td><code>OPENAI</code></td><td>OpenAI IPO <span class="was">Market</span> <span class="was">Cap</span></td><td>OpenAI IPO <span class="now">market</span> <span class="now">cap</span></td></tr><tr><td><code>RSENATE26</code></td><td>Republicans <span class="was">Keep</span> Senate in 2026</td><td>Republicans <span class="now">keep</span> Senate in 2026</td></tr><tr><td><code>SFHOME26</code></td><td>San Francisco <span class="was">Home</span> <span class="was">Price</span> <span class="was">Index</span> 2026</td><td>San Francisco <span class="now">home</span> <span class="now">price</span> <span class="now">index</span> 2026</td></tr><tr><td><code>SFHOME27</code></td><td>San Francisco <span class="was">Home</span> <span class="was">Value,</span> December 2027</td><td>San Francisco <span class="now">home</span> <span class="now">value,</span> December 2027</td></tr><tr><td><code>SILVER</code></td><td>Silver <span class="was">Spot</span></td><td>Silver <span class="now">spot</span></td></tr><tr><td><code>SSITOP</code></td><td>SSI <span class="was">Produces</span> <span class="was">Top</span> AI <span class="was">Before</span> 2028</td><td>SSI <span class="now">produces</span> <span class="now">top</span> AI <span class="now">before</span> 2028</td></tr><tr><td><code>TAKEOFF</code></td><td>AI <span class="was">Capability</span> <span class="was">Index</span> <span class="was">Hits</span> 200 <span class="was">Before</span> 2028</td><td>AI <span class="now">capability</span> <span class="now">index</span> <span class="now">hits</span> 200 <span class="now">before</span> 2028</td></tr><tr><td><code>TRUMPAPP</code></td><td>Trump <span class="was">Approval</span> <span class="was">Rating</span></td><td>Trump <span class="now">approval</span> <span class="now">rating</span></td></tr><tr><td><code>US10YR</code></td><td>US Treasury <span class="was">Yield</span> 10 <span class="was">Years</span> <span class="was">Index</span></td><td>US Treasury <span class="now">yield</span> 10 <span class="now">years</span> <span class="now">index</span></td></tr></tbody>
+  </table></div>
+
+  <h2>Docs title changes</h2>
+  <div class="wrap"><table>
+    <thead><tr><th>Where</th><th>Before</th><th>After</th></tr></thead>
+    <tbody><tr><td>docs page title + h1</td><td>Market <span class="was">Specifications</span></td><td>Market <span class="now">specifications</span></td></tr></tbody>
+  </table></div>
+
+  <h2>Deliberately untouched</h2>
+  <p class="sub">Canonical names keep their official casing — they are exempt by rule 3, not oversights:</p>
+  <div class="note"><ul><li>iShares 7-10 Year Treasury Bond ETF</li>
+<li>SPDR S&amp;P 500 ETF Trust</li>
+<li>VanEck Semiconductor ETF</li>
+<li>CBOE Volatility Index</li>
+<li>iPath Series B S&amp;P 500 VIX Short-Term Futures ETN</li>
+<li>SemiAnalysis H100 Selected Spot Rental Price Index</li>
+<li>SK hynix Inc. ADR</li>
+<li>United States Copper Index Fund</li></ul>
+  Plus docs legal pages (Terms of Service, Privacy Policy), &ldquo;Introduction&rdquo;, &ldquo;API reference&rdquo;, and technical names (WebSockets, OpenAPI 3.1 JSON, llms.txt).</div>
+
+  <div class="note warn">
+    Rollout: on merge of PR #440, the 13 live testnet prediction markets get the re-cased subtitles via the
+    admin-API payload re-post runbook (same mechanism as the 2026-08-09 summary and subtitle rollouts).
+  </div>
+</main>
+</body>
+</html>
