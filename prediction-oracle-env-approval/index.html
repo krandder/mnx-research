@@ -3,16 +3,16 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>TOP26 Polymarket decoupling</title>
+    <title>Exchange migration 228</title>
     <link rel="icon" href="/favicon.ico" />
     <meta
       name="description"
-      content="Concise approval note for the remaining TOP26 market-maker environment change."
+      content="Concise handoff for applying the TOP26 connector cleanup migration."
     />
-    <meta property="og:title" content="TOP26 Polymarket decoupling" />
+    <meta property="og:title" content="Exchange migration 228" />
     <meta
       property="og:description"
-      content="Decision and execution prompt for the remaining production configuration change."
+      content="The remaining exchange database migration after PR #484."
     />
     <meta property="og:type" content="article" />
     <style>
@@ -179,7 +179,7 @@
       textarea {
         display: block;
         width: 100%;
-        min-height: 330px;
+        min-height: 170px;
         resize: vertical;
         border: 0;
         outline: 0;
@@ -230,7 +230,7 @@
         }
 
         textarea {
-          min-height: 530px;
+          min-height: 250px;
           font-size: 0.76rem;
         }
       }
@@ -240,65 +240,56 @@
     <main>
       <header>
         <div class="kicker">MNX · approval note for Ian</div>
-        <h1>TOP26 Polymarket decoupling</h1>
+        <h1>Exchange migration 228</h1>
         <p class="lede">
-          One production environment edit remains after exchange PR #484 and
-          market-maker PR #137.
+          One testnet database migration remains after exchange PR #484.
         </p>
       </header>
 
       <section class="decision" aria-labelledby="decision-title">
         <div class="label">Decision</div>
-        <h2 id="decision-title">Approve the market-maker map change</h2>
+        <h2 id="decision-title">Apply the connector cleanup on testnet</h2>
         <p>
-          Remove <code>ANTHTOP26</code> and <code>OAITOP26</code> from
-          <code>MARKET_MAKER_POLYMARKET_FAIR_PRICE_ASSETS</code>. Keep
-          <code>DPREZ</code> and <code>RSENATE26</code> unchanged.
+          Run
+          <code>228-remove-mismatched-ai-top-polymarket-connectors.sql</code>.
+          It deletes the Polymarket connector rows for
+          <code>ANTHTOP26</code> and <code>OAITOP26</code> only.
         </p>
         <p class="why">
           MNX’s TOP26 contracts resolve from Epoch ECI; the old Polymarket
           references use Chatbot Arena. They are different events, so those
-          prices should not inform quoting. PR #484 handles the database
-          cleanup, but cannot edit the environment file on the market-maker
-          runner.
+          prices should not be used as their exchange oracle reference.
         </p>
-        <table aria-label="Required environment mapping change">
+        <table aria-label="Required connector cleanup">
           <tbody>
             <tr>
-              <th class="remove">Remove</th>
+              <th class="remove">Delete rows</th>
               <td><code>ANTHTOP26</code>, <code>OAITOP26</code></td>
             </tr>
             <tr>
               <th class="keep">Keep</th>
-              <td><code>DPREZ</code>, <code>RSENATE26</code></td>
+              <td><code>DPREZ</code> and every unrelated connector</td>
             </tr>
           </tbody>
         </table>
       </section>
 
       <section aria-labelledby="prompt-title">
-        <div class="label">Execution</div>
-        <h2 id="prompt-title">Paste this to your agent</h2>
+        <div class="label">Handoff</div>
+        <h2 id="prompt-title">Send this to Ian</h2>
         <div class="prompt">
           <div class="prompt-head">
-            <span>Production change prompt</span>
+            <span>Message</span>
             <span>Select all, then copy</span>
           </div>
-          <textarea readonly spellcheck="false" aria-label="Paste-ready production change prompt">Apply the production environment change from exchange #484 and market-maker #137.
+          <textarea readonly spellcheck="false" aria-label="Message for Ian">Please apply exchange migration 228-remove-mismatched-ai-top-polymarket-connectors.sql to testnet.
 
-Why: MNX TOP26 settles on Epoch ECI; the old Polymarket references use Chatbot Arena. They are different events, so those prices must not drive TOP26 quotes.
+It removes the Polymarket connector rows for ANTHTOP26 and OAITOP26 because MNX resolves them using Epoch ECI, while the linked Polymarket markets use Chatbot Arena.
 
-Follow market-maker/docs/runbooks/polymarket-settlement-decoupling.md.
-
-Preflight read-only; report keys only. Require TOP26 cancel_only with zero orders and DPREZ/RSENATE26 healthy. Ask Ian before writing. Never expose secrets.
-
-Then use the runbook’s atomic script: remove ANTHTOP26/OAITOP26 from MARKET_MAKER_POLYMARKET_FAIR_PRICE_ASSETS; keep DPREZ/RSENATE26. No SQL or control reseed. Restart via the runbook. Verify no TOP26 Polymarket source and retained sources are fresh. Report revision, backup, and evidence; stop on drift.</textarea>
+Please confirm afterward that both rows are gone and DPREZ is unchanged.</textarea>
         </div>
         <p class="refs">
           Sources:
-          <a href="https://github.com/mnx-markets/market-maker/pull/137"
-            >market-maker #137</a
-          > ·
           <a href="https://github.com/mnx-markets/exchange/pull/484"
             >exchange #484</a
           >
