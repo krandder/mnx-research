@@ -1,0 +1,1064 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Prediction oracles: EMA first, external guard second</title>
+    <link rel="icon" href="/favicon.ico" />
+    <meta
+      name="description"
+      content="Visual implementation note for MNX prediction oracles: internal eight-hour EMA price formation, a 0.10 Polymarket guard for DPREZ, and no Polymarket connection for ANTHTOP26 or OAITOP26."
+    />
+    <meta property="og:title" content="MNX prediction oracles: EMA first" />
+    <meta
+      property="og:description"
+      content="Internal eight-hour EMA price formation with a narrowly reviewed external guard."
+    />
+    <meta property="og:type" content="article" />
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f2f5f3;
+        --paper: #fff;
+        --ink: #18201d;
+        --muted: #5f6c66;
+        --line: #d4ddd8;
+        --green: #087265;
+        --green-dark: #064e46;
+        --green-soft: #e5f5f1;
+        --blue: #2457a7;
+        --blue-soft: #ebf2ff;
+        --amber: #9a540d;
+        --amber-soft: #fff4df;
+        --red: #a53737;
+        --red-soft: #fff0f0;
+        --shadow: 0 18px 44px rgba(28, 44, 37, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(circle at 90% 0, #dcece7 0, transparent 31rem),
+          var(--bg);
+        color: var(--ink);
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        line-height: 1.55;
+      }
+
+      a {
+        color: var(--blue);
+        text-underline-offset: 3px;
+      }
+
+      .wrap {
+        width: min(1120px, calc(100% - 40px));
+        margin: 0 auto;
+      }
+
+      header {
+        padding: 48px 0 34px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .eyebrow,
+      .label {
+        color: var(--green-dark);
+        font-size: 0.76rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        max-width: 940px;
+        margin: 10px 0 16px;
+        font-size: clamp(2.25rem, 6vw, 5rem);
+        line-height: 0.98;
+        letter-spacing: -0.045em;
+      }
+
+      .lede {
+        max-width: 850px;
+        margin: 0;
+        color: var(--muted);
+        font-size: clamp(1rem, 2vw, 1.22rem);
+      }
+
+      .status-row,
+      .toc {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 9px;
+        margin-top: 20px;
+      }
+
+      .pill,
+      .toc a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 34px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 6px 11px;
+        background: rgba(255, 255, 255, 0.75);
+        color: var(--muted);
+        font-size: 0.82rem;
+        text-decoration: none;
+      }
+
+      .pill.strong {
+        border-color: #9ccbc0;
+        background: var(--green-soft);
+        color: var(--green-dark);
+        font-weight: 750;
+      }
+
+      main {
+        padding: 18px 0 64px;
+      }
+
+      section {
+        scroll-margin-top: 20px;
+        margin: 40px 0;
+      }
+
+      h2 {
+        margin: 0 0 14px;
+        font-size: clamp(1.55rem, 3vw, 2.45rem);
+        line-height: 1.1;
+        letter-spacing: -0.025em;
+      }
+
+      h3 {
+        margin: 0 0 8px;
+        font-size: 1.08rem;
+        line-height: 1.25;
+      }
+
+      p {
+        margin: 0 0 12px;
+      }
+
+      code,
+      .mono {
+        font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      }
+
+      code {
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        background: #f6f8f7;
+        padding: 0.08rem 0.3rem;
+        font-size: 0.9em;
+      }
+
+      .panel,
+      .card,
+      table {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: var(--paper);
+        box-shadow: var(--shadow);
+      }
+
+      .panel {
+        padding: clamp(18px, 3vw, 28px);
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .two {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .three {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .card {
+        padding: 19px;
+      }
+
+      .card p:last-child,
+      .panel p:last-child {
+        margin-bottom: 0;
+      }
+
+      .callout {
+        border-left: 5px solid var(--green);
+        border-radius: 0 9px 9px 0;
+        background: var(--green-soft);
+        padding: 16px 18px;
+      }
+
+      .callout.warn {
+        border-left-color: var(--amber);
+        background: var(--amber-soft);
+      }
+
+      .callout.bad {
+        border-left-color: var(--red);
+        background: var(--red-soft);
+      }
+
+      .before-after {
+        display: grid;
+        grid-template-columns: 1fr 64px 1fr;
+        gap: 16px;
+        align-items: stretch;
+      }
+
+      .system {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 20px;
+        background: var(--paper);
+      }
+
+      .system.before {
+        border-color: #e3b4b4;
+        background: var(--red-soft);
+      }
+
+      .system.after {
+        border-color: #9ccbc0;
+        background: var(--green-soft);
+      }
+
+      .arrow {
+        display: grid;
+        place-items: center;
+        color: var(--green);
+        font-size: 2rem;
+        font-weight: 800;
+      }
+
+      .writer-stack {
+        display: grid;
+        gap: 9px;
+        margin-top: 14px;
+      }
+
+      .writer {
+        border: 1px solid currentColor;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.7);
+        padding: 11px 13px;
+        color: var(--red);
+      }
+
+      .after .writer {
+        color: var(--green-dark);
+      }
+
+      .formula {
+        display: grid;
+        gap: 12px;
+        margin-top: 18px;
+        border: 1px solid #9ccbc0;
+        border-left: 6px solid var(--green);
+        border-radius: 10px;
+        background: #fbfffd;
+        padding: 20px;
+        overflow-x: auto;
+      }
+
+      .formula-main {
+        min-width: 620px;
+        color: var(--green-dark);
+        font-family: "SFMono-Regular", Consolas, monospace;
+        font-size: clamp(1rem, 2.4vw, 1.42rem);
+        font-weight: 750;
+        white-space: nowrap;
+      }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 18px;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .flow {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 18px;
+        margin-top: 20px;
+      }
+
+      .step {
+        position: relative;
+        min-height: 156px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: var(--paper);
+        padding: 16px;
+      }
+
+      .step:not(:last-child)::after {
+        content: "→";
+        position: absolute;
+        top: 50%;
+        right: -16px;
+        z-index: 2;
+        color: var(--green);
+        font-size: 1.35rem;
+        font-weight: 800;
+        transform: translate(50%, -50%);
+      }
+
+      .step-num {
+        display: grid;
+        place-items: center;
+        width: 27px;
+        height: 27px;
+        margin-bottom: 13px;
+        border-radius: 50%;
+        background: var(--green);
+        color: #fff;
+        font-size: 0.78rem;
+        font-weight: 800;
+      }
+
+      .step p {
+        color: var(--muted);
+        font-size: 0.89rem;
+      }
+
+      .track-card {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: var(--paper);
+        padding: 18px;
+      }
+
+      .track {
+        position: relative;
+        height: 46px;
+        margin: 22px 4px 12px;
+      }
+
+      .rail {
+        position: absolute;
+        top: 19px;
+        right: 0;
+        left: 0;
+        height: 7px;
+        border-radius: 999px;
+        background: #e5eae7;
+      }
+
+      .range {
+        position: absolute;
+        top: 19px;
+        left: var(--left);
+        width: var(--width);
+        height: 7px;
+        border-radius: 999px;
+        background: #75c8b5;
+      }
+
+      .dot {
+        position: absolute;
+        top: 10px;
+        left: var(--at);
+        width: 24px;
+        height: 24px;
+        border: 4px solid #fff;
+        border-radius: 50%;
+        box-shadow: 0 0 0 2px currentColor;
+        background: currentColor;
+        transform: translateX(-50%);
+      }
+
+      .dot.ema {
+        color: var(--blue);
+      }
+
+      .dot.oracle {
+        top: 6px;
+        width: 31px;
+        height: 31px;
+        color: var(--green-dark);
+      }
+
+      .track-labels {
+        display: flex;
+        justify-content: space-between;
+        color: var(--muted);
+        font-size: 0.78rem;
+      }
+
+      .result {
+        margin-top: 12px;
+        color: var(--green-dark);
+        font-weight: 750;
+      }
+
+      .market-state {
+        display: inline-flex;
+        min-width: 78px;
+        justify-content: center;
+        border-radius: 999px;
+        padding: 4px 9px;
+        font-size: 0.78rem;
+        font-weight: 800;
+      }
+
+      .yes {
+        background: var(--green-soft);
+        color: var(--green-dark);
+      }
+
+      .no {
+        background: var(--red-soft);
+        color: var(--red);
+      }
+
+      .freeze {
+        background: var(--amber-soft);
+        color: var(--amber);
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+        border-radius: 10px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        box-shadow: none;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid var(--line);
+        padding: 12px 14px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        background: #f5f8f6;
+        color: var(--muted);
+        font-size: 0.74rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      tr:last-child td {
+        border-bottom: 0;
+      }
+
+      ol,
+      ul {
+        margin: 10px 0 0;
+        padding-left: 21px;
+      }
+
+      li {
+        margin: 7px 0;
+      }
+
+      .probe {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 10px;
+        align-items: start;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .probe:last-child {
+        border-bottom: 0;
+      }
+
+      .check {
+        display: grid;
+        place-items: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: var(--green-soft);
+        color: var(--green-dark);
+        font-weight: 900;
+      }
+
+      footer {
+        padding: 0 0 44px;
+        color: var(--muted);
+        font-size: 0.84rem;
+      }
+
+      @media (max-width: 900px) {
+        .flow {
+          grid-template-columns: 1fr;
+        }
+
+        .step {
+          min-height: 0;
+        }
+
+        .step:not(:last-child)::after {
+          top: auto;
+          right: 50%;
+          bottom: -20px;
+          transform: translate(50%, 50%) rotate(90deg);
+        }
+      }
+
+      @media (max-width: 760px) {
+        .wrap {
+          width: min(100% - 26px, 1120px);
+        }
+
+        header {
+          padding-top: 30px;
+        }
+
+        .two,
+        .three,
+        .before-after {
+          grid-template-columns: 1fr;
+        }
+
+        .arrow {
+          transform: rotate(90deg);
+        }
+
+        th,
+        td {
+          padding: 10px;
+        }
+
+        .formula-main {
+          min-width: 0;
+          white-space: normal;
+        }
+
+        .market-table,
+        .market-table tbody,
+        .market-table tr,
+        .market-table td {
+          display: block;
+          width: 100%;
+        }
+
+        .market-table thead {
+          display: none;
+        }
+
+        .market-table tr {
+          border-bottom: 1px solid var(--line);
+          padding: 8px 10px;
+        }
+
+        .market-table tr:last-child {
+          border-bottom: 0;
+        }
+
+        .market-table td {
+          display: grid;
+          grid-template-columns: 94px minmax(0, 1fr);
+          gap: 10px;
+          border: 0;
+          padding: 6px 0;
+        }
+
+        .market-table td::before {
+          content: attr(data-label);
+          color: var(--muted);
+          font-size: 0.7rem;
+          font-weight: 800;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap">
+        <div class="eyebrow">MNX research · oracle design note</div>
+        <h1>EMA first.<br />External guard second.</h1>
+        <p class="lede">
+          Prediction-market prices should be formed by MNX trading. A reviewed
+          external market may constrain an implausibly distant oracle, but it
+          must not replace the internal eight-hour exponential moving average.
+        </p>
+        <div class="status-row">
+          <span class="pill strong">Approved gap: g = 0.10</span>
+          <span class="pill">DPREZ: guarded</span>
+          <span class="pill">ANTHTOP26: internal only</span>
+          <span class="pill">OAITOP26: internal only</span>
+        </div>
+        <nav class="toc" aria-label="Page sections">
+          <a href="#change">The change</a>
+          <a href="#formula">Formula</a>
+          <a href="#examples">Examples</a>
+          <a href="#connections">Connections</a>
+          <a href="#failure">Failure policy</a>
+          <a href="#review">Adversarial review</a>
+          <a href="#rollout">Rollout</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section id="change">
+        <h2>One writer, one price-formation path</h2>
+        <div
+          class="before-after"
+          role="img"
+          aria-label="Old two-writer design replaced by one EMA-first futures writer"
+        >
+          <div class="system before">
+            <div class="label">Before</div>
+            <h3>Two jobs could own a binary oracle</h3>
+            <div class="writer-stack">
+              <div class="writer">
+                <strong>Generic price updater</strong><br />
+                External connector set the binary target directly.
+              </div>
+              <div class="writer">
+                <strong>Futures updater</strong><br />
+                Connector-backed binaries were excluded from the EMA path.
+              </div>
+            </div>
+          </div>
+          <div class="arrow" aria-hidden="true">→</div>
+          <div class="system after">
+            <div class="label">After</div>
+            <h3>The futures updater owns every binary oracle</h3>
+            <div class="writer-stack">
+              <div class="writer">
+                <strong>Internal eight-hour EMA</strong><br />
+                Always computes the candidate price.
+              </div>
+              <div class="writer">
+                <strong>Optional reviewed guard</strong><br />
+                Constrains the candidate only when the market identity matches.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flow" aria-label="New oracle update flow">
+          <div class="step">
+            <span class="step-num">1</span>
+            <h3>MNX signal</h3>
+            <p>
+              Use the internal best-bid / best-ask midpoint, with the last
+              settled trade as the existing fallback.
+            </p>
+          </div>
+          <div class="step">
+            <span class="step-num">2</span>
+            <h3>Eight-hour EMA</h3>
+            <p>
+              Advance the existing time-weighted accumulator. Its eight-hour
+              time constant implies a roughly 5.5-hour half-life.
+            </p>
+          </div>
+          <div class="step">
+            <span class="step-num">3</span>
+            <h3>Identity gate</h3>
+            <p>
+              Require an explicitly reviewed token and condition. Today, only
+              <code>DPREZ</code> qualifies.
+            </p>
+          </div>
+          <div class="step">
+            <span class="step-num">4</span>
+            <h3>External clamp</h3>
+            <p>
+              Keep the EMA unchanged inside the widened executable band; clamp
+              only when it is farther away.
+            </p>
+          </div>
+          <div class="step">
+            <span class="step-num">5</span>
+            <h3>Existing chain bound</h3>
+            <p>
+              Apply the current directional on-chain update step. Trading bands
+              and contract limits are unchanged.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="formula">
+        <h2>The guard is a clamp, not an average</h2>
+        <div class="formula">
+          <div class="formula-main">
+            L = max(0, B − 0.10)&nbsp;&nbsp; U = min(1, A + 0.10)&nbsp;&nbsp; O
+            = clamp(EMA<sub>8h</sub>, L, U)
+          </div>
+          <div class="legend">
+            <span><strong>B</strong> = 1,000-share depth-weighted YES bid</span>
+            <span><strong>A</strong> = 1,000-share depth-weighted YES ask</span>
+            <span
+              ><strong>O</strong> = oracle target before the existing on-chain
+              step bound</span
+            >
+          </div>
+        </div>
+        <div class="grid three" style="margin-top: 16px">
+          <div class="card">
+            <div class="label">No blending</div>
+            <h3>Inside means untouched</h3>
+            <p>
+              The external price receives no weight. If the internal EMA is in
+              the permitted interval, it is the target exactly.
+            </p>
+          </div>
+          <div class="card">
+            <div class="label">Absolute gap</div>
+            <h3>Ten probability points</h3>
+            <p>
+              <code>g = 0.10</code> is an absolute probability distance, not 10%
+              of the current price.
+            </p>
+          </div>
+          <div class="card">
+            <div class="label">Payout domain</div>
+            <h3>Always within [0, 1]</h3>
+            <p>
+              The lower and upper edges are capped at the binary payout
+              boundaries before the clamp.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="examples">
+        <h2>Three worked examples</h2>
+        <div class="grid three">
+          <div class="track-card">
+            <div class="label">1 · EMA inside</div>
+            <h3>Nothing moves</h3>
+            <p>
+              <span class="mono">EMA=.50, B=.49, A=.51</span><br />Guard
+              interval: <span class="mono">[.39, .61]</span>
+            </p>
+            <div class="track" style="--left: 39%; --width: 22%">
+              <div class="rail"></div>
+              <div class="range"></div>
+              <span class="dot ema" style="--at: 50%" title="EMA .50"></span>
+              <span
+                class="dot oracle"
+                style="--at: 50%"
+                title="Oracle .50"
+              ></span>
+            </div>
+            <div class="track-labels">
+              <span>0</span><span>guard band</span><span>1</span>
+            </div>
+            <div class="result">Oracle = .50</div>
+          </div>
+
+          <div class="track-card">
+            <div class="label">2 · EMA too low</div>
+            <h3>Clamp upward</h3>
+            <p>
+              <span class="mono">EMA=.40, B=.545, A=.585</span><br />Guard
+              interval: <span class="mono">[.445, .685]</span>
+            </p>
+            <div class="track" style="--left: 44.5%; --width: 24%">
+              <div class="rail"></div>
+              <div class="range"></div>
+              <span class="dot ema" style="--at: 40%" title="EMA .40"></span>
+              <span
+                class="dot oracle"
+                style="--at: 44.5%"
+                title="Oracle .445"
+              ></span>
+            </div>
+            <div class="track-labels">
+              <span>0</span><span>guard band</span><span>1</span>
+            </div>
+            <div class="result">Oracle = .445</div>
+          </div>
+
+          <div class="track-card">
+            <div class="label">3 · EMA too high</div>
+            <h3>Clamp downward</h3>
+            <p>
+              <span class="mono">EMA=.60, B=.415, A=.455</span><br />Guard
+              interval: <span class="mono">[.315, .555]</span>
+            </p>
+            <div class="track" style="--left: 31.5%; --width: 24%">
+              <div class="rail"></div>
+              <div class="range"></div>
+              <span class="dot ema" style="--at: 60%" title="EMA .60"></span>
+              <span
+                class="dot oracle"
+                style="--at: 55.5%"
+                title="Oracle .555"
+              ></span>
+            </div>
+            <div class="track-labels">
+              <span>0</span><span>guard band</span><span>1</span>
+            </div>
+            <div class="result">Oracle = .555</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="connections">
+        <h2>Which markets are officially connected?</h2>
+        <div class="table-wrap">
+          <table class="market-table">
+            <thead>
+              <tr>
+                <th>MNX market</th>
+                <th>Polymarket guard</th>
+                <th>Reason</th>
+                <th>Oracle behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td data-label="MNX market"><code>DPREZ</code></td>
+                <td data-label="Polymarket guard">
+                  <span class="market-state yes">Yes</span>
+                </td>
+                <td data-label="Reason">
+                  The reviewed external condition is semantically equivalent to
+                  the MNX settlement question.
+                </td>
+                <td data-label="Oracle behavior">
+                  Internal eight-hour EMA, clamped to the external guard
+                  interval.
+                </td>
+              </tr>
+              <tr>
+                <td data-label="MNX market"><code>ANTHTOP26</code></td>
+                <td data-label="Polymarket guard">
+                  <span class="market-state no">No</span>
+                </td>
+                <td data-label="Reason">
+                  MNX settles on Epoch’s Capabilities Index; the prior external
+                  mapping settles on Chatbot Arena / LMArena.
+                </td>
+                <td data-label="Oracle behavior">
+                  Internal eight-hour EMA only. A stale database row cannot
+                  activate a guard.
+                </td>
+              </tr>
+              <tr>
+                <td data-label="MNX market"><code>OAITOP26</code></td>
+                <td data-label="Polymarket guard">
+                  <span class="market-state no">No</span>
+                </td>
+                <td data-label="Reason">
+                  MNX settles on Epoch’s Capabilities Index; the prior external
+                  mapping settles on Chatbot Arena / LMArena.
+                </td>
+                <td data-label="Oracle behavior">
+                  Internal eight-hour EMA only. A stale database row cannot
+                  activate a guard.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout bad" style="margin-top: 16px">
+          <strong>Semantic equivalence is the authorization boundary.</strong>
+          Similar wording is insufficient. If settlement sources or criteria
+          differ, the external market is not a valid oracle reference.
+        </div>
+      </section>
+
+      <section id="failure">
+        <h2>Failure policy</h2>
+        <div class="grid two">
+          <div class="panel">
+            <div class="label">DPREZ · reviewed guard required</div>
+            <div class="probe">
+              <span class="market-state yes">Publish</span>
+              <span
+                >Exact reviewed token and condition, plus a fresh, valid
+                two-sided book with at least 1,000 YES shares per side.</span
+              >
+            </div>
+            <div class="probe">
+              <span class="market-state freeze">Freeze</span>
+              <span
+                >Connector missing, disabled, malformed, or different from the
+                reviewed identity.</span
+              >
+            </div>
+            <div class="probe">
+              <span class="market-state freeze">Freeze</span>
+              <span
+                >External fetch fails, identity differs, either side is thin,
+                the book crosses, or touch/depth spread exceeds 0.05.</span
+              >
+            </div>
+          </div>
+          <div class="panel">
+            <div class="label">AI-top markets · no guard authorized</div>
+            <div class="probe">
+              <span class="market-state yes">Publish</span>
+              <span
+                >The futures updater uses the normal internal EMA path without
+                requesting Polymarket data.</span
+              >
+            </div>
+            <div class="probe">
+              <span class="market-state no">Ignore</span>
+              <span
+                >A stale <code>price_connectors</code> row cannot reactivate the
+                deleted mapping.</span
+              >
+            </div>
+            <div class="probe">
+              <span class="market-state no">Delete</span>
+              <span
+                >The rollout migration removes the durable Polymarket rows for
+                <code>ANTHTOP26</code> and <code>OAITOP26</code> only.</span
+              >
+            </div>
+          </div>
+        </div>
+        <div class="callout warn" style="margin-top: 16px">
+          <strong>Disabled is not dormant for a reviewed guard.</strong> A
+          non-delisted future with an enabled Polymarket connector continues
+          receiving oracle updates while trading is disabled, so a newly
+          deployed guarded market can converge before the launch gate enables
+          orders. Unrelated connectorless futures remain halted.
+        </div>
+      </section>
+
+      <section id="review">
+        <h2>Adversarial review results</h2>
+        <div class="panel">
+          <div class="probe">
+            <span class="check">✓</span>
+            <span
+              ><strong>Writer race removed.</strong> The generic connector job
+              now selects perpetuals only; the futures job exclusively owns
+              binary and numeric futures.</span
+            >
+          </div>
+          <div class="probe">
+            <span class="check">✓</span>
+            <span
+              ><strong>Launch deadlock fixed without broadening halts.</strong>
+              The first draft filtered out trading-disabled guarded markets; the
+              next draft updated every disabled future. The final query admits
+              only enabled futures plus connector-backed launch
+              candidates.</span
+            >
+          </div>
+          <div class="probe">
+            <span class="check">✓</span>
+            <span
+              ><strong>Deploy ordering is safe.</strong> Even before the cleanup
+              migration runs, code ignores stale AI-top mappings;
+              <code>DPREZ</code> fails closed until its exact mapping is
+              available.</span
+            >
+          </div>
+          <div class="probe">
+            <span class="check">✓</span>
+            <span
+              ><strong>Boundary math covered.</strong> Tests pin unchanged
+              in-band EMA, ±0.10 clamps, and payout-domain caps at 0 and
+              1.</span
+            >
+          </div>
+          <div class="probe">
+            <span class="check">✓</span>
+            <span
+              ><strong>Existing controls preserved.</strong> The contract’s
+              directional update step and market trading bands remain downstream
+              and unchanged.</span
+            >
+          </div>
+        </div>
+        <div class="callout" style="margin-top: 16px">
+          Mutation probes deliberately broke the 0.10 gap, exact DPREZ identity,
+          disabled-market convergence, single-writer ownership, AI-top mapping
+          deletion, and migration scope. Each corresponding test failed before
+          the implementation was restored.
+        </div>
+      </section>
+
+      <section id="rollout">
+        <h2>Rollout gates</h2>
+        <div class="grid two">
+          <div class="panel">
+            <div class="label">Exchange deploy</div>
+            <ol>
+              <li>
+                Ship the writer change and connector-removal migration together.
+              </li>
+              <li>
+                Confirm the only reviewed binary connector row is
+                <code>DPREZ</code>.
+              </li>
+              <li>
+                Trigger the futures updater and verify EMA/guard provenance plus
+                fresh oracle confirmations.
+              </li>
+              <li>
+                Verify <code>ANTHTOP26</code> and <code>OAITOP26</code> update
+                without any Polymarket fetch.
+              </li>
+            </ol>
+          </div>
+          <div class="panel">
+            <div class="label">Separate market-maker gate</div>
+            <ol>
+              <li>
+                Remove <code>ANTHTOP26</code> and <code>OAITOP26</code> from
+                <code>MARKET_MAKER_POLYMARKET_FAIR_PRICE_ASSETS</code>.
+              </li>
+              <li>
+                Restart or redeploy the market-maker service with that
+                environment change.
+              </li>
+              <li>
+                Confirm no external fair-price logs or requests remain for
+                either AI-top market.
+              </li>
+            </ol>
+          </div>
+        </div>
+        <div class="callout warn" style="margin-top: 16px">
+          The exchange repository does not own the deployed market-maker
+          environment. The code PR removes exchange-side authorization and
+          durable mappings; the environment removal remains a mandatory
+          operational gate.
+        </div>
+      </section>
+    </main>
+
+    <footer class="wrap">
+      MNX research · implementation design reviewed 2026-08-11 · customer-facing
+      oracle documentation is a separate follow-up
+    </footer>
+  </body>
+</html>
