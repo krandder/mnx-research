@@ -179,7 +179,7 @@
       textarea {
         display: block;
         width: 100%;
-        min-height: 430px;
+        min-height: 330px;
         resize: vertical;
         border: 0;
         outline: 0;
@@ -230,7 +230,7 @@
         }
 
         textarea {
-          min-height: 610px;
+          min-height: 530px;
           font-size: 0.76rem;
         }
       }
@@ -284,16 +284,15 @@
             <span>Production change prompt</span>
             <span>Select all, then copy</span>
           </div>
-          <textarea readonly spellcheck="false" aria-label="Paste-ready production change prompt">Complete the remaining production market-maker environment change for exchange PR #484 and market-maker PR #137.
+          <textarea readonly spellcheck="false" aria-label="Paste-ready production change prompt">Apply the production environment change from exchange #484 and market-maker #137.
 
-Read the merged runbook first:
-https://github.com/mnx-markets/market-maker/blob/main/docs/runbooks/polymarket-settlement-decoupling.md
+Why: MNX TOP26 settles on Epoch ECI; the old Polymarket references use Chatbot Arena. They are different events, so those prices must not drive TOP26 quotes.
 
-Preflight read-only on mm-runner-mainnet-1. Verify mnx-mm@mainnet, /home/kas/src/market-maker-mnx, and /home/kas/.config/mnx-market-maker/mainnet.env. Report Polymarket map keys only—never token IDs or other secrets. Confirm ANTHTOP26 and OAITOP26 are cancel_only with zero orders and that DPREZ and RSENATE26 are healthy. Show Ian the planned key diff and backup path, then ask approval before any write.
+Follow market-maker/docs/runbooks/polymarket-settlement-decoupling.md.
 
-After approval, use the runbook’s atomic backup/rewrite script verbatim. Remove only ANTHTOP26 and OAITOP26 from MARKET_MAKER_POLYMARKET_FAIR_PRICE_ASSETS. Require final keys exactly DPREZ and RSENATE26 with their objects unchanged. Restart or deploy through the runbook’s state-preserving systemd path; do not reseed controls or touch price_connectors SQL.
+Preflight read-only; report keys only. Require TOP26 cancel_only with zero orders and DPREZ/RSENATE26 healthy. Ask Ian before writing. Never expose secrets.
 
-Verify the service is active; TOP26 remains cancel_only with zero orders and no Polymarket source; DPREZ and RSENATE26 remain fresh. Report the revision, backup, final keys, and evidence. Stop and ask Ian if anything differs from the runbook.</textarea>
+Then use the runbook’s atomic script: remove ANTHTOP26/OAITOP26 from MARKET_MAKER_POLYMARKET_FAIR_PRICE_ASSETS; keep DPREZ/RSENATE26. No SQL or control reseed. Restart via the runbook. Verify no TOP26 Polymarket source and retained sources are fresh. Report revision, backup, and evidence; stop on drift.</textarea>
         </div>
         <p class="refs">
           Sources:
