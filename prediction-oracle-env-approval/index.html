@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ian approval: remove two Polymarket fair-price links</title>
+    <link rel="icon" href="/favicon.ico" />
+    <meta
+      name="description"
+      content="A short approval brief for removing ANTHTOP26 and OAITOP26 from the deployed Polymarket fair-price environment while retaining DPREZ."
+    />
+    <meta property="og:title" content="MNX rollout approval for Ian" />
+    <meta
+      property="og:description"
+      content="Why two incorrect Polymarket fair-price links must be removed from the deployed market-maker environment."
+    />
+    <meta property="og:type" content="article" />
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4f5f2;
+        --paper: #fff;
+        --ink: #17201c;
+        --muted: #647069;
+        --line: #d6ddd8;
+        --green: #087264;
+        --green-dark: #075148;
+        --green-soft: #e5f5f0;
+        --red: #a33c3c;
+        --red-soft: #fff0ed;
+        --amber: #96570e;
+        --amber-soft: #fff5df;
+        --shadow: 0 18px 46px rgba(25, 40, 33, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(circle at 90% 0, #dcece7 0, transparent 30rem),
+          var(--bg);
+        color: var(--ink);
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        line-height: 1.55;
+      }
+
+      .wrap {
+        width: min(1040px, calc(100% - 40px));
+        margin: 0 auto;
+      }
+
+      header {
+        padding: 52px 0 34px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .eyebrow,
+      .label {
+        color: var(--green-dark);
+        font-size: 0.76rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        max-width: 850px;
+        margin: 10px 0 16px;
+        font-size: clamp(2.2rem, 6vw, 4.8rem);
+        line-height: 0.98;
+        letter-spacing: -0.045em;
+        overflow-wrap: anywhere;
+      }
+
+      .lede {
+        max-width: 790px;
+        margin: 0;
+        color: var(--muted);
+        font-size: clamp(1rem, 2vw, 1.2rem);
+      }
+
+      .status {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 9px;
+        margin-top: 21px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        min-height: 34px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 6px 11px;
+        background: rgba(255, 255, 255, 0.78);
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+
+      .pill.needed {
+        border-color: #e6c68f;
+        background: var(--amber-soft);
+        color: var(--amber);
+        font-weight: 750;
+      }
+
+      main {
+        padding: 18px 0 64px;
+      }
+
+      section {
+        margin: 38px 0;
+      }
+
+      h2 {
+        margin: 0 0 15px;
+        font-size: clamp(1.55rem, 3vw, 2.4rem);
+        line-height: 1.1;
+        letter-spacing: -0.025em;
+      }
+
+      h3 {
+        margin: 0 0 8px;
+        font-size: 1.06rem;
+      }
+
+      p {
+        margin: 0 0 12px;
+      }
+
+      code {
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        background: #f6f8f7;
+        padding: 0.08rem 0.3rem;
+        font-family: "SFMono-Regular", Consolas, monospace;
+        font-size: 0.9em;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+
+      .decision,
+      .panel,
+      .card {
+        min-width: 0;
+        border: 1px solid var(--line);
+        border-radius: 11px;
+        background: var(--paper);
+        box-shadow: var(--shadow);
+      }
+
+      .decision {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 18px;
+        align-items: start;
+        padding: clamp(20px, 4vw, 32px);
+        border-color: #a8d3c8;
+      }
+
+      .decision-mark {
+        display: grid;
+        place-items: center;
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        background: var(--green);
+        color: #fff;
+        font-size: 1.4rem;
+        font-weight: 800;
+      }
+
+      .decision strong {
+        color: var(--green-dark);
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .three {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .two {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .card,
+      .panel {
+        padding: 20px;
+      }
+
+      .card p:last-child,
+      .panel p:last-child {
+        margin-bottom: 0;
+      }
+
+      .card.bad {
+        border-color: #e6b8b3;
+        background: var(--red-soft);
+      }
+
+      .arrow-card {
+        display: grid;
+        place-items: center;
+        border: 1px dashed #b9c5bf;
+        border-radius: 11px;
+        padding: 20px;
+        color: var(--red);
+        font-size: 1.05rem;
+        font-weight: 800;
+        text-align: center;
+      }
+
+      .layer {
+        position: relative;
+        padding-left: 54px;
+      }
+
+      .layer + .layer {
+        margin-top: 15px;
+      }
+
+      .number {
+        position: absolute;
+        top: 18px;
+        left: 18px;
+        display: grid;
+        place-items: center;
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        background: var(--green-soft);
+        color: var(--green-dark);
+        font-size: 0.78rem;
+        font-weight: 850;
+      }
+
+      .token-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 9px;
+        margin-top: 14px;
+      }
+
+      .token {
+        border: 1px solid #a8d3c8;
+        border-radius: 7px;
+        background: var(--green-soft);
+        padding: 7px 10px;
+        color: var(--green-dark);
+        font-family: "SFMono-Regular", Consolas, monospace;
+        font-size: 0.84rem;
+        font-weight: 750;
+      }
+
+      .token.remove {
+        border-color: #e2aaa4;
+        background: var(--red-soft);
+        color: var(--red);
+        text-decoration: line-through;
+        text-decoration-thickness: 2px;
+      }
+
+      .note {
+        margin-top: 14px;
+        border-left: 5px solid var(--amber);
+        border-radius: 0 9px 9px 0;
+        background: var(--amber-soft);
+        padding: 15px 17px;
+      }
+
+      .markets {
+        display: grid;
+        gap: 10px;
+        margin-top: 16px;
+      }
+
+      .market {
+        display: grid;
+        grid-template-columns: 130px minmax(0, 1fr) auto;
+        gap: 14px;
+        align-items: center;
+        border-top: 1px solid var(--line);
+        padding-top: 12px;
+      }
+
+      .market:first-child {
+        border-top: 0;
+        padding-top: 0;
+      }
+
+      .market-name {
+        font-family: "SFMono-Regular", Consolas, monospace;
+        font-size: 0.88rem;
+        font-weight: 800;
+      }
+
+      .result {
+        border-radius: 999px;
+        padding: 5px 9px;
+        background: var(--green-soft);
+        color: var(--green-dark);
+        font-size: 0.75rem;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+
+      .result.off {
+        background: var(--red-soft);
+        color: var(--red);
+      }
+
+      ul {
+        margin: 12px 0 0;
+        padding-left: 1.2rem;
+      }
+
+      li + li {
+        margin-top: 7px;
+      }
+
+      footer {
+        border-top: 1px solid var(--line);
+        padding: 24px 0 38px;
+        color: var(--muted);
+        font-size: 0.84rem;
+      }
+
+      @media (max-width: 760px) {
+        .wrap {
+          width: min(100% - 28px, 1040px);
+        }
+
+        header {
+          padding-top: 34px;
+        }
+
+        h1 {
+          font-size: 2rem;
+          line-height: 1;
+        }
+
+        h2 {
+          overflow-wrap: anywhere;
+        }
+
+        .three,
+        .two {
+          grid-template-columns: 1fr;
+        }
+
+        .arrow-card {
+          min-height: 76px;
+        }
+
+        .decision {
+          grid-template-columns: 1fr;
+        }
+
+        .market {
+          grid-template-columns: 1fr;
+          gap: 5px;
+        }
+
+        .result {
+          justify-self: start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap">
+        <div class="eyebrow">MNX · approval brief for Ian</div>
+        <h1>Remove two incorrect Polymarket fair-price links</h1>
+        <p class="lede">
+          The code and database migration are merged. One deployed environment
+          setting sits outside that migration and needs an explicit operational
+          change before rollout.
+        </p>
+        <div class="status">
+          <span class="pill">Code merged</span>
+          <span class="pill">Database cleanup included</span>
+          <span class="pill needed">Environment approval needed</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section aria-labelledby="decision-title">
+        <div class="decision">
+          <div class="decision-mark" aria-hidden="true">✓</div>
+          <div>
+            <div class="label">Decision requested</div>
+            <h2 id="decision-title">
+              Approve removing exactly two symbols from the deployed setting
+            </h2>
+            <p>
+              Remove <code>ANTHTOP26</code> and <code>OAITOP26</code> from
+              <code>MARKET_MAKER_POLYMARKET_FAIR_PRICE_ASSETS</code> in each
+              environment receiving the merged change. <strong>Keep
+              <code>DPREZ</code></strong> and preserve every unrelated value.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="why-title">
+        <div class="label">Why</div>
+        <h2 id="why-title">The external markets answer a different question</h2>
+        <div class="grid three">
+          <div class="card">
+            <h3>MNX AI-top markets</h3>
+            <p>
+              Resolve from Epoch AI’s <strong>Capabilities Index (ECI)</strong>
+              at 2026 year-end.
+            </p>
+          </div>
+          <div class="arrow-card">
+            Different benchmark<br />≠ valid price reference
+          </div>
+          <div class="card bad">
+            <h3>Old Polymarket links</h3>
+            <p>
+              Refer to markets based on <strong>Chatbot Arena</strong>, which
+              has different rules and can produce a different winner.
+            </p>
+          </div>
+        </div>
+        <div class="note">
+          A fair price from a differently defined event can steer quoting in the
+          wrong direction. Removing the links makes the market maker follow the
+          same independence already enforced by the merged oracle code.
+        </div>
+      </section>
+
+      <section aria-labelledby="gap-title">
+        <div class="label">Why the migration cannot finish this</div>
+        <h2 id="gap-title">There are two separate configuration layers</h2>
+        <div class="grid two">
+          <div class="panel layer">
+            <span class="number">1</span>
+            <h3>Repository and database — done</h3>
+            <p>
+              The merged code removes the AI-top connector mappings. Its SQL
+              migration deletes stale Polymarket rows for the two markets.
+            </p>
+          </div>
+          <div class="panel layer">
+            <span class="number">2</span>
+            <h3>Deployed market-maker environment — Ian’s approval</h3>
+            <p>
+              The environment value is managed outside the exchange database.
+              SQL cannot edit it, and a code merge does not replace it.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="change-title">
+        <div class="label">The complete operational change</div>
+        <h2 id="change-title">Delete two entries, retain the reviewed one</h2>
+        <div class="panel">
+          <p>
+            Conceptually, the relevant part of the deployed value changes like
+            this. This is not a request to replace or reorder unrelated entries.
+          </p>
+          <div class="token-row" aria-label="Environment entries after approval">
+            <span class="token remove">ANTHTOP26</span>
+            <span class="token remove">OAITOP26</span>
+            <span class="token">DPREZ · keep</span>
+          </div>
+          <div class="markets">
+            <div class="market">
+              <span class="market-name">ANTHTOP26</span>
+              <span>MNX internal 8-hour EMA; no Polymarket dependency</span>
+              <span class="result off">external link off</span>
+            </div>
+            <div class="market">
+              <span class="market-name">OAITOP26</span>
+              <span>MNX internal 8-hour EMA; no Polymarket dependency</span>
+              <span class="result off">external link off</span>
+            </div>
+            <div class="market">
+              <span class="market-name">DPREZ</span>
+              <span>MNX 8-hour EMA plus its separately reviewed external guard</span>
+              <span class="result">retain guard</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="scope-title">
+        <div class="label">Approval scope</div>
+        <h2 id="scope-title">What this does—and does not—change</h2>
+        <div class="grid two">
+          <div class="panel">
+            <h3>It does</h3>
+            <ul>
+              <li>Stop external fair-price use for the two mismatched markets.</li>
+              <li>Align deployed market-maker behavior with the merged code.</li>
+              <li>Require a restart or redeploy after the environment edit.</li>
+            </ul>
+          </div>
+          <div class="panel">
+            <h3>It does not</h3>
+            <ul>
+              <li>Remove or settle either MNX market.</li>
+              <li>Change their resolution rules, trading bands, or expiry.</li>
+              <li>Remove DPREZ’s reviewed Polymarket guard.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="wrap">
+        MNX rollout approval brief · 2026-08-11 · No secrets or current
+        environment values are shown on this page.
+      </div>
+    </footer>
+  </body>
+</html>
