@@ -3,36 +3,32 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>TOP26 Polymarket decoupling — approval and execution note</title>
+    <title>TOP26 Polymarket decoupling</title>
     <link rel="icon" href="/favicon.ico" />
     <meta
       name="description"
-      content="Change-control note for removing ANTHTOP26 and OAITOP26 from the deployed Polymarket fair-price configuration."
+      content="Concise approval note for the remaining TOP26 market-maker environment change."
     />
     <meta property="og:title" content="TOP26 Polymarket decoupling" />
     <meta
       property="og:description"
-      content="Approval basis, target state, and paste-ready execution instructions for the remaining market-maker environment change."
+      content="Decision and execution prompt for the remaining production configuration change."
     />
     <meta property="og:type" content="article" />
     <style>
       :root {
         color-scheme: light;
-        --background: #f5f6f4;
-        --paper: #ffffff;
+        --bg: #f5f6f4;
+        --paper: #fff;
         --ink: #17201c;
-        --muted: #5f6a64;
+        --muted: #626d67;
         --line: #d5dcd8;
-        --line-strong: #b9c5bf;
         --green: #075f54;
         --green-soft: #eaf3f0;
-        --amber: #805112;
-        --amber-soft: #fbf4e7;
         --red: #8e3636;
         --red-soft: #f9eeee;
         --code: #101916;
         --code-ink: #dceae4;
-        --shadow: 0 12px 32px rgba(28, 43, 36, 0.06);
       }
 
       * {
@@ -41,7 +37,7 @@
 
       body {
         margin: 0;
-        background: var(--background);
+        background: var(--bg);
         color: var(--ink);
         font-family:
           Inter,
@@ -54,96 +50,49 @@
         line-height: 1.55;
       }
 
+      main {
+        width: min(860px, calc(100% - 40px));
+        margin: 0 auto;
+        padding: 54px 0 64px;
+      }
+
       a {
         color: var(--green);
         text-underline-offset: 3px;
       }
 
-      .wrap {
-        width: min(1060px, calc(100% - 40px));
-        margin: 0 auto;
-      }
-
-      header {
-        border-bottom: 1px solid var(--line);
-        background: var(--paper);
-        padding: 46px 0 34px;
-      }
-
       .kicker,
-      .section-label {
+      .label {
         color: var(--green);
-        font-size: 0.74rem;
+        font-size: 0.72rem;
         font-weight: 800;
         letter-spacing: 0.09em;
         text-transform: uppercase;
       }
 
       h1 {
-        max-width: 900px;
-        margin: 10px 0 16px;
-        font-size: clamp(2rem, 5vw, 4rem);
-        line-height: 1.02;
+        margin: 10px 0 14px;
+        font-size: clamp(2.1rem, 6vw, 4rem);
+        line-height: 1;
         letter-spacing: -0.04em;
-        overflow-wrap: anywhere;
       }
 
       .lede {
-        max-width: 820px;
+        max-width: 720px;
         margin: 0;
         color: var(--muted);
-        font-size: clamp(1rem, 1.8vw, 1.16rem);
-      }
-
-      .metadata {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 1px;
-        margin-top: 27px;
-        border: 1px solid var(--line);
-        background: var(--line);
-      }
-
-      .metadata div {
-        min-width: 0;
-        background: #fafbf9;
-        padding: 13px 15px;
-      }
-
-      .metadata dt {
-        margin-bottom: 3px;
-        color: var(--muted);
-        font-size: 0.72rem;
-        font-weight: 750;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-      }
-
-      .metadata dd {
-        margin: 0;
-        font-size: 0.92rem;
-        font-weight: 650;
-        overflow-wrap: anywhere;
-      }
-
-      main {
-        padding: 24px 0 66px;
+        font-size: 1.08rem;
       }
 
       section {
-        margin: 40px 0;
+        margin-top: 40px;
       }
 
       h2 {
-        margin: 6px 0 15px;
-        font-size: clamp(1.45rem, 3vw, 2.25rem);
+        margin: 6px 0 12px;
+        font-size: clamp(1.4rem, 3vw, 2rem);
         line-height: 1.15;
         letter-spacing: -0.025em;
-      }
-
-      h3 {
-        margin: 0 0 8px;
-        font-size: 1.02rem;
       }
 
       p {
@@ -153,606 +102,211 @@
       code {
         border: 1px solid var(--line);
         border-radius: 4px;
-        background: #f2f4f2;
+        background: #f1f3f1;
         padding: 0.08rem 0.3rem;
         font-family: "SFMono-Regular", Consolas, monospace;
         font-size: 0.88em;
         overflow-wrap: anywhere;
-        word-break: break-word;
-      }
-
-      .panel,
-      .decision,
-      table,
-      .prompt-shell {
-        min-width: 0;
-        border: 1px solid var(--line);
-        background: var(--paper);
-        box-shadow: var(--shadow);
       }
 
       .decision {
+        border: 1px solid var(--line);
         border-top: 4px solid var(--green);
-        padding: clamp(20px, 4vw, 30px);
+        background: var(--paper);
+        padding: 24px;
       }
 
-      .decision h2 {
-        max-width: 850px;
-        margin-top: 2px;
-      }
-
-      .decision p {
-        max-width: 900px;
-      }
-
-      .scope-line {
-        margin-top: 18px;
-        border-top: 1px solid var(--line);
-        padding-top: 15px;
+      .why {
         color: var(--muted);
-        font-size: 0.92rem;
-      }
-
-      .scope-line strong {
-        color: var(--ink);
-      }
-
-      .grid {
-        display: grid;
-        gap: 16px;
-      }
-
-      .two {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .panel {
-        padding: 20px;
-      }
-
-      .panel p:last-child {
-        margin-bottom: 0;
-      }
-
-      .plane-status {
-        display: inline-block;
-        margin-bottom: 10px;
-        border: 1px solid var(--line-strong);
-        padding: 3px 7px;
-        color: var(--muted);
-        font-size: 0.7rem;
-        font-weight: 800;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-      }
-
-      .plane-status.pending {
-        border-color: #d6bb8c;
-        background: var(--amber-soft);
-        color: var(--amber);
       }
 
       table {
         width: 100%;
+        margin-top: 20px;
         border-collapse: collapse;
-        text-align: left;
+        border: 1px solid var(--line);
+        font-size: 0.92rem;
       }
 
       th,
       td {
         border-bottom: 1px solid var(--line);
-        padding: 13px 15px;
-        vertical-align: top;
+        padding: 12px 14px;
+        text-align: left;
+      }
+
+      tr:last-child th,
+      tr:last-child td {
+        border-bottom: 0;
       }
 
       th {
-        background: #f7f8f6;
-        color: var(--muted);
+        width: 150px;
+        background: #f8f9f7;
         font-size: 0.72rem;
         letter-spacing: 0.05em;
         text-transform: uppercase;
       }
 
-      tr:last-child td {
-        border-bottom: 0;
-      }
-
-      .symbol {
-        font-family: "SFMono-Regular", Consolas, monospace;
-        font-size: 0.86rem;
-        font-weight: 800;
-      }
-
-      .action {
-        display: inline-block;
-        border-radius: 999px;
-        padding: 4px 8px;
-        font-size: 0.7rem;
-        font-weight: 800;
-        white-space: nowrap;
-      }
-
-      .action.remove {
-        background: var(--red-soft);
+      .remove {
         color: var(--red);
       }
 
-      .action.retain {
-        background: var(--green-soft);
+      .keep {
         color: var(--green);
       }
 
-      .rationale {
-        border-left: 4px solid var(--line-strong);
-        padding: 3px 0 3px 16px;
-      }
-
-      .steps {
-        margin: 0;
-        padding: 0;
-        list-style: none;
-        counter-reset: step;
-      }
-
-      .steps li {
-        position: relative;
-        min-height: 45px;
-        border-top: 1px solid var(--line);
-        padding: 14px 0 14px 48px;
-        counter-increment: step;
-      }
-
-      .steps li:first-child {
-        border-top: 0;
-        padding-top: 0;
-      }
-
-      .steps li::before {
-        position: absolute;
-        top: 14px;
-        left: 0;
-        display: grid;
-        place-items: center;
-        width: 28px;
-        height: 28px;
-        border: 1px solid var(--line-strong);
-        border-radius: 50%;
-        color: var(--green);
-        content: counter(step);
-        font-size: 0.76rem;
-        font-weight: 850;
-      }
-
-      .steps li:first-child::before {
-        top: 0;
-      }
-
-      .caution {
-        margin-top: 16px;
-        border: 1px solid #dfc89e;
-        background: var(--amber-soft);
-        padding: 14px 16px;
-        color: #5e421b;
-        font-size: 0.92rem;
-      }
-
-      .prompt-shell {
+      .prompt {
         overflow: hidden;
+        border: 1px solid #27342f;
+        background: var(--code);
       }
 
       .prompt-head {
         display: flex;
-        align-items: center;
         justify-content: space-between;
         gap: 16px;
         border-bottom: 1px solid #2d3a35;
-        background: var(--code);
-        padding: 12px 15px;
+        padding: 11px 14px;
         color: var(--code-ink);
+        font-size: 0.78rem;
       }
 
-      .prompt-head strong {
-        font-size: 0.84rem;
-      }
-
-      .prompt-head span {
-        color: #a9bab2;
-        font-size: 0.76rem;
+      .prompt-head span:last-child {
+        color: #9eb0a8;
       }
 
       textarea {
         display: block;
         width: 100%;
-        min-height: 760px;
+        min-height: 430px;
         resize: vertical;
         border: 0;
-        border-radius: 0;
         outline: 0;
         background: var(--code);
-        padding: 20px;
+        padding: 18px;
         color: var(--code-ink);
         font-family: "SFMono-Regular", Consolas, monospace;
         font-size: 0.82rem;
-        line-height: 1.62;
+        line-height: 1.6;
         white-space: pre-wrap;
       }
 
-      .sources {
-        margin: 0;
-        padding-left: 1.2rem;
-      }
-
-      .sources li + li {
-        margin-top: 8px;
-      }
-
-      footer {
-        border-top: 1px solid var(--line);
-        padding: 23px 0 35px;
+      .refs {
+        margin-top: 14px;
         color: var(--muted);
         font-size: 0.82rem;
       }
 
-      @media (max-width: 760px) {
-        .wrap {
-          width: min(100% - 28px, 1060px);
-        }
+      footer {
+        margin-top: 42px;
+        border-top: 1px solid var(--line);
+        padding-top: 18px;
+        color: var(--muted);
+        font-size: 0.78rem;
+      }
 
-        header {
-          padding-top: 32px;
+      @media (max-width: 620px) {
+        main {
+          width: min(100% - 28px, 860px);
+          padding-top: 34px;
         }
 
         h1 {
           font-size: 2rem;
         }
 
-        .metadata,
-        .two {
-          grid-template-columns: 1fr;
+        .decision {
+          padding: 18px;
         }
 
-        table,
-        tbody,
-        tr,
-        td {
-          display: block;
-        }
-
-        thead {
-          position: absolute;
-          width: 1px;
-          height: 1px;
-          overflow: hidden;
-          clip: rect(0 0 0 0);
-        }
-
-        tr {
-          border-bottom: 1px solid var(--line);
-          padding: 12px 14px;
-        }
-
-        tr:last-child {
-          border-bottom: 0;
-        }
-
-        td {
-          border: 0;
-          padding: 3px 0;
-        }
-
-        td::before {
-          display: block;
-          margin-bottom: 2px;
-          color: var(--muted);
-          content: attr(data-label);
-          font-size: 0.68rem;
-          font-weight: 750;
-          letter-spacing: 0.05em;
-          text-transform: uppercase;
+        th {
+          width: 105px;
         }
 
         .prompt-head {
-          align-items: flex-start;
           flex-direction: column;
-          gap: 3px;
+          gap: 2px;
         }
 
         textarea {
-          min-height: 980px;
+          min-height: 610px;
           font-size: 0.76rem;
         }
       }
     </style>
   </head>
   <body>
-    <header>
-      <div class="wrap">
-        <div class="kicker">MNX change-control note · owner: Ian</div>
+    <main>
+      <header>
+        <div class="kicker">MNX · approval note for Ian</div>
         <h1>TOP26 Polymarket decoupling</h1>
         <p class="lede">
-          Approval basis and execution guidance for the remaining production
-          configuration change after the exchange and market-maker code merges.
+          One production environment edit remains after exchange PR #484 and
+          market-maker PR #137.
         </p>
-        <dl class="metadata">
-          <div>
-            <dt>Code status</dt>
-            <dd>Exchange #484 and market-maker #137 merged</dd>
-          </div>
-          <div>
-            <dt>Outstanding control</dt>
-            <dd>Deployed market-maker environment</dd>
-          </div>
-          <div>
-            <dt>Configuration key</dt>
-            <dd>MARKET_MAKER_POLYMARKET_FAIR_PRICE_ASSETS</dd>
-          </div>
-        </dl>
-      </div>
-    </header>
+      </header>
 
-    <main class="wrap">
       <section class="decision" aria-labelledby="decision-title">
-        <div class="section-label">Decision requested</div>
-        <h2 id="decision-title">
-          Approve removal of ANTHTOP26 and OAITOP26 from the deployed
-          Polymarket fair-price map
-        </h2>
+        <div class="label">Decision</div>
+        <h2 id="decision-title">Approve the market-maker map change</h2>
         <p>
-          The two MNX markets resolve from Epoch AI’s Capabilities Index. Their
-          former Polymarket references use Chatbot Arena. Because the underlying
-          questions are not settlement-equivalent, those external prices should
-          not influence market-maker quoting.
+          Remove <code>ANTHTOP26</code> and <code>OAITOP26</code> from
+          <code>MARKET_MAKER_POLYMARKET_FAIR_PRICE_ASSETS</code>. Keep
+          <code>DPREZ</code> and <code>RSENATE26</code> unchanged.
         </p>
-        <p>
-          The target JSON object retains the reviewed <code>DPREZ</code> and
-          <code>RSENATE26</code> entries. No token identifiers or unrelated
-          environment values should change.
+        <p class="why">
+          MNX’s TOP26 contracts resolve from Epoch ECI; the old Polymarket
+          references use Chatbot Arena. They are different events, so those
+          prices should not inform quoting. PR #484 handles the database
+          cleanup, but cannot edit the environment file on the market-maker
+          runner.
         </p>
-        <div class="scope-line">
-          <strong>Approval scope:</strong> read-only preflight, exact JSON-key
-          removal, controlled market-maker restart or deployment, and
-          post-change verification. Any observed drift returns to Ian before a
-          write.
-        </div>
-      </section>
-
-      <section aria-labelledby="planes-title">
-        <div class="section-label">Control boundary</div>
-        <h2 id="planes-title">Why a separate operational change remains</h2>
-        <div class="grid two">
-          <div class="panel">
-            <span class="plane-status">Handled by exchange #484</span>
-            <h3>Exchange connector database</h3>
-            <p>
-              The merged SQL migration deletes stale Polymarket connector rows
-              for <code>ANTHTOP26</code> and <code>OAITOP26</code>. It operates
-              inside the exchange database.
-            </p>
-          </div>
-          <div class="panel">
-            <span class="plane-status pending">Operator action required</span>
-            <h3>Market-maker environment</h3>
-            <p>
-              The market-maker reads a separate JSON map from its deployed
-              environment file. A repository merge or database migration cannot
-              modify that file on the production runner.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section aria-labelledby="target-title">
-        <div class="section-label">Target state</div>
-        <h2 id="target-title">Exact mapping outcome</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Market</th>
-              <th>Environment action</th>
-              <th>Result</th>
-            </tr>
-          </thead>
+        <table aria-label="Required environment mapping change">
           <tbody>
             <tr>
-              <td data-label="Market"><span class="symbol">ANTHTOP26</span></td>
-              <td data-label="Environment action">
-                <span class="action remove">Remove key</span>
-              </td>
-              <td data-label="Result">
-                No Polymarket fair-price dependency; exchange oracle remains
-                based on the MNX 8-hour EMA.
-              </td>
+              <th class="remove">Remove</th>
+              <td><code>ANTHTOP26</code>, <code>OAITOP26</code></td>
             </tr>
             <tr>
-              <td data-label="Market"><span class="symbol">OAITOP26</span></td>
-              <td data-label="Environment action">
-                <span class="action remove">Remove key</span>
-              </td>
-              <td data-label="Result">
-                No Polymarket fair-price dependency; exchange oracle remains
-                based on the MNX 8-hour EMA.
-              </td>
-            </tr>
-            <tr>
-              <td data-label="Market"><span class="symbol">DPREZ</span></td>
-              <td data-label="Environment action">
-                <span class="action retain">Retain unchanged</span>
-              </td>
-              <td data-label="Result">
-                Reviewed Polymarket market-maker source remains configured.
-              </td>
-            </tr>
-            <tr>
-              <td data-label="Market"><span class="symbol">RSENATE26</span></td>
-              <td data-label="Environment action">
-                <span class="action retain">Retain unchanged</span>
-              </td>
-              <td data-label="Result">
-                Reviewed Polymarket market-maker source remains configured.
-              </td>
+              <th class="keep">Keep</th>
+              <td><code>DPREZ</code>, <code>RSENATE26</code></td>
             </tr>
           </tbody>
         </table>
       </section>
 
-      <section aria-labelledby="execution-title">
-        <div class="section-label">Recommended execution</div>
-        <h2 id="execution-title">Use the merged runbook and preserve the approval gate</h2>
-        <div class="panel">
-          <ol class="steps">
-            <li>
-              Verify the production service, checkout, environment-file path,
-              current map keys, market controls, and telemetry using read-only
-              commands from the merged runbook.
-            </li>
-            <li>
-              Confirm both TOP26 market-maker rows are <code>cancel_only</code>
-              with zero open orders. If not, stop and obtain Ian’s approval for
-              the control change before continuing.
-            </li>
-            <li>
-              Present the observed key-only before/after diff. Do not display
-              token IDs, the complete environment file, or any other secrets.
-            </li>
-            <li>
-              After Ian approves the write, use the runbook’s atomic backup and
-              JSON rewrite script. Remove only the two TOP26 keys; require the
-              resulting map to contain only <code>DPREZ</code> and
-              <code>RSENATE26</code>.
-            </li>
-            <li>
-              Deploy the reviewed market-maker merge or restart the pinned
-              service using the runbook’s state-preserving path. Do not reseed
-              market controls.
-            </li>
-            <li>
-              Verify service health and telemetry: TOP26 stays
-              <code>cancel_only</code> with zero orders and no Polymarket source;
-              the retained DPREZ and RSENATE26 sources remain fresh.
-            </li>
-          </ol>
-        </div>
-        <div class="caution">
-          Do not run separate SQL against <code>price_connectors</code> as part
-          of this task. Exchange PR #484 owns that migration. This approval is
-          limited to the market-maker environment plane.
-        </div>
-      </section>
-
       <section aria-labelledby="prompt-title">
-        <div class="section-label">Paste-ready handoff</div>
-        <h2 id="prompt-title">Instructions for Ian’s AI agent</h2>
-        <p class="rationale">
-          Paste the complete text below into the agent operating the production
-          market-maker. It requires a read-only preflight and returns to Ian for
-          approval before the first write.
-        </p>
-        <div class="prompt-shell">
+        <div class="label">Execution</div>
+        <h2 id="prompt-title">Paste this to your agent</h2>
+        <div class="prompt">
           <div class="prompt-head">
-            <strong>Production change prompt</strong>
-            <span>Select all in the field, then copy</span>
+            <span>Production change prompt</span>
+            <span>Select all, then copy</span>
           </div>
-          <textarea readonly spellcheck="false" aria-label="Paste-ready production change prompt">Objective
+          <textarea readonly spellcheck="false" aria-label="Paste-ready production change prompt">Complete the remaining production market-maker environment change for exchange PR #484 and market-maker PR #137.
 
-Complete only the market-maker environment side of the TOP26 Polymarket decoupling. Exchange PR #484 already owns the exchange price_connectors migration; do not run separate SQL or modify exchange connector rows in this task.
+Read the merged runbook first:
+https://github.com/mnx-markets/market-maker/blob/main/docs/runbooks/polymarket-settlement-decoupling.md
 
-Authoritative references
+Preflight read-only on mm-runner-mainnet-1. Verify mnx-mm@mainnet, /home/kas/src/market-maker-mnx, and /home/kas/.config/mnx-market-maker/mainnet.env. Report Polymarket map keys only—never token IDs or other secrets. Confirm ANTHTOP26 and OAITOP26 are cancel_only with zero orders and that DPREZ and RSENATE26 are healthy. Show Ian the planned key diff and backup path, then ask approval before any write.
 
-1. Market-maker PR #137: https://github.com/mnx-markets/market-maker/pull/137
-2. Merged runbook: https://github.com/mnx-markets/market-maker/blob/main/docs/runbooks/polymarket-settlement-decoupling.md
-3. Exchange PR #484: https://github.com/mnx-markets/exchange/pull/484
+After approval, use the runbook’s atomic backup/rewrite script verbatim. Remove only ANTHTOP26 and OAITOP26 from MARKET_MAKER_POLYMARKET_FAIR_PRICE_ASSETS. Require final keys exactly DPREZ and RSENATE26 with their objects unchanged. Restart or deploy through the runbook’s state-preserving systemd path; do not reseed controls or touch price_connectors SQL.
 
-Required outcome
-
-- Remove exactly ANTHTOP26 and OAITOP26 from the JSON object in MARKET_MAKER_POLYMARKET_FAIR_PRICE_ASSETS.
-- Preserve every field and value in the DPREZ and RSENATE26 objects, including tokenId, complementTokenId, conditionId, and scale fields.
-- Do not change any other environment variable or market control except where the merged runbook explicitly requires cancel_only for the two TOP26 rows.
-- Keep ANTHTOP26 and OAITOP26 cancel_only after the change. Do not restore quoting in this task.
-- Never print token identifiers, the full environment file, database credentials, or other secrets. Report map keys only.
-
-Phase A — read-only preflight
-
-1. Read the merged runbook completely before acting.
-2. Confirm PR #137 is present in the reviewed market-maker revision intended for deployment and PR #484 is present in the reviewed exchange revision.
-3. On mm-runner-mainnet-1, use the runbook commands to verify:
-   - service: mnx-mm@mainnet;
-   - checkout: /home/kas/src/market-maker-mnx;
-   - environment file: /home/kas/.config/mnx-market-maker/mainnet.env;
-   - the effective MARKET_MAKER_POLYMARKET_FAIR_PRICE_ASSETS value parses as a JSON object;
-   - current map keys, without printing any values;
-   - ANTHTOP26 and OAITOP26 market-control mode and open-order count;
-   - DPREZ and RSENATE26 source health.
-4. Compare observed paths and state with the merged runbook. Stop on any mismatch, ambiguity, missing variable, malformed JSON, unexpected map key, active TOP26 quoting, or nonzero TOP26 open-order count.
-5. Return a concise preflight report containing:
-   - exact host, service, checkout revision, and environment-file path;
-   - current map keys only;
-   - proposed map keys after removal;
-   - TOP26 control modes and open-order counts;
-   - DPREZ and RSENATE26 source-health summary;
-   - the exact backup path and deployment/restart command you propose to use.
-
-Do not mutate anything in Phase A. End the report with: “Approve the environment write and controlled restart/deployment?” Wait for Ian’s explicit approval.
-
-Phase B — execute only after Ian approves
-
-1. If necessary and separately approved, use the merged runbook to set only ANTHTOP26 and OAITOP26 to cancel_only. Require two advancing telemetry snapshots showing both rows cancel_only with zero open orders.
-2. Create the timestamped, permission-preserving backup specified by the runbook.
-3. Run the atomic JSON rewrite script from section 3 of the merged runbook verbatim. It must:
-   - locate exactly one MARKET_MAKER_POLYMARKET_FAIR_PRICE_ASSETS line;
-   - parse it as JSON;
-   - remove only ANTHTOP26 and OAITOP26;
-   - reject any remaining key other than DPREZ or RSENATE26;
-   - preserve unrelated lines and file permissions;
-   - replace the file atomically.
-4. Re-read the environment and report keys only. Require the resulting key set to be exactly DPREZ and RSENATE26. Stop before restart if this is not true.
-5. Deploy the reviewed market-maker revision through the runbook’s state-preserving systemd path, or use its explicit restart path if the reviewed revision is already pinned. Do not seed or reset the control database.
-6. Verify mnx-mm@mainnet is active and use the runbook’s post-deploy telemetry checks. Require:
-   - ANTHTOP26 and OAITOP26 remain cancel_only;
-   - both have zero open orders;
-   - neither exposes a Polymarket fair source, Polymarket telemetry object, or reference liquidity;
-   - DPREZ and RSENATE26 remain configured and fresh;
-   - no repeated failed ticks, stale-reference loops, or placement attempts appear for TOP26.
-7. Report the reviewed revision, backup path, deployment or restart timestamp, final key set, service state, and verification evidence. Do not include secret values.
-
-Rollback boundary
-
-Rollback may restore unrelated formatting or values from the backup, but it must never restore ANTHTOP26 or OAITOP26 to the Polymarket map. Keep both markets cancel_only. Re-coupling either market requires a new settlement-equivalence review and separate approval.
-
-Stop conditions
-
-Stop without improvising if any required state differs from the runbook, the retained DPREZ or RSENATE26 object would change, another map key is present, the service or path differs, a command would touch exchange connector rows, or the deployment requires a destructive/bootstrap mode. Return the evidence and ask Ian for direction.</textarea>
+Verify the service is active; TOP26 remains cancel_only with zero orders and no Polymarket source; DPREZ and RSENATE26 remain fresh. Report the revision, backup, final keys, and evidence. Stop and ask Ian if anything differs from the runbook.</textarea>
         </div>
+        <p class="refs">
+          Sources:
+          <a href="https://github.com/mnx-markets/market-maker/pull/137"
+            >market-maker #137</a
+          > ·
+          <a href="https://github.com/mnx-markets/exchange/pull/484"
+            >exchange #484</a
+          >
+        </p>
       </section>
 
-      <section aria-labelledby="sources-title">
-        <div class="section-label">Canonical references</div>
-        <h2 id="sources-title">Reviewed implementation and runbook</h2>
-        <ul class="sources">
-          <li>
-            <a href="https://github.com/mnx-markets/market-maker/pull/137"
-              >Market-maker PR #137 — Decouple TOP26 from Polymarket settlement</a
-            >
-          </li>
-          <li>
-            <a
-              href="https://github.com/mnx-markets/market-maker/blob/main/docs/runbooks/polymarket-settlement-decoupling.md"
-              >Merged production runbook — Polymarket settlement decoupling</a
-            >
-          </li>
-          <li>
-            <a href="https://github.com/mnx-markets/exchange/pull/484"
-              >Exchange PR #484 — EMA-first prediction oracles and connector cleanup</a
-            >
-          </li>
-        </ul>
-      </section>
+      <footer>No secret values are reproduced on this page.</footer>
     </main>
-
-    <footer>
-      <div class="wrap">
-        MNX internal change-control note · 2026-08-11 · No secret values are
-        reproduced on this page.
-      </div>
-    </footer>
   </body>
 </html>
