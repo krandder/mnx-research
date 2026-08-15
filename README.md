@@ -6,6 +6,7 @@ https://mnx-research.vercel.app
 
 ## Pages
 
+- `/journal-flow-architecture` - Journal & Market-Maker Flow Architecture
 - `/prediction-oracle-ema` - Prediction Oracles: EMA First
 - `/simulation-findings` - MNX Simulation Findings
 - `/adl` - ADL Replacement-Capacity Invariants
