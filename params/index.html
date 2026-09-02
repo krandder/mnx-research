@@ -33,6 +33,18 @@ code { background:#0e1626; padding:1px 5px; border-radius:4px; font-size:.85em; 
   <p class="sub">Every live tradable market with its full parameter set and the market-maker liquidity model those parameters are derived from.
   Snapshot of <strong>testnet</strong>; identical parameter methodology intended for production (pending review).</p>
   <p class="stamp">Proposed revision &mdash; pending Kelvin confirmation. Generated 2026-07-22 02:09 UTC from the live testnet read model.</p>
+  <div class="note warn">
+    <strong>Superseded (2026-09-02) &mdash; order caps are no longer derived from the MM liquidity model.</strong>
+    Operator decision: every market carries a flat cap of <strong>&asymp;$100,000 notional per market order</strong> and
+    <strong>&asymp;$1,000,000 per limit order</strong> (set in units at a reference price via the <code>Evaluator</code> setters;
+    live on mainnet since 2026-09-01). The 2%-slippage / 5%-of-max-position derivation below and the earlier
+    &ldquo;&le;5% of MM-provided liquidity&rdquo; bound are retired. Protection for thin books now comes from
+    (a) the order-panel UI &mdash; sizing guidance, slippage/cost estimates, affordability gates &mdash; and
+    (b) the oracle <code>mtb</code> fill bands (a taker fill cannot cross oracle&nbsp;&times;&nbsp;(1&nbsp;&plusmn;&nbsp;mtb)).
+    The order-cap columns and the liquidity-model section below are kept as history only. Record:
+    mnx-markets/exchange <code>proposals/MAX_ORDER_CAPS_FLAT_POLICY.md</code> (PR #715). Leverage, bands, funding and
+    tick sizes on this page are unaffected.
+  </div>
 
   <h2>The liquidity model behind the numbers</h2>
   <div class="note">
