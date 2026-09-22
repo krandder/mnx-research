@@ -1,0 +1,181 @@
+<title>Five Small PRs</title>
+<style>
+  :root {
+    --paper: #f5f6f8; --paper-2: #e9edf1; --ink: #172130; --ink-2: #4c5766; --rule: #cdd5dd;
+    --need: #0f8a6a; --need-soft: #d6efe6;    /* margin needed */
+    --free: #c9741c; --free-soft: #f7e6d2;    /* freed */
+    --pos: #3b5bdb; --pos-soft: #dde3fb;      /* position / new thing */
+    --gone: #b3261e; --gone-soft: #f6dcda;    /* deleted */
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #111922; --paper-2: #1a2430; --ink: #e5eaf0; --ink-2: #a6b1c0; --rule: #2b3745;
+      --need: #3ccf9f; --need-soft: #14372e; --free: #f0a052; --free-soft: #3f2a14;
+      --pos: #8ea4ff; --pos-soft: #1e2a4d; --gone: #ff7b72; --gone-soft: #3d1a18; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #111922; --paper-2: #1a2430; --ink: #e5eaf0; --ink-2: #a6b1c0; --rule: #2b3745;
+    --need: #3ccf9f; --need-soft: #14372e; --free: #f0a052; --free-soft: #3f2a14;
+    --pos: #8ea4ff; --pos-soft: #1e2a4d; --gone: #ff7b72; --gone-soft: #3d1a18; color-scheme: dark;
+  }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 18px/1.6 "Source Serif 4", Georgia, serif; padding-block: 0 4rem; padding-inline: 20px; }
+  main { max-width: 68ch; margin: 0 auto; }
+  h1, h2 { font-family: Sora, "Helvetica Neue", Arial, sans-serif; text-wrap: balance; line-height: 1.15; margin: 0; }
+  h1 { font-size: clamp(2rem, 5vw, 2.8rem); font-weight: 700; margin-top: 3rem; }
+  h2 { font-size: 1.35rem; font-weight: 600; margin-top: 2.8rem; padding-top: 1.1rem; border-top: 1px solid var(--rule); }
+  h2 a { color: var(--pos); text-decoration: none; font-family: "JetBrains Mono", monospace; font-size: 0.85em; margin-left: 0.4em; }
+  p { margin: 0.9rem 0; }
+  .lede { font-size: 1.15rem; color: var(--ink-2); margin-top: 0.8rem; }
+  .eyebrow { font: 600 0.72rem/1 Sora, sans-serif; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-2); margin-top: 2.5rem; }
+  figure { margin: 1.4rem 0; }
+  figure svg { display: block; width: 100%; height: auto; max-width: 100%; color: var(--ink); font-family: "JetBrains Mono", ui-monospace, monospace; }
+  figcaption { font-size: 0.9rem; color: var(--ink-2); margin-top: 0.5rem; }
+  .fact { display: flex; gap: 1.2rem; flex-wrap: wrap; margin: 0.6rem 0 0; font-size: 0.9rem; color: var(--ink-2); }
+  .fact span b { color: var(--ink); font-family: "JetBrains Mono", monospace; font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.93rem; margin: 1.2rem 0; }
+  th, td { text-align: left; padding: 0.55rem 0.6rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font: 600 0.72rem/1.3 Sora, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); }
+  td.num { font-family: "JetBrains Mono", monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .wrap { overflow-x: auto; }
+  .note { background: var(--paper-2); border-left: 4px solid var(--pos); padding: 0.9rem 1.1rem; margin: 1.4rem 0; }
+  .note p { margin: 0.3rem 0; }
+  footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--rule); font-size: 0.85rem; color: var(--ink-2); }
+  a { color: var(--pos); }
+</style>
+
+<main>
+  <div class="eyebrow">MNX exchange · order margin · for review</div>
+  <h1>Five Small PRs</h1>
+  <p class="lede">One idea each, stacked in order. Together they let a market maker quote both sides without paying margin twice, the way Hyperliquid does it, and they end up deleting more code than they add.</p>
+
+  <div class="note">
+    <p><strong>The problem in one line.</strong> Today every resting order freezes its full margin. A bid and an ask on the same market can never both add to your position, so half of that money is idle. Hyperliquid charges only for what your orders could really do to your position.</p>
+  </div>
+
+  <h2>1. The rule, written down <a href="https://github.com/mnx-markets/exchange/pull/1070">#1070</a></h2>
+  <p>One new file, one function, nothing calls it. Given your resting bids and asks, your position and your leverage, it says how much margin those orders need. Orders that add to your position count in full. Orders that would close it are free up to twice its size, because closing and flipping to the same size re-uses the margin you already posted.</p>
+
+  <figure>
+    <svg viewBox="0 0 760 210" role="img" aria-label="Long 10 at price 100. Asks up to 20 need nothing; an ask of 25 needs margin for 5 units">
+      <text x="20" y="26" font-size="13" font-weight="600" font-family="Sora, sans-serif">You are long 10 at 100, leverage 10. What do resting asks cost?</text>
+      <line x1="140" y1="60" x2="440" y2="60" stroke="var(--rule)"/>
+      <text x="140" y="54" text-anchor="middle" font-size="9" fill="var(--ink-2)">0</text>
+      <text x="240" y="54" text-anchor="middle" font-size="9" fill="var(--pos)">your position, 10</text>
+      <text x="340" y="54" text-anchor="middle" font-size="9" fill="var(--pos)">twice it, 20</text>
+      <line x1="240" y1="58" x2="240" y2="170" stroke="var(--pos)" stroke-dasharray="3 3"/>
+      <line x1="340" y1="58" x2="340" y2="170" stroke="var(--pos)" stroke-dasharray="3 3"/>
+      <g font-size="11">
+        <text x="20" y="90">ask 15</text><rect x="140" y="76" width="150" height="18" fill="var(--free-soft)" stroke="var(--free)"/><text x="460" y="90">needs 0</text>
+        <text x="20" y="126">ask 20</text><rect x="140" y="112" width="200" height="18" fill="var(--free-soft)" stroke="var(--free)"/><text x="460" y="126">needs 0 (an exact flip)</text>
+        <text x="20" y="162">ask 25</text><rect x="140" y="148" width="200" height="18" fill="var(--free-soft)" stroke="var(--free)"/><rect x="340" y="148" width="50" height="18" fill="var(--need-soft)" stroke="var(--need)"/><text x="460" y="162">needs 5 × 100 / 10 = 50</text>
+      </g>
+      <text x="20" y="198" font-size="10" fill="var(--ink-2)">A bid of 10 on the same side as the position would need 100: same-side orders always count in full.</text>
+    </svg>
+    <figcaption>These are the numbers we read off Hyperliquid's own engine; the tests in #1070 pin them.</figcaption>
+  </figure>
+  <div class="fact"><span>Size <b>+92 lines</b></span><span>Behaviour change <b>none</b></span><span>Review <b>passed</b></span></div>
+
+  <h2>2. Track what the rule needs <a href="https://github.com/mnx-markets/exchange/pull/1074">#1074</a></h2>
+  <p>The rule needs, per account and market, how big your resting bids and asks are and what they are worth. The engine already keeps the sizes. This adds the value at order price next to them, updated the same way and rebuilt after a restart. Nothing reads it yet.</p>
+
+  <figure>
+    <svg viewBox="0 0 760 130" role="img" aria-label="Per account and market: the tracker already had bid size and ask size; this PR adds bid value and ask value">
+      <rect x="20" y="20" width="720" height="90" rx="6" fill="none" stroke="currentColor" stroke-width="1.2"/>
+      <text x="32" y="42" font-size="12" font-weight="600">per account × market</text>
+      <g font-size="11">
+        <rect x="32" y="56" width="150" height="24" rx="3" fill="var(--paper-2)" stroke="currentColor"/><text x="107" y="72" text-anchor="middle">bid size (had it)</text>
+        <rect x="196" y="56" width="150" height="24" rx="3" fill="var(--paper-2)" stroke="currentColor"/><text x="271" y="72" text-anchor="middle">ask size (had it)</text>
+        <rect x="380" y="56" width="160" height="24" rx="3" fill="var(--pos-soft)" stroke="var(--pos)"/><text x="460" y="72" text-anchor="middle">bid value (new)</text>
+        <rect x="554" y="56" width="160" height="24" rx="3" fill="var(--pos-soft)" stroke="var(--pos)"/><text x="634" y="72" text-anchor="middle">ask value (new)</text>
+      </g>
+      <text x="32" y="100" font-size="10" fill="var(--ink-2)">value = size × order price, kept exact, one multiplication per order event</text>
+    </svg>
+    <figcaption>Two numbers added to a record that already existed.</figcaption>
+  </figure>
+  <div class="fact"><span>Size <b>+25 lines</b></span><span>Behaviour change <b>none</b></span><span>Review <b>passed</b></span></div>
+
+  <h2>3. Show the number, read-only <a href="https://github.com/mnx-markets/exchange/pull/1075">#1075</a></h2>
+  <p>Each account's balance gains one extra number: what the rule would let it use right now. Cash, minus what is already pending, minus what the rule says the resting orders need in each market. When a market cannot be priced exactly (an order waiting on a trigger, a fill in flight, mixed leverage), that market keeps the old sum, so the number is never too high. Nothing uses it; it only shows up in replies so we can watch it on testnet.</p>
+
+  <figure>
+    <svg viewBox="0 0 760 150" role="img" aria-label="Cash 1000 with a bid of 500 and an ask of 500. Old available is 0. New effective available is 500. Nothing acts on the new number yet.">
+      <text x="20" y="26" font-size="13" font-weight="600" font-family="Sora, sans-serif">Cash 1,000 · bid 500 · ask 500</text>
+      <g font-size="11">
+        <text x="20" y="66">old available</text>
+        <rect x="160" y="52" width="500" height="20" fill="var(--need-soft)" stroke="var(--need)"/><text x="410" y="66" text-anchor="middle">1,000 reserved</text><text x="670" y="66" font-weight="600">0</text>
+        <text x="20" y="106">effective available</text>
+        <rect x="160" y="92" width="250" height="20" fill="var(--need-soft)" stroke="var(--need)"/><text x="285" y="106" text-anchor="middle">rule needs 500</text>
+        <rect x="410" y="92" width="250" height="20" fill="var(--free-soft)" stroke="var(--free)"/><text x="535" y="106" text-anchor="middle">free</text><text x="670" y="106" font-weight="600" fill="var(--free)">500</text>
+      </g>
+      <text x="20" y="138" font-size="10" fill="var(--ink-2)">Both numbers exist side by side. Only the old one is acted on. That is the point of this step.</text>
+    </svg>
+    <figcaption>Two review rounds found three ways this number could come out too high; all fixed before it opened.</figcaption>
+  </figure>
+  <div class="fact"><span>Size <b>+101 / −23 lines</b></span><span>Behaviour change <b>none</b></span><span>Review <b>two rounds, passed</b></span></div>
+
+  <h2>4. Let placement use it, switch off <a href="https://github.com/mnx-markets/exchange/pull/1079">#1079</a></h2>
+  <p>Behind one switch that stays off, placement can accept an order when the extra margin it needs, plus its fee, fits in the number from step 3. Cash is still reserved per order exactly as today. Because of that, the old "available" can go below zero by the amount the rule frees; the checks that would have called that an error now allow it, up to that amount and no further.</p>
+
+  <figure>
+    <svg viewBox="0 0 760 190" role="img" aria-label="Placement flow: new order arrives; if the switch is off, the old check runs; if on, the order is accepted when its extra requirement plus fee fits in effective available">
+      <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+      <g font-size="11">
+        <rect x="20" y="70" width="120" height="40" rx="6" fill="var(--paper-2)" stroke="currentColor"/><text x="80" y="94" text-anchor="middle">new order</text>
+        <line x1="140" y1="90" x2="200" y2="90" stroke="currentColor" marker-end="url(#ar)"/>
+        <rect x="200" y="60" width="140" height="60" rx="6" fill="var(--pos-soft)" stroke="var(--pos)"/><text x="270" y="86" text-anchor="middle" font-weight="600">switch</text><text x="270" y="102" text-anchor="middle" fill="var(--ink-2)">off today</text>
+        <line x1="340" y1="75" x2="420" y2="45" stroke="currentColor" marker-end="url(#ar)"/><text x="375" y="52" font-size="10" fill="var(--ink-2)">off</text>
+        <line x1="340" y1="105" x2="420" y2="135" stroke="currentColor" marker-end="url(#ar)"/><text x="375" y="132" font-size="10" fill="var(--ink-2)">on</text>
+        <rect x="420" y="20" width="320" height="44" rx="6" fill="var(--paper-2)" stroke="currentColor"/><text x="580" y="46" text-anchor="middle">old check: full reservation ≤ available</text>
+        <rect x="420" y="112" width="320" height="56" rx="6" fill="var(--free-soft)" stroke="var(--free)"/><text x="580" y="134" text-anchor="middle">new check: extra requirement + fee</text><text x="580" y="152" text-anchor="middle">≤ effective available</text>
+      </g>
+      <text x="20" y="182" font-size="10" fill="var(--ink-2)">Either way the order's cash is reserved per order as before. Only the yes/no decision changes.</text>
+    </svg>
+    <figcaption>Orders the rule cannot price (market, conditional, expiring, different leverage) are charged their whole reservation, never less.</figcaption>
+  </figure>
+  <div class="fact"><span>Size <b>+123 / −25 lines</b></span><span>Behaviour change <b>none while off</b></span><span>Review <b>two rounds, passed</b></span></div>
+
+  <h2>5. Throw code away <a href="https://github.com/mnx-markets/exchange/pull/1083">#1083</a></h2>
+  <p>Earlier PRs (#1001, #1002) had built a second ledger: a cash hold per market, with every change written into the journal. The derived design never reads it, so it goes. Reserved margin is again the plain sum of each order's reservation. Old journals and snapshots still load; the old fields are ignored.</p>
+
+  <figure>
+    <svg viewBox="0 0 760 160" role="img" aria-label="Before: two ledgers, per-order reservations and a per-market cash hold with journaled movements, kept in sync. After: only the per-order reservations, plus a derived number computed when needed.">
+      <g font-size="11">
+        <text x="20" y="26" font-size="12" font-weight="600" font-family="Sora, sans-serif">before</text>
+        <rect x="20" y="40" width="160" height="40" rx="6" fill="var(--paper-2)" stroke="currentColor"/><text x="100" y="64" text-anchor="middle">per-order reservations</text>
+        <rect x="20" y="96" width="160" height="40" rx="6" fill="var(--gone-soft)" stroke="var(--gone)" stroke-dasharray="4 3"/><text x="100" y="114" text-anchor="middle">per-market cash hold</text><text x="100" y="128" text-anchor="middle" fill="var(--ink-2)">+ journaled movements</text>
+        <line x1="100" y1="80" x2="100" y2="96" stroke="var(--gone)" marker-end="url(#ar)" marker-start="url(#ar)"/>
+        <text x="200" y="92" font-size="10" fill="var(--gone)">must agree</text>
+        <text x="420" y="26" font-size="12" font-weight="600" font-family="Sora, sans-serif">after</text>
+        <rect x="420" y="40" width="160" height="40" rx="6" fill="var(--paper-2)" stroke="currentColor"/><text x="500" y="64" text-anchor="middle">per-order reservations</text>
+        <rect x="600" y="40" width="140" height="40" rx="6" fill="var(--free-soft)" stroke="var(--free)"/><text x="670" y="58" text-anchor="middle">effective available</text><text x="670" y="72" text-anchor="middle" fill="var(--ink-2)">computed, not stored</text>
+        <text x="420" y="120" font-size="10" fill="var(--ink-2)">One ledger. One derived number. Nothing to keep in sync.</text>
+      </g>
+    </svg>
+    <figcaption>Proof: a journal recorded with the old code replays identically through the new code, cold and from every snapshot.</figcaption>
+  </figure>
+  <div class="fact"><span>Size <b>+209 / −670 lines</b></span><span>Behaviour change <b>none</b></span><span>Review <b>passed</b></span></div>
+
+  <h2>All together</h2>
+  <div class="wrap">
+  <table>
+    <thead><tr><th>PR</th><th>What</th><th>Lines</th><th>Changes behaviour?</th></tr></thead>
+    <tbody>
+      <tr><td><a href="https://github.com/mnx-markets/exchange/pull/1070">#1070</a></td><td>the rule, as a function</td><td class="num">+92</td><td>no</td></tr>
+      <tr><td><a href="https://github.com/mnx-markets/exchange/pull/1074">#1074</a></td><td>track order values</td><td class="num">+25</td><td>no</td></tr>
+      <tr><td><a href="https://github.com/mnx-markets/exchange/pull/1075">#1075</a></td><td>show the number</td><td class="num">+101 / −23</td><td>no</td></tr>
+      <tr><td><a href="https://github.com/mnx-markets/exchange/pull/1079">#1079</a></td><td>placement may use it, switch off</td><td class="num">+123 / −25</td><td>not until switched on</td></tr>
+      <tr><td><a href="https://github.com/mnx-markets/exchange/pull/1083">#1083</a></td><td>delete the second ledger</td><td class="num">+209 / −670</td><td>no</td></tr>
+      <tr><td><strong>total</strong></td><td></td><td class="num"><strong>about −170</strong></td><td>none today</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>Every PR was attacked by an independent reviewer before it opened, and the whole stack twice more. No way to lose funds was found; everything found above nit level was fixed first.</p>
+
+  <div class="note">
+    <p><strong>Not in this stack, on purpose.</strong> The one-line PR that turns the switch on. It waits for: the seal-time cash check that cancels only the order that cannot be paid, the read model showing the same effective number (otherwise dashboards show a false shortfall while a quote rests), withdrawals using the new number, a clean shortfall report, and an agreed one-way rollback.</p>
+  </div>
+
+  <footer>Sizes are product code only, tests excluded (about 3,000 lines of tests were added). Hyperliquid behaviour taken from static analysis of its mainnet engine binary; see the companion page "How Hyperliquid Holds Margin".</footer>
+</main>
