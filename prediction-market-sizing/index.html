@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prediction-Market Curve Shape and Sizing</title>
+<meta name="description" content="Concave, linear and steeper-far-out position curves on ANTHTOP26, RSENATE26, TAKEOFF, PNP27 and LABREV, sized to $2.5k expected and $15k worst-case loss per market, with the near-fair liquidity each allows.">
+<link rel="icon" href="/favicon.ico">
+<style>
+:root{color-scheme:light;--bg:#f3f6f7;--surface:#fff;--soft:#e4ecee;--ink:#161616;--muted:#5f625f;--rule:#ccd6da;--accent:#0f6b5f;--accent-dark:#064a42;--warn:#9b4b21}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 ui-serif,Georgia,"Times New Roman",serif;padding:0 20px 80px}
+main{max-width:980px;margin:0 auto}
+header{padding:52px 0 6px}
+.eyebrow{font:600 12px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+h1{font:400 clamp(32px,5vw,48px)/1.08 ui-serif,Georgia,serif;margin:12px 0 10px}
+h2{font:400 26px/1.15 ui-serif,Georgia,serif;margin:44px 0 10px}
+p,li{max-width:72ch}
+.box{background:var(--surface);border:1px solid var(--rule);padding:16px 20px;margin:18px 0}
+.box.key{border-left:4px solid var(--accent)}
+.box.warn{border-left:4px solid var(--warn)}
+table{border-collapse:collapse;width:100%;font:13.5px/1.45 ui-sans-serif,system-ui,sans-serif;margin:12px 0;background:var(--surface)}
+th,td{text-align:left;padding:7px 9px;border-bottom:1px solid var(--rule);vertical-align:top}
+thead th{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+td.n{text-align:right;font-family:ui-monospace,Menlo,monospace;white-space:nowrap}
+tr.best td{color:var(--accent-dark);font-weight:600}
+tr.worst td{color:var(--warn)}
+.wrap{overflow-x:auto}
+.small{font-size:14px;color:var(--muted)}
+a{color:var(--accent-dark)}
+</style>
+</head>
+<body><main>
+<header>
+<div class="eyebrow">MNX research · market maker · MNX-131 sizing round · 24 September 2026</div>
+<h1>Prediction-Market Curve Shape and Sizing</h1>
+</header>
+
+<div class="box key"><b>One-page summary.</b>
+<ul>
+<li><b>Shape: steeper far out wins on every market.</b> At the same $2.5k expected loss, a position curve that gets steeper beyond the knee (liquidity floor at a quarter of the near-fair depth) allows about 1.8× today's near-fair liquidity on ANTHTOP26, TAKEOFF and PNP27; the concave curve of v3 §2.6.5 (deepens as the position grows) allows only about 0.35×. The concave curve also sells the most units into a 50¢ move: it is the shape that loses most exactly when news is large.</li>
+<li><b>What binds is the expected budget, not the $15k worst case.</b> With the depths the $2.5k budget allows, each curve reaches 1% or 99% before any sensible cap, and the resolution-against-us loss stays under $15k (PNP27 concave and linear are the exception: their cap binds at about 18k units). So the cap can be set at the curve's reach, and the worst case is set by the depth.</li>
+<li><b>Near-fair liquidity the budget allows</b> (steeper-far-out, dollars per 1¢): ANTHTOP26 about $440, TAKEOFF about $220, RSENATE26 about $290, PNP27 about $145; LABREV about $440 per 1%. Today: $256, $191, $215, not listed, $127.</li>
+<li><b>RSENATE26:</b> the 5× proposal is not inside the budget under these jump frequencies (about $9–10k expected, $15–18k if a 50¢ move happens while deep); about 1.6× today fits with the 50¢ event excluded before election week. The proposal's loss table is an upper bound by about 20% (it prices every unit at the near-fair depth; the live book is thinner beyond the center band). Raising the slew limit barely helps: arbitrageurs take a jump in seconds, so the loss per jump is the depth between the old and new price, not the catch-up time. Election night: drop to 1× or cancel-only before polls close, as the proposal says.</li>
+<li><b>K1–K4 answers:</b> unchanged by this round (ρ ≈ 3%, keep 5 h, retire pif, one flat τ_ema per market), with one addition: <b>Q-K5 / §2.6.5 should use the steeper-far-out slow curve, not the concave one</b>; the answers file is updated.</li>
+</ul></div>
+
+<h2>How the numbers were made</h2>
+<p>Every market is priced in log-odds (LABREV, a future, in log price), with today's live mainnet parameters: spread 100 bps, the two-channel instant curve (a center band where only the position curve prices, then a flow channel four times thinner, decaying with a 5 h e-fold). Only the position curve's shape beyond a knee of 0.2 log-odds is varied: concave slope × 0.25, linear, steeper slope × 4. Losses are to the market maker, marked at the true post-news value.</p>
+<ul>
+<li><b>Paced informed trader</b>: slices small enough that the flow channel is empty each time, walking the position curve until our price reaches the true value or the cap. This is the worst case for markets whose fair does not follow news (ANTHTOP26 fixed, TAKEOFF, LABREV and PNP27 on their own mark).</li>
+<li><b>News jump</b>: arbitrageurs sweep the instant curve at once; if our fair does not follow, they refill every hour as the flow decays, for 72 h. For RSENATE26 the fair follows Polymarket, so there is no refill; the loss is the sweep.</li>
+<li><b>Worst case</b>: a paced walk to 99% (or 1%) or the cap, then resolution against us. RSENATE26: the election-night jump to 0.95 (and to 0.05).</li>
+<li><b>Expected loss</b>: 4 jumps of 10¢, 1 of 20¢ and 0.2 of 50¢ per market over the budget horizon, each direction equally likely, each exploited by the worse of the two strategies. This frequency is an assumption; the sensitivity table shows depth scaling close to inversely with it.</li>
+</ul>
+<p class="small">Check against the RSENATE26 proposal: with a pure position curve the simulator reproduces its table exactly ($301 for +10¢ at today's depth, $58.8k for 0.95 at 5×); with the live two-channel curve the +10¢ loss is $234 and 0.95 at 5× is $18.3k. The mark-EMA fair on TAKEOFF and LABREV walks toward the new price over days and would recover part of a loss; it is ignored here, which is conservative.</p>
+
+<h2>Sizing per market and shape</h2>
+<div class="wrap"><table>
+<thead><tr><th>curve</th><th>depth near fair, units per 1%</th><th>near-fair $ per 1¢ (LABREV per 1%)</th><th>cap, units</th><th>expected loss</th><th>worst case</th><th>loss per event: 10¢ · 20¢ · 50¢ (avg of both directions)</th></tr></thead>
+<tbody><tr><th colspan="7" style="background:var(--soft)">ANTHTOP26 · 0.62, fixed fair 0.6529 · today 142 units per 1%, about $256 per 1¢ near fair</th></tr><tr class="worst"><td>concave (v3 §2.6.5)</td><td class="n">34.1</td><td class="n">$90</td><td class="n">67,168 (curve reaches the edge first)</td><td class="n">$2,500</td><td class="n">$11,787</td><td class="n">$131 · $830 · $5,729</td></tr><tr><td>linear (today)</td><td class="n">93.5</td><td class="n">$246</td><td class="n">47,497 (curve reaches the edge first)</td><td class="n">$2,500</td><td class="n">$8,927</td><td class="n">$196 · $816 · $4,510</td></tr><tr class="best"><td>steeper far out</td><td class="n">165.7</td><td class="n">$436</td><td class="n">23,548 (curve reaches the edge first)</td><td class="n">$2,500</td><td class="n">$5,451</td><td class="n">$274 · $798 · $3,028</td></tr><tr><th colspan="7" style="background:var(--soft)">RSENATE26 · 0.345, follows Polymarket · today 141 units per 1%, about $215 per 1¢ near fair</th></tr><tr class="worst"><td>concave (v3 §2.6.5)</td><td class="n">167.6</td><td class="n">$256</td><td class="n">340,497 (curve reaches the edge first)</td><td class="n">$2,500</td><td class="n">$4,768</td><td class="n">$282 · $814 · $2,792</td></tr><tr><td>linear (today)</td><td class="n">174.0</td><td class="n">$266</td><td class="n">91,077 (curve reaches the edge first)</td><td class="n">$2,500</td><td class="n">$4,514</td><td class="n">$289 · $811 · $2,671</td></tr><tr class="best"><td>steeper far out</td><td class="n">189.6</td><td class="n">$289</td><td class="n">27,697 (curve reaches the edge first)</td><td class="n">$2,500</td><td class="n">$3,905</td><td class="n">$305 · $803 · $2,381</td></tr><tr><th colspan="7" style="background:var(--soft)">TAKEOFF · 0.28, 7-day EMA of own mark · today 165 units per 1%, about $191 per 1¢ near fair</th></tr><tr class="worst"><td>concave (v3 §2.6.5)</td><td class="n">31.0</td><td class="n">$43</td><td class="n">66,677 (curve reaches the edge first)</td><td class="n">$2,500</td><td class="n">$14,290</td><td class="n">$160 · $985 · $4,380</td></tr><tr><td>linear (today)</td><td class="n">87.1</td><td class="n">$121</td><td class="n">48,212 (curve reaches the edge first)</td><td class="n">$2,500</td><td class="n">$10,974</td><td class="n">$215 · $927 · $3,557</td></tr><tr class="best"><td>steeper far out</td><td class="n">159.2</td><td class="n">$221</td><td class="n">24,472 (curve reaches the edge first)</td><td class="n">$2,500</td><td class="n">$6,713</td><td class="n">$287 · $852 · $2,499</td></tr><tr><th colspan="7" style="background:var(--soft)">PNP27 · 0.03 assumed (not listed yet)</th></tr><tr class="worst"><td>concave (v3 §2.6.5)</td><td class="n">15.0</td><td class="n">$15</td><td class="n">18,116 (binds)</td><td class="n">$2,500</td><td class="n">$15,000</td><td class="n">$262 · $799 · $3,262</td></tr><tr><td>linear (today)</td><td class="n">52.3</td><td class="n">$54</td><td class="n">18,773 (binds)</td><td class="n">$2,500</td><td class="n">$15,000</td><td class="n">$274 · $782 · $3,111</td></tr><tr class="best"><td>steeper far out</td><td class="n">140.8</td><td class="n">$145</td><td class="n">30,568 (curve reaches the edge first)</td><td class="n">$2,500</td><td class="n">$14,377</td><td class="n">$305 · $753 · $2,640</td></tr><tr><th colspan="7" style="background:var(--soft)">LABREV · $196.5 future, 7-day EMA of own mark · today 2.5 units per 1%, about $127 per 1% near fair</th></tr><tr class="worst"><td>concave (v3 §2.6.5)</td><td class="n">1.3</td><td class="n">$263</td><td class="n">288 (curve reaches the edge first)</td><td class="n">$2,500</td><td class="n">$9,557</td><td class="n">$128 · $528 · $7,292</td></tr><tr><td>linear (today)</td><td class="n">2.0</td><td class="n">$387</td><td class="n">136 (curve reaches the edge first)</td><td class="n">$2,500</td><td class="n">$5,888</td><td class="n">$184 · $760 · $5,013</td></tr><tr class="best"><td>steeper far out</td><td class="n">2.2</td><td class="n">$438</td><td class="n">73 (curve reaches the edge first)</td><td class="n">$2,500</td><td class="n">$4,362</td><td class="n">$208 · $857 · $4,066</td></tr></tbody></table></div>
+
+<h2>Sensitivity: depth that keeps $2.5k expected</h2>
+<div class="wrap"><table>
+<thead><tr><th>market</th><th>curve</th><th>base</th><th>jumps half as often</th><th>jumps twice as often</th><th>knee 0.5 instead of 0.2</th></tr></thead>
+<tbody><tr><td>ANTHTOP26</td><td>concave</td><td class="n">34.1</td><td class="n">68.1</td><td class="n">17.0</td><td class="n">50.5</td></tr><tr><td>ANTHTOP26</td><td>linear</td><td class="n">93.5</td><td class="n">186.9</td><td class="n">46.7</td><td class="n">93.5</td></tr><tr><td>ANTHTOP26</td><td>steep</td><td class="n">165.7</td><td class="n">331.4</td><td class="n">82.8</td><td class="n">118.7</td></tr><tr><td>RSENATE26</td><td>concave</td><td class="n">167.6</td><td class="n">335.1</td><td class="n">83.8</td><td class="n">173.6</td></tr><tr><td>RSENATE26</td><td>linear</td><td class="n">174.0</td><td class="n">348.0</td><td class="n">87.0</td><td class="n">174.0</td></tr><tr><td>RSENATE26</td><td>steep</td><td class="n">189.6</td><td class="n">379.2</td><td class="n">94.8</td><td class="n">174.8</td></tr><tr><td>TAKEOFF</td><td>concave</td><td class="n">31.0</td><td class="n">61.9</td><td class="n">15.5</td><td class="n">47.2</td></tr><tr><td>TAKEOFF</td><td>linear</td><td class="n">87.1</td><td class="n">174.2</td><td class="n">43.5</td><td class="n">87.1</td></tr><tr><td>TAKEOFF</td><td>steep</td><td class="n">159.2</td><td class="n">318.4</td><td class="n">79.6</td><td class="n">110.4</td></tr><tr><td>PNP27</td><td>concave</td><td class="n">15.0</td><td class="n">29.8</td><td class="n">7.5</td><td class="n">18.3</td></tr><tr><td>PNP27</td><td>linear</td><td class="n">52.3</td><td class="n">104.7</td><td class="n">26.2</td><td class="n">52.3</td></tr><tr><td>PNP27</td><td>steep</td><td class="n">140.8</td><td class="n">281.6</td><td class="n">70.4</td><td class="n">97.8</td></tr><tr><td>LABREV</td><td>concave</td><td class="n">1.3</td><td class="n">2.7</td><td class="n">1.0</td><td class="n">1.9</td></tr><tr><td>LABREV</td><td>linear</td><td class="n">2.0</td><td class="n">4.0</td><td class="n">1.0</td><td class="n">2.0</td></tr><tr><td>LABREV</td><td>steep</td><td class="n">2.2</td><td class="n">4.5</td><td class="n">1.1</td><td class="n">2.0</td></tr></tbody></table></div>
+<p>Depth moves almost exactly inversely with the jump frequency, so the frequency model is the number to agree first. A wider knee (0.5 log-odds) shrinks the difference between the shapes, because less of each move lands beyond it; the ranking never changes: steeper far out, then linear, then concave, on every market and every setting.</p>
+
+<h2>Why the concave curve loses</h2>
+<p>A concave position curve means that the more we hold, the less each extra unit moves our price. A paced informed trader, or an arbitrageur refilling after a jump, therefore buys more units before our price reaches the new value, and buys them at prices further from it. Loss per event scales with those units times the distance; the concave curve maximizes both in large moves, which is where fat tails put the damage. The steeper curve does the opposite: it gives ground fast once a move is clearly large, and it still keeps a floor of liquidity so the book never empties. This is the same defense-against-fat-tails argument as the instant curve, applied to the position curve.</p>
+
+<h2>Sources</h2>
+<p class="small">Simulator: sizing.py and sizing_sens.py in the <a href="/decaying-liquidity-amm/archive/">research archive</a>; inputs: mainnet telemetry 2026-09-24 00:30Z (mm.mnx.fi/api/telemetry) and api.app.mnx.fi/v0/markets; RSENATE26-deeper-liquidity-proposal.md and MNX-129-liquidity-milestones.md (mnx-pm outbox); the v3 proposal on branch proposal/unified-impact-permanence. An independent astra run on the same brief (RESEARCH-BRIEF-5.md) is in progress and will be added here.</p>
+</main></body></html>
