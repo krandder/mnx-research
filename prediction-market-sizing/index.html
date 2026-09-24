@@ -36,7 +36,16 @@ a{color:var(--accent-dark)}
 <h1>Prediction-Market Curve Shape and Sizing</h1>
 </header>
 
-<div class="box key"><b>One-page summary.</b>
+<div class="box warn"><b>Update, same day: approved sizes at 3× budget, and a correction.</b> Kelvin approved the steeper-far-out curve with budgets of at least 3× ($7.5k expected, $45k worst). The independent astra run (<a href="/decaying-liquidity-amm/archive/Z-sizing.md">Z-sizing.md</a>) corrects the first pass below: it adds the loss when an informed trader holds to resolution, which is the budget that binds on ANTHTOP26, RSENATE26 and TAKEOFF, and it uses the real band width, ANTHTOP26's fixed fair and resolution at 1/0. The shape verdict is unchanged; the depths are lower than the first pass at equal budget.
+<table><thead><tr><th>market</th><th>D0</th><th>cap</th><th>expected</th><th>worst</th><th>near-fair liquidity</th></tr></thead><tbody>
+<tr><td>ANTHTOP26</td><td class="n">325</td><td class="n">47,300</td><td class="n">$7,500</td><td class="n">$11,600</td><td class="n">$940 per 1¢</td></tr>
+<tr><td>RSENATE26</td><td class="n">336</td><td class="n">48,900</td><td class="n">$7,500</td><td class="n">$12,000</td><td class="n">$510 per 1¢</td></tr>
+<tr><td>TAKEOFF</td><td class="n">367</td><td class="n">56,400</td><td class="n">$7,500</td><td class="n">$15,400</td><td class="n">$510 per 1¢</td></tr>
+<tr><td>PNP27</td><td class="n">385</td><td class="n">83,400</td><td class="n">$7,500</td><td class="n">$39,200</td><td class="n">$400 per 1¢</td></tr>
+<tr><td>LABREV</td><td class="n">6.9</td><td class="n">190</td><td class="n">$7,500</td><td class="n">$12,200 at ±50%</td><td class="n">$1,360 per 1%</td></tr>
+</tbody></table>
+<p class="small">Conditions: LABREV has no finite worst case without a settlement bound; TAKEOFF must stop feeding its own quotes into its fair; PNP27 needs a fixed or independent fair; RSENATE26 returns to today's depth before election night.</p></div>
+<div class="box key"><b>One-page summary (first pass).</b>
 <ul>
 <li><b>Shape: steeper far out wins on every market.</b> At the same $2.5k expected loss, a position curve that gets steeper beyond the knee (liquidity floor at a quarter of the near-fair depth) allows about 1.8× today's near-fair liquidity on ANTHTOP26, TAKEOFF and PNP27; the concave curve of v3 §2.6.5 (deepens as the position grows) allows only about 0.35×. The concave curve also sells the most units into a 50¢ move: it is the shape that loses most exactly when news is large.</li>
 <li><b>What binds is the expected budget, not the $15k worst case.</b> With the depths the $2.5k budget allows, each curve reaches 1% or 99% before any sensible cap, and the resolution-against-us loss stays under $15k (PNP27 concave and linear are the exception: their cap binds at about 18k units). So the cap can be set at the curve's reach, and the worst case is set by the depth.</li>
